@@ -10,7 +10,7 @@ const nintendoLogo = new Uint8Array([
 
 test("no mapper", () => {
   const header = new Array(0x180);
-  header.splice(0x104, 0x30, nintendoLogo);
+  header.splice(0x104, 0x30, ...nintendoLogo);
   header.splice(0x134, 6, ...unhex("544554524953")); // Title: TETRIS
   header.splice(0x14B, 1, 0x01);                     // Old licensee: Nintendo
   header.splice(0x14C, 1, 0x01);                     // ROM version: 1
@@ -20,17 +20,19 @@ test("no mapper", () => {
   const cart = dmg.detect(new Uint8Array(header));
   expect(cart.title).toStrictEqual("TETRIS");
   expect(cart.romSize).toBe(32768);
-  expect(cart.ramSize).toBe(0);
-  expect(cart.validHeader).toBe(true);
+  expect(cart.savSize).toBe(0);
+  expect(cart.valid.header).toBe(true);
 });
 
+const rom1 = [ new Segment(0, 32768) ];
 const rom4 = [
   new Segment(0, 16384),
   new Segment(16384, 32768),
   new Segment(32768, 49152),
   new Segment(49152, 65536),
 ];
-const ram4 = [
+const sav1 = [ new Segment(0, 8192) ];
+const sav4 = [
   new Segment(0, 8192),
   new Segment(8192, 16384),
   new Segment(16384, 24576),
@@ -38,10 +40,48 @@ const ram4 = [
 ];
 
 test.each([
-  [ 0x00, "None", 32768, [ new Segment(0, 32768) ], 0, [] ],
-  //[ 0x01, "MBC1", 65536, rom4, 32768, ram4 ],
-])("mapper $id rom and ram sizes",
-   (id, mapper, romSize, romSegments, ramSize, ramSegments) => {
+  [ 0x00, "None", 32768, rom1, 0, [], [] ],
+  [ 0x08, "None", 32768, rom1, 0, [], [ "ram" ] ],
+  [ 0x09, "None", 32768, rom1, 8192, sav1, [ "battery", "ram" ] ],
+
+  [ 0x01, "MBC1", 65536, rom4, 0, [], [] ],
+  [ 0x02, "MBC1", 65536, rom4, 0, [], [ "ram" ] ],
+  [ 0x03, "MBC1", 65536, rom4, 32768, sav4, [ "battery", "ram" ] ],
+
+  [ 0x05, "MBC2", 65536, rom4, 0, [], [] ],
+  [ 0x06, "MBC2", 65536, rom4, 512, [ new Segment(0, 512) ], [ "battery" ] ],
+
+  [ 0x0F, "MBC3", 65536, rom4, 0, [], [ "battery", "timer" ] ],
+  [ 0x10, "MBC3", 65536, rom4, 32768, sav4, [ "battery", "ram", "timer" ] ],
+  [ 0x11, "MBC3", 65536, rom4, 0, [], [] ],
+  [ 0x12, "MBC3", 65536, rom4, 0, [], [ "ram" ] ],
+  [ 0x13, "MBC3", 65536, rom4, 32768, sav4, [ "battery", "ram" ] ],
+
+  [ 0x19, "MBC5", 65536, rom4, 0, [], [] ],
+  [ 0x1A, "MBC5", 65536, rom4, 0, [], [ "ram" ] ],
+  [ 0x1B, "MBC5", 65536, rom4, 32768, sav4, [ "battery", "ram" ] ],
+  [ 0x1C, "MBC5", 65536, rom4, 0, [], [ "rumble" ] ],
+  [ 0x1D, "MBC5", 65536, rom4, 0, [], [ "ram", "rumble" ] ],
+  [ 0x1E, "MBC5", 65536, rom4, 32768, sav4, [ "battery", "ram", "rumble" ] ],
+
+  // [ 0x20, "MBC6", 65536, rom4, 32768, sav4, [] ],
+  // [ 0x22, "MBC7", 65536, rom4, 32768, sav4, [] ],
+
+  // [ 0x0B, "MMM01", 65536, rom4, 32768, sav4, [] ],
+  // [ 0x0C, "MMM01", 65536, rom4, 32768, sav4, [ "ram" ] ],
+  // [ 0x0D, "MMM01", 65536, rom4, 32768, sav4, [ "battery", "ram" ] ],
+
+  [ 0xFC, "MAC-GBD", 65536, rom4, 32768, sav4, [ "battery", "camera", "ram" ] ],
+  // [ 0xFD, "Tama5", 65536, rom4, 32768, sav4, [ "battery", "ram" ] ],
+  [
+    0xFE, "HuC-3", 65536, rom4, 32768, sav4,
+    [ "battery", "infrared", "ram", "speaker", "timer" ]
+  ],
+  [ 0xFF, "HuC-1", 65536, rom4, 32768, sav4, [ "battery", "infrared", "ram" ] ],
+
+  [ 0xF0, "None", 32768, rom1, 0, [], [] ], // unknown → no mapper/features
+])("cartridge type %d (%s) rom and sav",
+   (id, mapper, romSize, romSegments, savSize, savSegments, features) => {
      const header = new Array(0x180);
      header.splice(0x147, 1, id);
      header.splice(0x148, 1, 0x01); // ROM size: 64 KiB (4 banks)
@@ -51,8 +91,12 @@ test.each([
      expect(cart.mapperName).toBe(mapper);
      expect(cart.romSize).toBe(romSize);
      expect(cart.romSegments).toStrictEqual(romSegments);
-     expect(cart.ramSize).toBe(ramSize);
-     expect(cart.ramSegments).toStrictEqual(ramSegments);
+     expect(cart.savSize).toBe(savSize);
+     expect(cart.savSegments).toStrictEqual(savSegments);
+
+     const kv = Object.entries(cart.features);
+     expect(kv.filter(([ k, v ]) => v).map(([ k, v ]) => k).sort())
+         .toStrictEqual(features);
    });
 
 test.each([

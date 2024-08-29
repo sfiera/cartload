@@ -1,49 +1,47 @@
 const fixedSize = function(size, getter, setter) {
   return {
-    marshal : (value, result) => {
+    marshal: (value, result) => {
       const data = new Uint8Array(size);
       const view = new DataView(data.buffer);
-      view[setter](0, value); // big-endian
+      view[setter](0, value);  // big-endian
       result.push(...data);
     },
-    unmarshal : (data) => {
+    unmarshal: (data) => {
       if (data.length < size) {
-        return [ null, null ];
+        return [null, null];
       }
       const view = new DataView(data.buffer);
-      const value = view[getter](0); // big-endian
-      return [ value, data.slice(size) ];
+      const value = view[getter](0);  // big-endian
+      return [value, data.slice(size)];
     },
   };
 };
 
 const packFormats = {
-  b : fixedSize(1, "getInt8", "setInt8"),
-  B : fixedSize(1, "getUint8", "setUint8"),
-  h : fixedSize(2, "getInt16", "setInt16"),
-  H : fixedSize(2, "getUint16", "setUint16"),
-  i : fixedSize(4, "getInt32", "setInt32"),
-  I : fixedSize(4, "getUint32", "setUint32"),
-  "?" : {
-    marshal : (value, result) => {result.push([ value ? 1 : 0 ])},
-    unmarshal : (data) => {
+  b: fixedSize(1, "getInt8", "setInt8"),
+  B: fixedSize(1, "getUint8", "setUint8"),
+  h: fixedSize(2, "getInt16", "setInt16"),
+  H: fixedSize(2, "getUint16", "setUint16"),
+  i: fixedSize(4, "getInt32", "setInt32"),
+  I: fixedSize(4, "getUint32", "setUint32"),
+  "?": {
+    marshal: (value, result) => {result.push([value ? 1 : 0])},
+    unmarshal: (data) => {
       if (data.length < 1) {
-        return [ null, null ];
+        return [null, null];
       } else if (data[0] > 1) {
         throw new Error("invalid boolean " + value);
       }
-      return [ data[0] == 1, data.slice(1) ];
+      return [data[0] == 1, data.slice(1)];
     },
   },
-  p : {
-    unmarshal : (data) => {
+  p: {
+    unmarshal: (data) => {
       let [length, remainder] = packFormats.B.unmarshal(data);
       if ((length === null) || (remainder.length < length)) {
-        return [ null, null ];
+        return [null, null];
       }
-      return [
-        new Uint8Array(remainder.slice(0, length)), remainder.slice(length)
-      ];
+      return [new Uint8Array(remainder.slice(0, length)), remainder.slice(length)];
     },
   },
 };

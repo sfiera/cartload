@@ -1,6 +1,6 @@
 import {hex, unhex} from "./util.js";
 
-const b = (...bytes) => new Uint8Array([...bytes ]);
+const b = (...bytes) => new Uint8Array([...bytes]);
 
 test("hex", () => {
   expect(hex(b())).toBe("");

@@ -48,8 +48,7 @@ const Client = class {
   }
 
   async setVariable(variable, value) {
-    return await this.command(cmds.SET_VARIABLE, variable.size, variable.id,
-                              value);
+    return await this.command(cmds.SET_VARIABLE, variable.size, variable.id, value);
   }
 
   async identify() {
@@ -60,8 +59,7 @@ const Client = class {
       throw new Error("unsupported ofw version", ofwPcbVer, ofwFwVer);
     }
 
-    const [info, nameEnc, cartPowerCtrl, bootloaderReset] =
-        await this.command(cmds.QUERY_FW_INFO);
+    const [info, nameEnc, cartPowerCtrl, bootloaderReset] = await this.command(cmds.QUERY_FW_INFO);
     const [cfwID, fwVer, pcbVer, fwTs] = unpack("BHBI", info);
     const fwDate = new Date(fwTs * 1000);
     const name = latin1.decode(nameEnc).replaceAll("\u0000", "");
@@ -109,11 +107,11 @@ let logoImageURL = function(header) {
 let handleClick = async function() {
   let ports = await navigator.serial.getPorts();
   if (!ports.length) {
-    ports = [ await navigator.serial.requestPort() ];
+    ports = [await navigator.serial.requestPort()];
   }
 
   let port = ports[0];
-  await port.open({baudRate : 1000000});
+  await port.open({baudRate: 1000000});
   let client = new Client(port);
   console.log(await client.identify());
 
@@ -128,8 +126,7 @@ let handleClick = async function() {
     header.push(...await client.transfer(cmds.DMG_CART_READ, 64));
     header.push(...await client.transfer(cmds.DMG_CART_READ, 64));
     header = new Uint8Array(header);
-    console.log(hex(
-        await window.crypto.subtle.digest("SHA-1", header.slice(0, 0x180))));
+    console.log(hex(await window.crypto.subtle.digest("SHA-1", header.slice(0, 0x180))));
 
     const cart = dmg.detect(header);
     console.log(cart);
@@ -149,6 +146,7 @@ let handleClick = async function() {
 };
 
 document.addEventListener("DOMContentLoaded", (e) => {
-  document.getElementById("connect").addEventListener(
-      "click", (e) => { handleClick(); });
+  document.getElementById("connect").addEventListener("click", (e) => {
+    handleClick();
+  });
 });

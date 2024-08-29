@@ -14,10 +14,9 @@ export const infrared = true;
 export const speaker = true;
 
 const nintendoLogo = new Uint8Array([
-  0xCE, 0xED, 0x66, 0x66, 0xCC, 0x0D, 0x00, 0x0B, 0x03, 0x73, 0x00, 0x83,
-  0x00, 0x0C, 0x00, 0x0D, 0x00, 0x08, 0x11, 0x1F, 0x88, 0x89, 0x00, 0x0E,
-  0xDC, 0xCC, 0x6E, 0xE6, 0xDD, 0xDD, 0xD9, 0x99, 0xBB, 0xBB, 0x67, 0x63,
-  0x6E, 0x0E, 0xEC, 0xCC, 0xDD, 0xDC, 0x99, 0x9F, 0xBB, 0xB9, 0x33, 0x3E,
+  0xCE, 0xED, 0x66, 0x66, 0xCC, 0x0D, 0x00, 0x0B, 0x03, 0x73, 0x00, 0x83, 0x00, 0x0C, 0x00, 0x0D,
+  0x00, 0x08, 0x11, 0x1F, 0x88, 0x89, 0x00, 0x0E, 0xDC, 0xCC, 0x6E, 0xE6, 0xDD, 0xDD, 0xD9, 0x99,
+  0xBB, 0xBB, 0x67, 0x63, 0x6E, 0x0E, 0xEC, 0xCC, 0xDD, 0xDC, 0x99, 0x9F, 0xBB, 0xB9, 0x33, 0x3E,
 ]);
 
 class DmgCart {
@@ -37,16 +36,13 @@ class DmgCart {
     } else if (data.length < 0x180) {
       throw new TypeError("data too short for header")
     }
-    this.features =
-        {ram, battery, timer, rumble, sensor, camera, infrared, speaker};
+    this.features = {ram, battery, timer, rumble, sensor, camera, infrared, speaker};
 
     this.cgbFlag = (data[0x143] >= 0x80) ? data[0x143] : 0;
-    const titleRegexp =
-        this.cgbFlag
-            ? /^(.*?)\u0000*([ABHKV][A-Z2-9][A-Z2-9][ABDEFIJKPSUXY])?[\u0080-\uffff]$/
-            : /^(.*?)\u0000*()$/;
-    const titleMatch =
-        latin1.decode(data.slice(0x134, 0x144)).match(titleRegexp);
+    const titleRegexp = this.cgbFlag ?
+        /^(.*?)\u0000*([ABHKV][A-Z2-9][A-Z2-9][ABDEFIJKPSUXY])?[\u0080-\uffff]$/ :
+        /^(.*?)\u0000*()$/;
+    const titleMatch = latin1.decode(data.slice(0x134, 0x144)).match(titleRegexp);
     this.title = titleMatch[1];
     this.mfrCode = titleMatch[2] || "";
 
@@ -54,9 +50,14 @@ class DmgCart {
     this.romSize = 0x8000 << romSizeCode;
 
     const ramSizeCode = data[0x149];
-    this.savSize = (ram && battery) ? [
-            0, 0x800, 0x2000, 0x8000, 0x20000, 0x10000,
-        ][ramSizeCode] : 0;
+    this.savSize = !(ram && battery) ? 0 : [
+      0,
+      0x800,
+      0x2000,
+      0x8000,
+      0x20000,
+      0x10000,
+    ][ramSizeCode];
 
     this.newLicensee = latin1.decode(data.slice(0x144, 0x146));
     this.sgbFlag = data[0x146];
@@ -67,21 +68,17 @@ class DmgCart {
     [this.romCksum] = unpack("H", data.slice(0x14E, 0x150));
 
     this.valid = {};
-    this.valid.logo =
-        !data.slice(0x104, 0x134).some((x, i) => nintendoLogo[i] != x);
+    this.valid.logo = !data.slice(0x104, 0x134).some((x, i) => nintendoLogo[i] != x);
     this.valid.headerCksum =
-        data[0x14D] == data.slice(0x134, 0x14D)
-                           .reduce((cksum, x) => (cksum + 0xff - x) & 0xff, 0);
+        data[0x14D] == data.slice(0x134, 0x14D).reduce((cksum, x) => (cksum + 0xff - x) & 0xff, 0);
     this.valid.header = this.valid.logo && this.valid.headerCksum;
   }
 
   get romSegments() {
-    return ints(this.romSize >> 14)
-        .map((i) => new Segment(i * (1 << 14), (i + 1) * (1 << 14)));
+    return ints(this.romSize >> 14).map((i) => new Segment(i * (1 << 14), (i + 1) * (1 << 14)));
   }
   get savSegments() {
-    return ints(this.savSize >> 13)
-        .map((i) => new Segment(i * (1 << 13), (i + 1) * (1 << 13)));
+    return ints(this.savSize >> 13).map((i) => new Segment(i * (1 << 13), (i + 1) * (1 << 13)));
   }
 };
 
@@ -92,10 +89,8 @@ class NoMapper extends DmgCart {
     this.savSize = Math.min(0x2000, this.savSize);
   }
   get mapperName() { return "None" }
-  get romSegments() { return [ new Segment(0, this.romSize) ] }
-  get savSegments() {
-    return this.savSize ? [ new Segment(0, this.savSize) ] : []
-  }
+  get romSegments() { return [new Segment(0, this.romSize)] }
+  get savSegments() { return this.savSize ? [new Segment(0, this.savSize)] : [] }
 };
 
 class MBC1 extends DmgCart {
@@ -111,9 +106,7 @@ class MBC2 extends DmgCart {
     }
   }
   get mapperName() { return "MBC2" }
-  get savSegments() {
-    return this.savSize ? [ new Segment(0, this.savSize) ] : []
-  }
+  get savSegments() { return this.savSize ? [new Segment(0, this.savSize)] : [] }
 };
 
 class MBC3 extends DmgCart {
@@ -137,9 +130,7 @@ class HuC1 extends DmgCart {
 };
 
 class HuC3 extends DmgCart {
-  constructor(header) {
-    super(header, {ram, battery, infrared, speaker, timer});
-  }
+  constructor(header) { super(header, {ram, battery, infrared, speaker, timer}); }
   get mapperName() { return "HuC-3" }
 };
 

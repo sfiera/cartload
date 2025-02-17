@@ -3,7 +3,6 @@ import vars from "./gbxcart/vars.js";
 import {pack, unpack} from "./struct.js";
 import {ints, latin1, makeImage, Segment} from "./util.js";
 
-
 const GGBITS = [12, 7, 6, 5, 4, 3, 2, 1, 0, 10, 15, 11, 9, 8, 13, 14];
 const shuffleAddr = (addr) =>
     GGBITS.entries().reduce((a, [i, b]) => a + (((addr >> b) & 1) << i), 0);
@@ -14,6 +13,11 @@ const unshuffleData = (data) => {
   }
   return result;
 };
+
+const BANKCTRL = shuffleAddr(0xFFFC);
+const BANK0 = shuffleAddr(0xFFFD);
+const BANK1 = shuffleAddr(0xFFFE);
+const BANK2 = shuffleAddr(0xFFFF);
 
 class GameGearCart {
   constructor(data, romSize) {
@@ -87,7 +91,7 @@ class GameGearCart {
 
   async selectRomSegment(client, segment) {
     if (segment.begin >= 0x8000) {
-      await client.command(cmds.DMG_CART_WRITE, shuffleAddr(0xFFFF), segment.begin >> 14);
+      await client.command(cmds.DMG_CART_WRITE, BANK2, segment.begin >> 14);
     }
     await client.setVariable(vars.ADDRESS, 0x0000);
   }
@@ -98,10 +102,10 @@ export const detect = async (client) => {
   const data =
       unshuffleData(await client.transfer(cmds.DMG_CART_READ, 0x10000)).slice(0x4000, 0x8000);
   for (let bankCount = 2; bankCount < 128; bankCount <<= 1) {
-    await client.command(cmds.DMG_CART_WRITE, shuffleAddr(0xFFFF), bankCount + 1);
+    await client.command(cmds.DMG_CART_WRITE, BANK1, bankCount + 1);
     await client.setVariable(vars.ADDRESS, 0x0000);
     const newData =
-        unshuffleData(await client.transfer(cmds.DMG_CART_READ, 0x10000)).slice(0x8000, 0xC000);
+        unshuffleData(await client.transfer(cmds.DMG_CART_READ, 0x10000)).slice(0x4000, 0x8000);
     if (newData.every((byte, index) => byte == data[index])) {
       return new GameGearCart(data, bankCount * 0x4000);
     }
@@ -121,8 +125,8 @@ export const connect = async (client) => {
   await client.setVariable(vars.DMG_WRITE_CS_PULSE, 1);
   await client.setVariable(vars.DMG_ACCESS_MODE, 1);
   await client.setVariable(vars.ADDRESS, 0x0000);
-  await client.command(cmds.DMG_CART_WRITE, shuffleAddr(0xFFFC), 0);
-  await client.command(cmds.DMG_CART_WRITE, shuffleAddr(0xFFFD), 0);
-  await client.command(cmds.DMG_CART_WRITE, shuffleAddr(0xFFFE), 1);
-  await client.command(cmds.DMG_CART_WRITE, shuffleAddr(0xFFFF), 2);
+  await client.command(cmds.DMG_CART_WRITE, BANKCTRL, 0);
+  await client.command(cmds.DMG_CART_WRITE, BANK0, 0);
+  await client.command(cmds.DMG_CART_WRITE, BANK1, 1);
+  await client.command(cmds.DMG_CART_WRITE, BANK2, 2);
 };

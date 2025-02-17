@@ -17,4 +17,5 @@ export default {
   CART_PWR_ON: {id: 0xF2, reqFormat: "B", respFormat: "B"},
   CART_PWR_OFF: {id: 0xF3, reqFormat: "B", respFormat: "B"},
   CART_QUERY_PWR: {id: 0xF4, reqFormat: "B", respFormat: "B"},
+  SET_PIN: {id: 0xF5, reqFormat: "BIB", respFormat: "B"},
 };

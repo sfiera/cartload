@@ -74,7 +74,7 @@ class GameGearCart {
       const segs = this.romSegments;
       for (const [i, seg] of segs.entries()) {
         await this.selectRomSegment(client, seg);
-        console.log(`Segment ${i}/${segs.length}`);
+        console.log(`Segment ${i+1}/${segs.length}`);
         const segData = unshuffleData(await client.transfer(cmds.DMG_CART_READ, 0x10000));
         const begin = Math.min(seg.begin, 0x8000);
         data.push(...segData.slice(begin, begin + seg.size));

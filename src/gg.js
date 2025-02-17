@@ -16,13 +16,13 @@ const unshuffleData = (data) => {
 };
 
 class GameGearCart {
-  constructor(data) {
+  constructor(data, romSize) {
     if (!(data instanceof Uint8Array)) {
       throw new TypeError("data must be Uint8Array")
     } else if (data.length < 0x10) {
       throw new TypeError("data too short for header")
     }
-    this.header = data.slice(0x7FF0, 0x8000);
+    this.header = data.slice(0x3FF0, 0x4000);
     this.title = null;
     this.trademark = latin1.decode(this.header.slice(0x00, 0x0A));
     this.code = (this.header[0x0E] & 0x0F).toString(16) +
@@ -30,17 +30,7 @@ class GameGearCart {
         this.header[0x0C].toString(16).padStart(2, "0");
     this.romVersion = this.header[0x0E] >> 4;
     this.region = this.header[0x0F] >> 4;
-    this.romSize = {
-      0: 256 * 1024,
-      1: 512 * 1024,
-      2: 1024 * 1024,
-      10: 8 * 1024,
-      11: 16 * 1024,
-      12: 32 * 1024,
-      13: 48 * 1024,
-      14: 64 * 1024,
-      15: 128 * 1024,
-    }[this.header[0x0F] & 0x0F];
+    this.romSize = romSize;
 
     this.compatibility = {
       sms: false,  // read and invert audio pin
@@ -55,7 +45,7 @@ class GameGearCart {
   get mapperName() { return "Sega" }
 
   get romSegments() {
-    return ints(524288 >> 14).map((i) => new Segment(i * (1 << 14), (i + 1) * (1 << 14)));
+    return ints(this.romSize >> 14).map((i) => new Segment(i * (1 << 14), (i + 1) * (1 << 14)));
   }
   get savSegments() {
     return ints(this.savSize >> 13).map((i) => new Segment(i * (1 << 13), (i + 1) * (1 << 13)));
@@ -105,8 +95,18 @@ class GameGearCart {
 
 export const detect = async (client) => {
   await client.setVariable(vars.ADDRESS, 0x0000);
-  const data = unshuffleData(await client.transfer(cmds.DMG_CART_READ, 0x10000));
-  return new GameGearCart(data);
+  const data =
+      unshuffleData(await client.transfer(cmds.DMG_CART_READ, 0x10000)).slice(0x4000, 0x8000);
+  for (let bankCount = 2; bankCount < 128; bankCount <<= 1) {
+    await client.command(cmds.DMG_CART_WRITE, shuffleAddr(0xFFFF), bankCount + 1);
+    await client.setVariable(vars.ADDRESS, 0x0000);
+    const newData =
+        unshuffleData(await client.transfer(cmds.DMG_CART_READ, 0x10000)).slice(0x8000, 0xC000);
+    if (newData.every((byte, index) => byte == data[index])) {
+      return new GameGearCart(data, bankCount * 0x4000);
+    }
+  }
+  throw new Error("failed to detect cartridge size");
 };
 
 export const connect = async (client) => {

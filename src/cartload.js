@@ -1,110 +1,18 @@
+import {Client} from "./client.js";
 import * as dmg from "./dmg.js";
 import cmds from "./gbxcart/cmds.js";
 import vars from "./gbxcart/vars.js";
-import {pack, unpack} from "./struct.js";
-import {hex, latin1, unitBytes} from "./util.js";
+import * as gg from "./gg.js";
+import {unpack} from "./struct.js";
+import {downloadUrl, hex, toDataUrl, unitBytes} from "./util.js";
 
-const Client = class {
-  constructor(port) {
-    this.reader = port.readable.getReader();
-    this.writer = port.writable.getWriter();
-  }
-
-  async command(cmd, ...args) {
-    await this.writer.write(pack(cmd.reqFormat, cmd.id, ...args));
-    if (!cmd.respFormat.length) {
-      return [];
-    }
-    let data = new Array();
-    while (true) {
-      let readData = await this.reader.read();
-      data.push(...readData.value);
-      try {
-        return unpack(cmd.respFormat, new Uint8Array(data));
-      } catch (e) {
-        if (e.message != "data underflow") {
-          throw e;
-        }
-      }
-      if (readData.done) {
-        throw new Error("EOF");
-      }
-    }
-  }
-
-  async transfer(cmd, size, ...args) {
-    await this.setVariable(vars.TRANSFER_SIZE, size);
-    await this.command(cmd, ...args);
-    let result = [];
-    while (result.length < size) {
-      let data = (await this.reader.read()).value;
-      result.push(...data);
-    }
-    return result;
-  }
-
-  async getVariable(variable) {
-    return await this.command(cmds.GET_VARIABLE, variable.size, variable.id);
-  }
-
-  async setVariable(variable, value) {
-    return await this.command(cmds.SET_VARIABLE, variable.size, variable.id, value);
-  }
-
-  async identify() {
-    const [ofwPcbVer] = await this.command(cmds.OFW_PCB_VER);
-    const [ofwFwVer] = await this.command(cmds.OFW_FW_VER);
-
-    if ((ofwPcbVer < 5) || (ofwFwVer == 0)) {
-      throw new Error("unsupported ofw version", ofwPcbVer, ofwFwVer);
-    }
-
-    const [info, nameEnc, cartPowerCtrl, bootloaderReset] = await this.command(cmds.QUERY_FW_INFO);
-    const [cfwID, fwVer, pcbVer, fwTs] = unpack("BHBI", info);
-    const fwDate = new Date(fwTs * 1000);
-    const name = latin1.decode(nameEnc).replaceAll("\u0000", "");
-    if (fwVer < 12) {
-      throw new Error("unsupported fw version", fwVer);
-    } else if (!cartPowerCtrl) {
-      throw new Error("cartridge reset not supported");
-    }
-
-    return {cfwID, fwVer, pcbVer, fwDate, name, cartPowerCtrl, bootloaderReset};
-  }
+const MAX_TRANSFER_SIZE = 64;
+const PLATFORMS = {
+  dmg,
+  gg,
 };
 
-let logoImageURL = function(header) {
-  const canvas = document.createElement("canvas");
-  canvas.width = 48;
-  canvas.height = 8;
-
-  const ctx = canvas.getContext("2d");
-  ctx.fillStyle = "black";
-
-  const logo = unpack("HHHHHHHHHHHHHHHHHHHHHHHH", header.slice(0x104, 0x134));
-  let tileIndex = 0;
-  for (let tileRow = 0; tileRow < 2; ++tileRow) {
-    for (let tileCol = 0; tileCol < 12; ++tileCol) {
-      const tileData = logo[tileIndex];
-      let bit = 0x8000;
-      for (let row = 0; row < 4; ++row) {
-        for (let col = 0; col < 4; ++col) {
-          const x = tileCol * 4 + col;
-          const y = tileRow * 4 + row;
-          if (tileData & bit) {
-            ctx.fillRect(x, y, 1, 1);
-          }
-          bit >>= 1;
-        }
-      }
-      ++tileIndex;
-    }
-  }
-
-  return canvas.toDataURL();
-};
-
-let handleClick = async function() {
+let handleClick = async function(platform) {
   let ports = await navigator.serial.getPorts();
   if (!ports.length) {
     ports = [await navigator.serial.requestPort()];
@@ -114,31 +22,32 @@ let handleClick = async function() {
   await port.open({baudRate: 1000000});
   let client = new Client(port);
   console.log(await client.identify());
+  platform = PLATFORMS[platform];
 
   try {
-    await dmg.connect(client);
+    await platform.connect(client);
+    const cart = await platform.detect(client);
 
-    let header = [];
-    header.push(...await client.transfer(cmds.DMG_CART_READ, 64));
-    header.push(...await client.transfer(cmds.DMG_CART_READ, 64));
-    header.push(...await client.transfer(cmds.DMG_CART_READ, 64));
-    header.push(...await client.transfer(cmds.DMG_CART_READ, 64));
-    header.push(...await client.transfer(cmds.DMG_CART_READ, 64));
-    header.push(...await client.transfer(cmds.DMG_CART_READ, 64));
-    header = new Uint8Array(header);
-    console.log(hex(await window.crypto.subtle.digest("SHA-1", header.slice(0, 0x180))));
-
-    const cart = dmg.detect(header);
     console.log(cart);
+    console.log(hex(await window.crypto.subtle.digest("SHA-1", cart.header)));
     document.getElementById("title").replaceChildren(cart.title);
-    document.getElementById("code").replaceChildren(cart.mfrCode);
+    document.getElementById("code").replaceChildren(cart.code || "(none)");
     document.getElementById("mapper").replaceChildren(cart.mapperName);
     document.getElementById("rom").replaceChildren(unitBytes(cart.romSize));
     document.getElementById("sav").replaceChildren(unitBytes(cart.savSize));
 
     const img = new Image();
-    img.src = logoImageURL(header);
+    img.src = cart.logoImageUrl(cart.header);
     document.getElementById("logo").replaceChildren(img);
+
+    document.getElementById("back-up").disabled = false;
+    document.getElementById("back-up").addEventListener("click", async (e) => {
+      e.target.disabled = true;
+      const data = await cart.backUpRom(client);
+      console.log(hex(await window.crypto.subtle.digest("SHA-1", data)));
+      downloadUrl(`${cart.title}.gb`, await toDataUrl(data));
+      e.target.disabled = false;
+    });
 
   } finally {
     await client.command(cmds.CART_PWR_OFF);
@@ -146,7 +55,17 @@ let handleClick = async function() {
 };
 
 document.addEventListener("DOMContentLoaded", (e) => {
-  document.getElementById("connect").addEventListener("click", (e) => {
-    handleClick();
+  const platform = document.getElementById("platform");
+  const connect = document.getElementById("connect");
+  const disconnect = document.getElementById("disconnect");
+
+  platform.addEventListener("change", (e) => {
+    connect.disabled = !platform.value;
+  });
+
+  connect.addEventListener("click", (e) => {
+    connect.disabled = true;
+    disconnect.disabled = false;
+    handleClick(platform.value);
   });
 });

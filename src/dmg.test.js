@@ -111,45 +111,45 @@ test.each([
   {
     data: unhex("534841444f574741544520434c415380"),
     title: "SHADOWGATE CLAS",
-    mfrCode: "",  // C is not a valid cartridge type
+    code: "",  // C is not a valid cartridge type
     cgbFlag: 0x80,
   },
   {
     data: unhex("574152494f4c414e44330041573841c0"),
     title: "WARIOLAND3",
-    mfrCode: "AW8A",
+    code: "AW8A",
     cgbFlag: 0xc0,
   },
   {
     data: unhex("54494e54494e2d5052495342545450c0"),
     title: "TINTIN-PRIS",
-    mfrCode: "BTTP",
+    code: "BTTP",
     cgbFlag: 0xc0,
   },
   {
     data: unhex("46414d494c5947423200004846324ac0"),
     title: "FAMILYGB2",
-    mfrCode: "HF2J",
+    code: "HF2J",
     cgbFlag: 0xc0,
   },
   {
     data: unhex("4b4f524f32204b495242594b4b4b4ac0"),
     title: "KORO2 KIRBY",
-    mfrCode: "KKKJ",
+    code: "KKKJ",
     cgbFlag: 0xc0,
   },
   {
     data: unhex("534e4f43524f535300000056505345c0"),
     title: "SNOCROSS",
-    mfrCode: "VPSE",
+    code: "VPSE",
     cgbFlag: 0xc0,
   },
-])("title $title", ({data, title, mfrCode = "", cgbFlag = 0}) => {
+])("title $title", ({data, title, code = "", cgbFlag = 0}) => {
   const header = new Array(0x180);
   header.splice(0x134, data.length, ...data);
 
   const cart = dmg.detect(new Uint8Array(header));
   expect(cart.title).toStrictEqual(title);
-  expect(cart.mfrCode).toStrictEqual(mfrCode);
+  expect(cart.code).toStrictEqual(code);
   expect(cart.cgbFlag).toStrictEqual(cgbFlag);
 });

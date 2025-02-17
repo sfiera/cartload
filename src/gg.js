@@ -1,0 +1,122 @@
+import cmds from "./gbxcart/cmds.js";
+import vars from "./gbxcart/vars.js";
+import {pack, unpack} from "./struct.js";
+import {ints, latin1, makeImage, Segment} from "./util.js";
+
+
+const GGBITS = [12, 7, 6, 5, 4, 3, 2, 1, 0, 10, 15, 11, 9, 8, 13, 14];
+const shuffleAddr = (addr) =>
+    GGBITS.entries().reduce((a, [i, b]) => a + (((addr >> b) & 1) << i), 0);
+const unshuffleData = (data) => {
+  var result = new Uint8Array(0x10000);
+  for (let addr = 0; addr < 0x10000; ++addr) {
+    result[addr] = data[shuffleAddr(addr)];
+  }
+  return result;
+};
+
+class GameGearCart {
+  constructor(data) {
+    if (!(data instanceof Uint8Array)) {
+      throw new TypeError("data must be Uint8Array")
+    } else if (data.length < 0x10) {
+      throw new TypeError("data too short for header")
+    }
+    this.header = data.slice(0x7FF0, 0x8000);
+    this.title = "(none)";
+    this.trademark = latin1.decode(this.header.slice(0x00, 0x0A));
+    this.code = (this.header[0x0E] & 0x0F).toString(16) +
+        this.header[0x0D].toString(16).padStart(2, "0") +
+        this.header[0x0C].toString(16).padStart(2, "0");
+    this.romVersion = this.header[0x0E] >> 4;
+    this.region = this.header[0x0F] >> 4;
+    this.romSize = {
+      0: 256 * 1024,
+      1: 512 * 1024,
+      2: 1024 * 1024,
+      10: 8 * 1024,
+      11: 16 * 1024,
+      12: 32 * 1024,
+      13: 48 * 1024,
+      14: 64 * 1024,
+      15: 128 * 1024,
+    }[this.header[0x0F] & 0x0F];
+
+    this.valid = {
+      trademark: this.trademark.slice(0, 8) == "TMR SEGA",
+    };
+    this.valid.header = this.valid.trademark;
+  }
+
+  get mapperName() { return "Sega" }
+
+  get romSegments() {
+    return ints(524288 >> 14).map((i) => new Segment(i * (1 << 14), (i + 1) * (1 << 14)));
+  }
+  get savSegments() {
+    return ints(this.savSize >> 13).map((i) => new Segment(i * (1 << 13), (i + 1) * (1 << 13)));
+  }
+
+  logoImageUrl(header) {
+    return makeImage(64, 8, (ctx) => {
+      ctx.fillStyle = "black";
+
+      const trademark = header.slice(0, 8);
+      ctx.fillRect(0, 0, 64, 8);
+    });
+  }
+
+  async backUpRom(client) {
+    await client.command(cmds.CART_PWR_ON);
+    try {
+      await client.command(cmds.DISABLE_PULLUPS);
+      await client.setVariable(vars.DMG_READ_METHOD, 1);
+      await client.setVariable(vars.DMG_ACCESS_MODE, 1);  // MODE_ROM_READ
+      await client.setVariable(vars.CART_MODE, 1);
+      await client.setVariable(vars.DMG_READ_CS_PULSE, 1);
+      let data = [];
+      const segs = this.romSegments;
+      for (const [i, seg] of segs.entries()) {
+        await this.selectRomSegment(client, seg);
+        console.log(`Segment ${i}/${segs.length}`);
+        const segData = unshuffleData(await client.transfer(cmds.DMG_CART_READ, 0x10000));
+        const begin = Math.min(seg.begin, 0x8000);
+        data.push(...segData.slice(begin, begin + seg.size));
+      }
+      return new Uint8Array(data);
+    } finally {
+      await client.command(cmds.CART_PWR_OFF);
+    }
+  }
+
+  async selectRomSegment(client, segment) {
+    if (segment.begin >= 0x8000) {
+      await client.command(cmds.DMG_CART_WRITE, shuffleAddr(0xFFFF), segment.begin >> 14);
+    }
+    await client.setVariable(vars.ADDRESS, 0x0000);
+  }
+};
+
+export const detect = async (client) => {
+  await client.setVariable(vars.ADDRESS, 0x0000);
+  const data = unshuffleData(await client.transfer(cmds.DMG_CART_READ, 0x10000));
+  return new GameGearCart(data);
+};
+
+export const connect = async (client) => {
+  await client.setVariable(vars.DMG_READ_METHOD, 1);
+  await client.command(cmds.SET_MODE_DMG);
+  await client.command(cmds.SET_VOLTAGE_5V);
+  await client.command(cmds.CART_PWR_ON);
+  await client.command(cmds.DISABLE_PULLUPS);
+  await client.setVariable(vars.DMG_READ_METHOD, 1);
+  await client.setVariable(vars.CART_MODE, 1);
+  await client.setVariable(vars.DMG_READ_CS_PULSE, 1);
+  await client.setVariable(vars.DMG_WRITE_CS_PULSE, 1);
+  await client.setVariable(vars.DMG_ACCESS_MODE, 1);
+  await client.setVariable(vars.ADDRESS, 0x0000);
+  await client.command(cmds.DMG_CART_WRITE, shuffleAddr(0xFFFC), 0);
+  await client.command(cmds.DMG_CART_WRITE, shuffleAddr(0xFFFD), 0);
+  await client.command(cmds.DMG_CART_WRITE, shuffleAddr(0xFFFE), 1);
+  await client.command(cmds.DMG_CART_WRITE, shuffleAddr(0xFFFF), 2);
+};

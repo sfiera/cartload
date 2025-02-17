@@ -1,7 +1,7 @@
 import cmds from "./gbxcart/cmds.js";
 import vars from "./gbxcart/vars.js";
 import {pack, unpack} from "./struct.js";
-import {ints, latin1, Segment} from "./util.js";
+import {ints, latin1, makeImage, Segment} from "./util.js";
 
 export const ram = true;
 export const battery = true;
@@ -36,15 +36,15 @@ class DmgCart {
     } else if (data.length < 0x180) {
       throw new TypeError("data too short for header")
     }
+    this.header = data;
     this.features = {ram, battery, timer, rumble, sensor, camera, infrared, speaker};
 
     this.cgbFlag = (data[0x143] >= 0x80) ? data[0x143] : 0;
-    const titleRegexp = this.cgbFlag ?
-        /^(.*?)\u0000*([ABHKV][A-Z2-9][A-Z2-9][ABDEFIJKPSUXY])?[\u0080-\uffff]$/ :
-        /^(.*?)\u0000*()$/;
+    const titleRegexp =
+        /^(.*?)\u0000*(?:([ABHKV][A-Z2-9][A-Z2-9][ABDEFIJKPSUXY])?[\u0080-\uffff])?$/;
     const titleMatch = latin1.decode(data.slice(0x134, 0x144)).match(titleRegexp);
     this.title = titleMatch[1];
-    this.mfrCode = titleMatch[2] || "";
+    this.code = titleMatch[2] || "";
 
     const romSizeCode = data[0x148];
     this.romSize = 0x8000 << romSizeCode;
@@ -67,10 +67,17 @@ class DmgCart {
     this.headerCksum = data[0x14D];
     [this.romCksum] = unpack("H", data.slice(0x14E, 0x150));
 
-    this.valid = {};
-    this.valid.logo = !data.slice(0x104, 0x134).some((x, i) => nintendoLogo[i] != x);
-    this.valid.headerCksum =
-        data[0x14D] == data.slice(0x134, 0x14D).reduce((cksum, x) => (cksum + 0xff - x) & 0xff, 0);
+    this.compatibility = {
+      dmg: this.cgbFlag != 0xC0,
+      cgb: !!(this.cgbFlag & 0x80),
+      sgb: this.sgbFlag == 0x03,
+    };
+
+    this.valid = {
+      logo: !data.slice(0x104, 0x134).some((x, i) => nintendoLogo[i] != x),
+      headerCksum: data[0x14D] ==
+          data.slice(0x134, 0x14D).reduce((cksum, x) => (cksum + 0xff - x) & 0xff, 0),
+    };
     this.valid.header = this.valid.logo && this.valid.headerCksum;
   }
 
@@ -79,6 +86,62 @@ class DmgCart {
   }
   get savSegments() {
     return ints(this.savSize >> 13).map((i) => new Segment(i * (1 << 13), (i + 1) * (1 << 13)));
+  }
+
+  logoImageUrl(header) {
+    return makeImage(48, 8, (ctx) => {
+      ctx.fillStyle = "black";
+
+      const logo = unpack("HHHHHHHHHHHHHHHHHHHHHHHH", header.slice(0x104, 0x134));
+      let tileIndex = 0;
+      for (let tileRow = 0; tileRow < 2; ++tileRow) {
+        for (let tileCol = 0; tileCol < 12; ++tileCol) {
+          const tileData = logo[tileIndex];
+          let bit = 0x8000;
+          for (let row = 0; row < 4; ++row) {
+            for (let col = 0; col < 4; ++col) {
+              const x = tileCol * 4 + col;
+              const y = tileRow * 4 + row;
+              if (tileData & bit) {
+                ctx.fillRect(x, y, 1, 1);
+              }
+              bit >>= 1;
+            }
+          }
+          ++tileIndex;
+        }
+      }
+    });
+  }
+
+  async backUpRom(client) {
+    await client.command(cmds.CART_PWR_ON);
+    try {
+      await client.command(cmds.DISABLE_PULLUPS);
+      await client.setVariable(vars.DMG_READ_METHOD, 1);
+      await client.setVariable(vars.DMG_ACCESS_MODE, 1);  // MODE_ROM_READ
+      await client.setVariable(vars.CART_MODE, 1);
+      await client.setVariable(vars.DMG_READ_CS_PULSE, 0);
+      let data = [];
+      const segs = this.romSegments;
+      for (const [i, seg] of segs.entries()) {
+        await this.selectRomSegment(client, seg);
+        console.log(`Segment ${i}/${segs.length}`);
+        data.push(...await client.transfer(cmds.DMG_CART_READ, seg.size));
+      }
+      return new Uint8Array(data);
+    } finally {
+      await client.command(cmds.CART_PWR_OFF);
+    }
+  }
+
+  async selectRomSegment(client, segment) {
+    if (segment.begin == 0) {
+      await client.setVariable(vars.ADDRESS, 0);
+    } else {
+      await client.command(cmds.DMG_CART_WRITE, 0x2000, segment.begin >> 14);
+      await client.setVariable(vars.ADDRESS, 0x4000);
+    }
   }
 };
 
@@ -134,6 +197,11 @@ class HuC3 extends DmgCart {
   get mapperName() { return "HuC-3" }
 };
 
+class Tama5 extends DmgCart {
+  constructor(header) { super(header, {ram, battery, infrared, speaker, timer}); }
+  get mapperName() { return "Tama5" }
+};
+
 const dmgCarts = new Array(256)
 dmgCarts[0x00] = data => new NoMapper(data);
 dmgCarts[0x01] = data => new MBC1(data);
@@ -164,12 +232,13 @@ dmgCarts[0xfd] = data => new Tama5(data);
 dmgCarts[0xfe] = data => new HuC3(data);
 dmgCarts[0xff] = data => new HuC1(data);
 
-export const detect = (data) => {
-  let cartType = dmgCarts[data[0x147]];
+export const detect = async (client) => {
+  const header = new Uint8Array(await client.transfer(cmds.DMG_CART_READ, 0x180));
+  let cartType = dmgCarts[header[0x147]];
   if (typeof cartType === "undefined") {
     cartType = dmgCarts[0];
   }
-  return cartType(data);
+  return cartType(header);
 };
 
 export const connect = async (client) => {

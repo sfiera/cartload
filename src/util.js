@@ -28,7 +28,9 @@ export const ints = (length) => {
 export const latin1 = new TextDecoder("latin1");
 
 export const unitBytes = (n) => {
-  if ((n % (1 << 30)) == 0) {
+  if (!n) {
+    return "0";
+  } else if ((n % (1 << 30)) == 0) {
     return (n >> 30) + " GiB";
   } else if ((n % (1 << 20)) == 0) {
     return (n >> 20) + " MiB";
@@ -37,4 +39,44 @@ export const unitBytes = (n) => {
   } else {
     return n + " B";
   }
+};
+
+export const makeElement = (tagName, properties = {}) => {
+  const el = document.createElement(tagName);
+  Object.entries(properties).forEach(([key, value]) => {
+    if (key === "children") {
+      el.replaceChildren(...value);
+    } else if (key === "ondrop") {
+      el.addEventListener("dragenter", e => {el.classList.add("dropTarget")});
+      el.addEventListener("dragleave", e => {el.classList.remove("dropTarget")});
+      el.addEventListener("dragover", e => {e.preventDefault()});
+      el.addEventListener("drop", (e, ...args) => {
+        e.preventDefault();
+        el.classList.remove("dropTarget");
+        value(e, ...args);
+      });
+    } else {
+      el[key] = value;
+    }
+  });
+  return el;
+};
+
+export const makeImage = (width, height, fn) => {
+  const canvas = makeElement("canvas", {
+    width: width,
+    height: height,
+  });
+  fn(canvas.getContext("2d"));
+  return canvas.toDataURL();
+};
+
+export const toDataUrl = buffer => new Promise(resolve => {
+  const reader = new FileReader();
+  reader.onload = () => resolve(reader.result);
+  reader.readAsDataURL(new Blob([buffer]));
+});
+
+export const downloadUrl = (filename, url) => {
+  makeElement("a", {download: filename, href: url}).click();
 };

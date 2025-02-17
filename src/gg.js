@@ -23,7 +23,7 @@ class GameGearCart {
       throw new TypeError("data too short for header")
     }
     this.header = data.slice(0x7FF0, 0x8000);
-    this.title = "(none)";
+    this.title = null;
     this.trademark = latin1.decode(this.header.slice(0x00, 0x0A));
     this.code = (this.header[0x0E] & 0x0F).toString(16) +
         this.header[0x0D].toString(16).padStart(2, "0") +

@@ -30,7 +30,7 @@ let handleClick = async function(platform) {
 
     console.log(cart);
     console.log(hex(await window.crypto.subtle.digest("SHA-1", cart.header)));
-    document.getElementById("title").replaceChildren(cart.title);
+    document.getElementById("title").replaceChildren(cart.title || "(none)");
     document.getElementById("code").replaceChildren(cart.code || "(none)");
     document.getElementById("mapper").replaceChildren(cart.mapperName);
     document.getElementById("rom").replaceChildren(unitBytes(cart.romSize));
@@ -45,7 +45,7 @@ let handleClick = async function(platform) {
       e.target.disabled = true;
       const data = await cart.backUpRom(client);
       console.log(hex(await window.crypto.subtle.digest("SHA-1", data)));
-      downloadUrl(`${cart.title}.${cart.extension}`, await toDataUrl(data));
+      downloadUrl(`${cart.title || cart.code || 'ROM'}.${cart.extension}`, await toDataUrl(data));
       e.target.disabled = false;
     });
 

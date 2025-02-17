@@ -45,7 +45,7 @@ let handleClick = async function(platform) {
       e.target.disabled = true;
       const data = await cart.backUpRom(client);
       console.log(hex(await window.crypto.subtle.digest("SHA-1", data)));
-      downloadUrl(`${cart.title}.gb`, await toDataUrl(data));
+      downloadUrl(`${cart.title}.${cart.extension}`, await toDataUrl(data));
       e.target.disabled = false;
     });
 

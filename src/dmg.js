@@ -88,6 +88,10 @@ class DmgCart {
     return ints(this.savSize >> 13).map((i) => new Segment(i * (1 << 13), (i + 1) * (1 << 13)));
   }
 
+  get extension() {
+    return this.compatibility.cgb ? "cgb" : this.compatibility.sgb ? "sgb" : "gb";
+  }
+
   logoImageUrl(header) {
     return makeImage(48, 8, (ctx) => {
       ctx.fillStyle = "black";

@@ -42,6 +42,10 @@ class GameGearCart {
       15: 128 * 1024,
     }[this.header[0x0F] & 0x0F];
 
+    this.compatibility = {
+      sms: false,  // read and invert audio pin
+    };
+
     this.valid = {
       trademark: this.trademark.slice(0, 8) == "TMR SEGA",
     };
@@ -56,6 +60,8 @@ class GameGearCart {
   get savSegments() {
     return ints(this.savSize >> 13).map((i) => new Segment(i * (1 << 13), (i + 1) * (1 << 13)));
   }
+
+  get extension() { return this.compatibility.sms ? "sms" : "gg"; }
 
   logoImageUrl(header) {
     return makeImage(64, 8, (ctx) => {

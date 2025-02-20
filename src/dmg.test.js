@@ -1,4 +1,5 @@
 import * as dmg from "./dmg.js";
+import cmds from "./gbxcart/cmds.js";
 import {latin1, Segment, unhex} from "./util.js";
 
 const nintendoLogo = new Uint8Array([
@@ -7,7 +8,29 @@ const nintendoLogo = new Uint8Array([
   0xBB, 0xBB, 0x67, 0x63, 0x6E, 0x0E, 0xEC, 0xCC, 0xDD, 0xDC, 0x99, 0x9F, 0xBB, 0xB9, 0x33, 0x3E,
 ]);
 
-test("no mapper", () => {
+class FakeClient {
+  constructor(data) {
+    this.address = 0;
+    this.data = new Uint8Array(data);
+  }
+
+  read(addr) {
+    return this.data[addr] || 0;
+  }
+
+  async transfer(cmd, size, ...args) {
+    expect(cmd.id).toBe(cmds.DMG_CART_READ.id);
+    expect(args).toHaveLength(0);
+    const result = new Uint8Array(size);
+    for (let i = 0; i < size; ++i) {
+        result[i] = this.read(this.address++);
+        this.address &= 0xFFFF;
+    }
+    return result;
+  }
+}
+
+test("no mapper", async () => {
   const header = new Array(0x180);
   header.splice(0x104, 0x30, ...nintendoLogo);
   header.splice(0x134, 6, ...unhex("544554524953"));  // Title: TETRIS
@@ -16,7 +39,7 @@ test("no mapper", () => {
   header.splice(0x14D, 1, 0x0a);                      // Header checksum: $0A
   header.splice(0x14E, 2, 0x16, 0xbf);                // Global checksum: $16BF
 
-  const cart = dmg.detect(new Uint8Array(header));
+  const cart = await dmg.detect(new FakeClient(header));
   expect(cart.title).toStrictEqual("TETRIS");
   expect(cart.romSize).toBe(32768);
   expect(cart.savSize).toBe(0);
@@ -77,13 +100,13 @@ test.each([
 
   [0xF0, "None", 32768, rom1, 0, [], []],  // unknown → no mapper/features
 ])("cartridge type %d (%s) rom and sav",
-   (id, mapper, romSize, romSegments, savSize, savSegments, features) => {
+   async (id, mapper, romSize, romSegments, savSize, savSegments, features) => {
      const header = new Array(0x180);
      header.splice(0x147, 1, id);
      header.splice(0x148, 1, 0x01);  // ROM size: 64 KiB (4 banks)
      header.splice(0x149, 1, 0x03);  // RAM size: 8 KiB (4 banks)
 
-     const cart = dmg.detect(new Uint8Array(header));
+     const cart = await dmg.detect(new FakeClient(header));
      expect(cart.mapperName).toBe(mapper);
      expect(cart.romSize).toBe(romSize);
      expect(cart.romSegments).toStrictEqual(romSegments);
@@ -144,11 +167,11 @@ test.each([
     code: "VPSE",
     cgbFlag: 0xc0,
   },
-])("title $title", ({data, title, code = "", cgbFlag = 0}) => {
+])("title $title", async ({data, title, code = "", cgbFlag = 0}) => {
   const header = new Array(0x180);
   header.splice(0x134, data.length, ...data);
 
-  const cart = dmg.detect(new Uint8Array(header));
+  const cart = await dmg.detect(new FakeClient(header));
   expect(cart.title).toStrictEqual(title);
   expect(cart.code).toStrictEqual(code);
   expect(cart.cgbFlag).toStrictEqual(cgbFlag);

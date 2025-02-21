@@ -1,5 +1,6 @@
 import * as dmg from "./dmg.js";
 import cmds from "./gbxcart/cmds.js";
+import vars from "./gbxcart/vars.js";
 import {latin1, Segment, unhex} from "./util.js";
 
 const nintendoLogo = new Uint8Array([
@@ -8,14 +9,64 @@ const nintendoLogo = new Uint8Array([
   0xBB, 0xBB, 0x67, 0x63, 0x6E, 0x0E, 0xEC, 0xCC, 0xDD, 0xDC, 0x99, 0x9F, 0xBB, 0xB9, 0x33, 0x3E,
 ]);
 
+function rand(n, seed) {
+  seed = seed || 1;
+  const data = new Uint8Array(n);
+  data.forEach((_, i) => {
+    seed = (48271 * seed) % 2147483647;
+    data[i] = seed;
+  });
+  return data;
+}
+
+function zero(array, start, end) {
+  while (start < end) {
+    array[start++] = 0;
+  }
+}
+
+function copy(array, start, ...data) { data.forEach((x, i) => array[start + i] = x); }
+
 class FakeClient {
-  constructor(data) {
+  constructor(rom, ram) {
     this.address = 0;
-    this.data = new Uint8Array(data);
+    this.rom = new Uint8Array(rom);
+    this.ram = new Uint8Array(ram);
   }
 
   read(addr) {
-    return this.data[addr] || 0;
+    if (0 <= addr && addr < 0x8000) {
+      return this.rom[addr] || 0;
+    } else if (0xA000 <= addr && addr < 0xC000) {
+      return this.ram[addr] || 0;
+    }
+    return 0xFF;
+  }
+
+  write(addr, value) {}
+
+  async command(cmd, ...args) {
+    if (cmd === cmds.CART_PWR_ON) {
+    } else if (cmd === cmds.CART_PWR_OFF) {
+    } else if (cmd === cmds.DISABLE_PULLUPS) {
+    } else if (cmd === cmds.DMG_CART_WRITE) {
+      const [addr, value] = args;
+      this.write(addr, value);
+    } else {
+      expect(cmd).toEqual(null);
+    }
+  }
+
+  async setVariable(variable, value) {
+    if (variable === vars.ADDRESS) {
+      this.address = value & 0xFFFF;
+    } else if (variable === vars.DMG_READ_METHOD) {
+    } else if (variable === vars.DMG_ACCESS_MODE) {
+    } else if (variable === vars.CART_MODE) {
+    } else if (variable === vars.DMG_READ_CS_PULSE) {
+    } else {
+      expect(variable).toEqual(null);
+    }
   }
 
   async transfer(cmd, size, ...args) {
@@ -23,27 +74,84 @@ class FakeClient {
     expect(args).toHaveLength(0);
     const result = new Uint8Array(size);
     for (let i = 0; i < size; ++i) {
-        result[i] = this.read(this.address++);
-        this.address &= 0xFFFF;
+      result[i] = this.read(this.address++);
+      this.address &= 0xFFFF;
     }
+    expect(this.address).toBeLessThan(0x8001);
     return result;
   }
 }
 
-test("no mapper", async () => {
-  const header = new Array(0x180);
-  header.splice(0x104, 0x30, ...nintendoLogo);
-  header.splice(0x134, 6, ...unhex("544554524953"));  // Title: TETRIS
-  header.splice(0x14B, 1, 0x01);                      // Old licensee: Nintendo
-  header.splice(0x14C, 1, 0x01);                      // ROM version: 1
-  header.splice(0x14D, 1, 0x0a);                      // Header checksum: $0A
-  header.splice(0x14E, 2, 0x16, 0xbf);                // Global checksum: $16BF
+class FakeMBC1Client extends FakeClient {
+  constructor(rom, ram, {multicart = false}) {
+    super(rom, ram);
+    this.ramEnabled = false;
+    this.romBank = 1;
+    this.ramBank = 0;
+    this.mode = 0;
+    this.multicart = multicart;
+  }
 
-  const cart = await dmg.detect(new FakeClient(header));
+  read(addr) {
+    if (0 <= addr && addr < 0x8000) {
+      const upper = addr >= 0x4000;
+      addr &= 0x3FFF;
+      if (this.mode || upper) {
+        addr += this.ramBank << (this.multicart ? 18 : 19);
+      }
+      if ((this.mode && this.multicart) || upper) {
+        addr += this.romBank << 14;
+      }
+      return this.rom[addr % this.rom.length];
+    } else if (0xA000 <= addr && addr < 0xC000) {
+      if (this.ramEnabled) {
+        addr = (this.ramBank << 13) + (addr & 0x1FFF);
+        return this.ram[addr % this.ram.length];
+      }
+    }
+    return 0xFF;
+  }
+
+  write(addr, value) {
+    if (0 <= addr && addr < 0x2000) {
+      this.ramEnabled = (value & 0x0F) == 0x0A;
+    } else if (0x2000 <= addr && addr < 0x4000) {
+      this.romBank = (value & 0x1F) || 1;
+      if (this.multicart) {
+        this.romBank &= 0x0F;
+      }
+    } else if (0x4000 <= addr && addr < 0x6000) {
+      this.ramBank = value & 3;
+    } else if (0x6000 <= addr && addr < 0x8000) {
+      this.mode = value & 1;
+    } else if (0xA000 <= addr && addr < 0xC000) {
+      if (this.ramEnabled) {
+        addr = (this.ramBank << 13) + (addr & 0x1FFF);
+        this.ram[addr % this.ram.length] = value;
+      }
+    }
+  }
+}
+
+test("no mapper", async () => {
+  const data = rand(0x8000);
+  zero(data, 0x104, 0x150);
+  copy(data, 0x104, ...nintendoLogo);
+  copy(data, 0x134, ...unhex("544554524953"));  // Title: TETRIS
+  copy(data, 0x14B, 0x01);                      // Old licensee: Nintendo
+  copy(data, 0x14C, 0x01);                      // ROM version: 1
+  copy(data, 0x14D, 0x0a);                      // Header checksum: $0A
+  copy(data, 0x14E, 0x16, 0xbf);                // Global checksum: $16BF
+  const client = new FakeClient(data);
+
+  const cart = await dmg.detect(client);
   expect(cart.title).toStrictEqual("TETRIS");
   expect(cart.romSize).toBe(32768);
   expect(cart.savSize).toBe(0);
   expect(cart.valid.header).toBe(true);
+
+  const backup = await cart.backUpRom(client);
+  expect(backup).toEqual(data);
 });
 
 const rom1 = [new Segment(0, 32768)];

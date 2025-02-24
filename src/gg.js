@@ -4,8 +4,10 @@ import {pack, unpack} from "./struct.js";
 import {ints, latin1, makeImage, Segment} from "./util.js";
 
 const GGBITS = [12, 7, 6, 5, 4, 3, 2, 1, 0, 10, 15, 11, 9, 8, 13, 14];
-const shuffleAddr = (addr) =>
+export const shuffleAddr = (addr) =>
     GGBITS.entries().reduce((a, [i, b]) => a + (((addr >> b) & 1) << i), 0);
+export const unshuffleAddr = (addr) =>
+    GGBITS.entries().reduce((a, [i, b]) => a + (((addr >> i) & 1) << b), 0);
 const unshuffleData = (data) => {
   var result = new Uint8Array(0x10000);
   for (let addr = 0; addr < 0x10000; ++addr) {
@@ -29,10 +31,10 @@ class GameGearCart {
     this.header = data.slice(0x3FF0, 0x4000);
     this.title = null;
     this.trademark = latin1.decode(this.header.slice(0x00, 0x0A));
-    this.code = (this.header[0x0E] & 0x0F).toString(16) +
+    this.code = (this.header[0x0E] >> 4).toString(16) +
         this.header[0x0D].toString(16).padStart(2, "0") +
         this.header[0x0C].toString(16).padStart(2, "0");
-    this.romVersion = this.header[0x0E] >> 4;
+    this.romVersion = this.header[0x0E] & 0x0F;
     this.region = this.header[0x0F] >> 4;
     this.romSize = romSize;
 

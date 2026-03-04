@@ -11,6 +11,11 @@ export const Client = class {
     this.writer = port.writable.getWriter();
   }
 
+  async close() {
+    await this.reader.releaseLock();
+    await this.writer.releaseLock();
+  }
+
   async command(cmd, ...args) {
     await this.writer.write(pack(cmd.reqFormat, cmd.id, ...args));
     if (!cmd.respFormat.length) {

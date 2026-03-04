@@ -1,26 +1,23 @@
 import {Client} from "./client.js";
 import * as dmg from "./dmg.js";
 import cmds from "./gbxcart/cmds.js";
-import vars from "./gbxcart/vars.js";
 import * as gg from "./gg.js";
-import {unpack} from "./struct.js";
 import {downloadUrl, hex, toDataUrl, unitBytes} from "./util.js";
 
-const MAX_TRANSFER_SIZE = 64;
 const PLATFORMS = {
   dmg,
   gg,
 };
 
-let handleConnect = async function(platform) {
+const handleConnect = async function(platform) {
   let ports = await navigator.serial.getPorts();
   if (!ports.length) {
     ports = [await navigator.serial.requestPort()];
   }
 
-  let port = ports[0];
+  const port = ports[0];
   await port.open({baudRate: 1000000});
-  let client = new Client(port);
+  const client = new Client(port);
   console.log(await client.identify());
   platform = PLATFORMS[platform];
 
@@ -54,7 +51,7 @@ let handleConnect = async function(platform) {
     img.src = cart.logoImageUrl(cart.header);
     ui.logo.replaceChildren(img);
 
-    let handleBackUp = async (e) => {
+    const handleBackUp = async () => {
       ui.backUp.disabled = true;
       const data = await cart.backUpRom(client);
       console.log(hex(await window.crypto.subtle.digest("SHA-1", data)));
@@ -64,7 +61,7 @@ let handleConnect = async function(platform) {
     ui.backUp.disabled = false;
     ui.backUp.addEventListener("click", handleBackUp);
 
-    let handleDisconnect = async (e) => {
+    const handleDisconnect = async () => {
       await client.close();
       await port.close();
 
@@ -90,15 +87,15 @@ let handleConnect = async function(platform) {
   }
 };
 
-document.addEventListener("DOMContentLoaded", (e) => {
+document.addEventListener("DOMContentLoaded", () => {
   const platform = document.getElementById("platform");
   const connect = document.getElementById("connect");
 
-  platform.addEventListener("change", (e) => {
+  platform.addEventListener("change", () => {
     connect.disabled = !platform.value;
   });
 
-  connect.addEventListener("click", (e) => {
+  connect.addEventListener("click", () => {
     connect.disabled = true;
     platform.disabled = true;
     handleConnect(platform.value);

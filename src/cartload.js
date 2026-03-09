@@ -1,4 +1,5 @@
 import {Client} from "./client.js";
+import * as agb from "./agb.js";
 import * as dmg from "./dmg.js";
 import cmds from "./gbxcart/cmds.js";
 import * as gg from "./gg.js";
@@ -6,6 +7,7 @@ import {downloadUrl, hex, toDataUrl, unitBytes} from "./util.js";
 
 const PLATFORMS = {
   dmg,
+  agb,
   gg,
 };
 
@@ -55,7 +57,7 @@ const handleConnect = async function(platform) {
       ui.backUp.disabled = true;
       const data = await cart.backUpRom(client);
       console.log(hex(await window.crypto.subtle.digest("SHA-1", data)));
-      downloadUrl(`${cart.title || cart.code || 'ROM'}.${cart.extension}`, await toDataUrl(data));
+      downloadUrl(`${cart.title || cart.code || "ROM"}.${cart.extension}`, await toDataUrl(data));
       ui.backUp.disabled = false;
     };
     ui.backUp.disabled = false;

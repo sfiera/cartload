@@ -11,7 +11,45 @@ const PLATFORMS = {
   gg,
 };
 
-const handleConnect = async function(platform) {
+const showInfo = cart => {
+  const title = document.getElementById("title");
+  const code = document.getElementById("code");
+  const mapper = document.getElementById("mapper");
+  const rom = document.getElementById("rom");
+  const sav = document.getElementById("sav");
+  const logo = document.getElementById("logo");
+
+  if (cart) {
+    title.replaceChildren(cart.title || "(none)");
+    code.replaceChildren(cart.code || "(none)");
+    mapper.replaceChildren(cart.mapperName);
+    rom.replaceChildren(unitBytes(cart.romSize));
+    sav.replaceChildren(unitBytes(cart.savSize));
+
+    const img = new Image();
+    img.src = cart.logoImageUrl(cart.header);
+    logo.replaceChildren(img);
+  } else {
+    title.replaceChildren();
+    code.replaceChildren();
+    mapper.replaceChildren();
+    rom.replaceChildren();
+    sav.replaceChildren();
+    logo.replaceChildren();
+  }
+};
+
+const showProgress = (curr, max) => {
+  const progress = document.getElementById("progress");
+  const pct = Math.floor(1000 * curr / max) / 10;
+  progress.value = pct;
+  progress.innerText = `${pct}%`;
+};
+
+const handleConnect = async platform => {
+  const ctrl = new AbortController();
+  const signal = ctrl.signal;
+
   let ports = await navigator.serial.getPorts();
   if (!ports.length) {
     ports = [await navigator.serial.requestPort()];
@@ -21,24 +59,18 @@ const handleConnect = async function(platform) {
   await port.open({baudRate: 1000000});
   const client = new Client(port);
   console.log(await client.identify());
-  platform = PLATFORMS[platform];
 
-  const ui = {
-    title: document.getElementById("title"),
-    code: document.getElementById("code"),
-    mapper: document.getElementById("mapper"),
-    rom: document.getElementById("rom"),
-    sav: document.getElementById("sav"),
-    logo: document.getElementById("logo"),
-
-    progress: document.getElementById("progress"),
-
-    platform: document.getElementById("platform"),
-    connect: document.getElementById("connect"),
-    backUp: document.getElementById("back-up"),
-    disconnect: document.getElementById("disconnect"),
+  try {
+    await run(client, platform, {signal});
+  } finally {
+    ctrl.abort();
+    await client.command(cmds.CART_PWR_OFF);
+    await client.close();
+    await port.close();
   };
+};
 
+const run = async (client, platform, {signal}) => {
   let cart = null;
   try {
     await platform.connect(client);
@@ -49,63 +81,32 @@ const handleConnect = async function(platform) {
 
   console.log(cart);
   if (!cart) {
-    await client.close();
-    await port.close();
-    ui.platform.disabled = false;
-    ui.connect.disabled = false;
     return;
   }
 
   console.log(hex(await window.crypto.subtle.digest("SHA-1", cart.header)));
-  ui.title.replaceChildren(cart.title || "(none)");
-  ui.code.replaceChildren(cart.code || "(none)");
-  ui.mapper.replaceChildren(cart.mapperName);
-  ui.rom.replaceChildren(unitBytes(cart.romSize));
-  ui.sav.replaceChildren(unitBytes(cart.savSize));
+  showInfo(cart);
+  signal.addEventListener("abort", () => showInfo(null));
 
-  const img = new Image();
-  img.src = cart.logoImageUrl(cart.header);
-  ui.logo.replaceChildren(img);
-
+  const backUp = document.getElementById("back-up");
   const handleBackUp = async () => {
-    ui.backUp.disabled = true;
-    const data = await cart.backUpRom(client, progress => {
-      const pct = Math.floor(1000 * progress / cart.romSize) / 10;
-      ui.progress.value = pct;
-      ui.progress.innerText = `${pct}%`;
-    });
+    backUp.disabled = true;
+    const data = await cart.backUpRom(client, len => showProgress(len, cart.romSize));
     console.log(hex(await window.crypto.subtle.digest("SHA-1", data)));
     downloadUrl(`${cart.title || cart.code || "ROM"}.${cart.extension}`, await toDataUrl(data));
-    ui.backUp.disabled = false;
+    backUp.disabled = false;
   };
-  ui.backUp.disabled = false;
-  ui.backUp.addEventListener("click", handleBackUp);
+  backUp.disabled = false;
+  backUp.addEventListener("click", handleBackUp, {signal});
+  signal.addEventListener("abort", () => backUp.disabled = true);
 
-  let resolveDisconnect;
-  const disconnected = new Promise(resolve => resolveDisconnect = resolve);
-  const handleDisconnect = async () => { resolveDisconnect(); };
-  ui.disconnect.disabled = false;
-  ui.disconnect.addEventListener("click", handleDisconnect);
+  const {promise, resolve} = Promise.withResolvers();
+  const disconnect = document.getElementById("disconnect");
+  disconnect.disabled = false;
+  disconnect.addEventListener("click", () => resolve(), {signal});
+  signal.addEventListener("abort", () => disconnect.disabled = true);
 
-  await disconnected;
-
-  await client.command(cmds.CART_PWR_OFF);
-  await client.close();
-  await port.close();
-
-  ui.disconnect.disabled = true;
-  ui.disconnect.removeEventListener("click", handleDisconnect);
-  ui.backUp.disabled = true;
-  ui.backUp.removeEventListener("click", handleBackUp);
-  ui.platform.disabled = false;
-  ui.connect.disabled = false;
-
-  ui.title.replaceChildren();
-  ui.code.replaceChildren();
-  ui.mapper.replaceChildren();
-  ui.rom.replaceChildren();
-  ui.sav.replaceChildren();
-  ui.logo.replaceChildren();
+  await promise;
 };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -116,9 +117,11 @@ document.addEventListener("DOMContentLoaded", () => {
     connect.disabled = !platform.value;
   });
 
-  connect.addEventListener("click", () => {
+  connect.addEventListener("click", async () => {
     connect.disabled = true;
     platform.disabled = true;
-    handleConnect(platform.value);
+    await handleConnect(PLATFORMS[platform.value]);
+    connect.disabled = false;
+    platform.disabled = false;
   });
 });

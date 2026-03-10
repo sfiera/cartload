@@ -1,7 +1,7 @@
 import cmds from "./gbxcart/cmds.js";
 import vars from "./gbxcart/vars.js";
 import {pack, unpack} from "./struct.js";
-import {ints, latin1, makeImage, Segment} from "./util.js";
+import {arrayEq, ints, latin1, makeImage, Segment} from "./util.js";
 
 const GGBITS = [12, 7, 6, 5, 4, 3, 2, 1, 0, 10, 15, 11, 9, 8, 13, 14];
 export const shuffleAddr = (addr) =>
@@ -113,7 +113,7 @@ export const detect = async (client) => {
     await client.setVariable(vars.ADDRESS, 0x0000);
     const newData = unshuffleData(await client.transfer(cmds.DMG_CART_READ, 0x10000, null))
                         .slice(0x4000, 0x8000);
-    if (newData.every((byte, index) => byte == data[index])) {
+    if (arrayEq(newData, data)) {
       return new GameGearCart(data, bankCount * 0x4000);
     }
   }

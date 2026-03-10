@@ -7,6 +7,8 @@ export class Segment {
   get size() { return this.end - this.begin; }
 };
 
+export const arrayEq = (a, b) => (a.length == b.length) && a.every((x, i) => x == b[i]);
+
 export const unhex = (data) =>
     new Uint8Array(data.match(/[0-9a-fA-F]{2}/g).map((val) => parseInt(val, 16)));
 

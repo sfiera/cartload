@@ -1,7 +1,7 @@
 import cmds from "./gbxcart/cmds.js";
 import vars from "./gbxcart/vars.js";
 import {pack, unpack} from "./struct.js";
-import {ints, latin1, makeImage, Segment} from "./util.js";
+import {arrayEq, ints, latin1, makeImage, Segment} from "./util.js";
 
 class AgbCart {
   constructor(data, romSize) {
@@ -44,14 +44,12 @@ export const detect = async (client) => {
     await client.command(cmds.ENABLE_PULLUPS);
     await client.setVariable(vars.ADDRESS, words);
     const hiHeader = await client.transfer(cmds.AGB_CART_READ, 0x180, null);
-    if (hiHeader.every((byte, index) => byte == header[index])) {
-      return new AgbCart(header, words * 2);
-    }
 
     await client.command(cmds.DISABLE_PULLUPS);
     await client.setVariable(vars.ADDRESS, words);
     const loHeader = await client.transfer(cmds.AGB_CART_READ, 0x180, null);
-    if (loHeader.every((byte, index) => byte != hiHeader[index])) {
+
+    if (arrayEq(hiHeader, header) || !arrayEq(hiHeader, loHeader)) {
       return new AgbCart(header, words * 2);
     }
   }

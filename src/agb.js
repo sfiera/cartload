@@ -77,4 +77,5 @@ export const connect = async (client) => {
   await client.setVariable(vars.AGB_IRQ_ENABLED, 0);
   await client.setVariable(vars.ADDRESS, 0x00000000);
   await client.command(cmds.CART_PWR_ON);
+  await client.command(cmds.AGB_BOOTUP_SEQUENCE);
 };

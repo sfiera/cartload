@@ -39,60 +39,65 @@ const handleConnect = async function(platform) {
     disconnect: document.getElementById("disconnect"),
   };
 
+  let cart = null;
   try {
     await platform.connect(client);
-    const cart = await platform.detect(client);
-
-    console.log(cart);
-    console.log(hex(await window.crypto.subtle.digest("SHA-1", cart.header)));
-    ui.title.replaceChildren(cart.title || "(none)");
-    ui.code.replaceChildren(cart.code || "(none)");
-    ui.mapper.replaceChildren(cart.mapperName);
-    ui.rom.replaceChildren(unitBytes(cart.romSize));
-    ui.sav.replaceChildren(unitBytes(cart.savSize));
-
-    const img = new Image();
-    img.src = cart.logoImageUrl(cart.header);
-    ui.logo.replaceChildren(img);
-
-    const handleBackUp = async () => {
-      ui.backUp.disabled = true;
-      const data = await cart.backUpRom(client, progress => {
-        const pct = Math.floor(1000 * progress / cart.romSize) / 10;
-        ui.progress.value = pct;
-        ui.progress.innerText = `${pct}%`;
-      });
-      console.log(hex(await window.crypto.subtle.digest("SHA-1", data)));
-      downloadUrl(`${cart.title || cart.code || "ROM"}.${cart.extension}`, await toDataUrl(data));
-      ui.backUp.disabled = false;
-    };
-    ui.backUp.disabled = false;
-    ui.backUp.addEventListener("click", handleBackUp);
-
-    const handleDisconnect = async () => {
-      await client.close();
-      await port.close();
-
-      ui.disconnect.disabled = true;
-      ui.disconnect.removeEventListener("click", handleDisconnect);
-      ui.backUp.disabled = true;
-      ui.backUp.removeEventListener("click", handleBackUp);
-      ui.platform.disabled = false;
-      ui.connect.disabled = false;
-
-      ui.title.replaceChildren();
-      ui.code.replaceChildren();
-      ui.mapper.replaceChildren();
-      ui.rom.replaceChildren();
-      ui.sav.replaceChildren();
-      ui.logo.replaceChildren();
-    };
-    ui.disconnect.disabled = false;
-    ui.disconnect.addEventListener("click", handleDisconnect);
-
+    cart = await platform.detect(client);
   } finally {
     await client.command(cmds.CART_PWR_OFF);
   }
+
+  console.log(cart);
+  console.log(hex(await window.crypto.subtle.digest("SHA-1", cart.header)));
+  ui.title.replaceChildren(cart.title || "(none)");
+  ui.code.replaceChildren(cart.code || "(none)");
+  ui.mapper.replaceChildren(cart.mapperName);
+  ui.rom.replaceChildren(unitBytes(cart.romSize));
+  ui.sav.replaceChildren(unitBytes(cart.savSize));
+
+  const img = new Image();
+  img.src = cart.logoImageUrl(cart.header);
+  ui.logo.replaceChildren(img);
+
+  const handleBackUp = async () => {
+    ui.backUp.disabled = true;
+    const data = await cart.backUpRom(client, progress => {
+      const pct = Math.floor(1000 * progress / cart.romSize) / 10;
+      ui.progress.value = pct;
+      ui.progress.innerText = `${pct}%`;
+    });
+    console.log(hex(await window.crypto.subtle.digest("SHA-1", data)));
+    downloadUrl(`${cart.title || cart.code || "ROM"}.${cart.extension}`, await toDataUrl(data));
+    ui.backUp.disabled = false;
+  };
+  ui.backUp.disabled = false;
+  ui.backUp.addEventListener("click", handleBackUp);
+
+  let resolveDisconnect;
+  const disconnected = new Promise(resolve => resolveDisconnect = resolve);
+  const handleDisconnect = async () => { resolveDisconnect(); };
+  ui.disconnect.disabled = false;
+  ui.disconnect.addEventListener("click", handleDisconnect);
+
+  await disconnected;
+
+  await client.command(cmds.CART_PWR_OFF);
+  await client.close();
+  await port.close();
+
+  ui.disconnect.disabled = true;
+  ui.disconnect.removeEventListener("click", handleDisconnect);
+  ui.backUp.disabled = true;
+  ui.backUp.removeEventListener("click", handleBackUp);
+  ui.platform.disabled = false;
+  ui.connect.disabled = false;
+
+  ui.title.replaceChildren();
+  ui.code.replaceChildren();
+  ui.mapper.replaceChildren();
+  ui.rom.replaceChildren();
+  ui.sav.replaceChildren();
+  ui.logo.replaceChildren();
 };
 
 document.addEventListener("DOMContentLoaded", () => {

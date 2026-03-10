@@ -48,6 +48,14 @@ const handleConnect = async function(platform) {
   }
 
   console.log(cart);
+  if (!cart) {
+    await client.close();
+    await port.close();
+    ui.platform.disabled = false;
+    ui.connect.disabled = false;
+    return;
+  }
+
   console.log(hex(await window.crypto.subtle.digest("SHA-1", cart.header)));
   ui.title.replaceChildren(cart.title || "(none)");
   ui.code.replaceChildren(cart.code || "(none)");

@@ -108,6 +108,10 @@ export const detect = async (client) => {
   await client.setVariable(vars.ADDRESS, 0x0000);
   const data = unshuffleData(await client.transfer(cmds.DMG_CART_READ, 0x10000, null))
                    .slice(0x4000, 0x8000);
+  if (data.every(x => x == 0)) {
+    return null;
+  }
+
   for (let bankCount = 2; bankCount < 128; bankCount <<= 1) {
     await client.command(cmds.DMG_CART_WRITE, BANK1, bankCount + 1);
     await client.setVariable(vars.ADDRESS, 0x0000);

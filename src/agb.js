@@ -38,21 +38,33 @@ class AgbCart {
   }
 };
 
+const readHeader = async (client, {address, pullups}) => {
+  await client.command(pullups ? cmds.ENABLE_PULLUPS : cmds.DISABLE_PULLUPS);
+  await client.setVariable(vars.ADDRESS, (address || 0) / 2);
+  return new Uint8Array(await client.transfer(cmds.AGB_CART_READ, 0x180, null));
+};
+
 export const detect = async (client) => {
-  const header = new Uint8Array(await client.transfer(cmds.AGB_CART_READ, 0x180, null));
-  for (let words = 0x4000; words <= 0x10000000; words <<= 1) {
-    await client.command(cmds.ENABLE_PULLUPS);
-    await client.setVariable(vars.ADDRESS, words);
-    const hiHeader = await client.transfer(cmds.AGB_CART_READ, 0x180, null);
+  // Read ROM header with pullups enabled and disabled.
+  // If results don’t match, bus is open and no cart is present.
+  const hiHeader = await readHeader(client, {pullups: true});
+  const loHeader = await readHeader(client, {pullups: false});
+  if (!arrayEq(hiHeader, loHeader)) {
+    return null;
+  }
+  const header = hiHeader;
 
-    await client.command(cmds.DISABLE_PULLUPS);
-    await client.setVariable(vars.ADDRESS, words);
-    const loHeader = await client.transfer(cmds.AGB_CART_READ, 0x180, null);
-
+  // Detect ROM size by scanning upwards for the header.
+  // Size is found if header reappears or bus is open.
+  for (let address = 0x8000; address <= 0x20000000; address <<= 1) {
+    const hiHeader = await readHeader(client, {address, pullups: true});
+    const loHeader = await readHeader(client, {address, pullups: false});
     if (arrayEq(hiHeader, header) || !arrayEq(hiHeader, loHeader)) {
-      return new AgbCart(header, words * 2);
+      return new AgbCart(header, address);
     }
   }
+
+  // Failed to detect ROM size.
   return new AgbCart(header, 0);
 };
 

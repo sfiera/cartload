@@ -242,6 +242,9 @@ dmgCarts[0xff] = data => new HuC1(data);
 
 export const detect = async (client) => {
   const header = new Uint8Array(await client.transfer(cmds.DMG_CART_READ, 0x180, null));
+  if (header.every(x => x == 0)) {
+    return null;
+  }
   let cartType = dmgCarts[header[0x147]];
   if (typeof cartType === "undefined") {
     cartType = dmgCarts[0];
@@ -262,4 +265,5 @@ export const connect = async (client) => {
   await client.setVariable(vars.DMG_ACCESS_MODE, 1);
   await client.setVariable(vars.ADDRESS, 0x0000);
   await client.command(cmds.DMG_MBC_RESET);
+  await client.command(cmds.DMG_CART_WRITE, 0x0000, 0xFF);
 };

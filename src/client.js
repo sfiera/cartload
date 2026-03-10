@@ -38,18 +38,24 @@ export const Client = class {
     }
   }
 
-  async transfer(cmd, size, ...args) {
+  async transfer(cmd, size, callback, ...args) {
     let result = [];
     if (size >= MAX_TRANSFER_SIZE) {
       await this.setVariable(vars.TRANSFER_SIZE, MAX_TRANSFER_SIZE);
       while (size >= MAX_TRANSFER_SIZE) {
         await this.transferChunk(cmd, result, MAX_TRANSFER_SIZE, ...args);
         size -= MAX_TRANSFER_SIZE;
+        if (callback) {
+          callback(result.length);
+        }
       }
     }
     if (size > 0) {
       await this.setVariable(vars.TRANSFER_SIZE, size);
       await this.transferChunk(cmd, result, size, ...args);
+      if (callback) {
+        callback(result.length);
+      }
     }
     return result;
   }

@@ -69,7 +69,7 @@ class FakeClient {
     }
   }
 
-  async transfer(cmd, size, ...args) {
+  async transfer(cmd, size, callback, ...args) {
     expect(cmd.id).toBe(cmds.DMG_CART_READ.id);
     expect(args).toHaveLength(0);
     const result = new Uint8Array(size);
@@ -150,7 +150,7 @@ test("no mapper", async () => {
   expect(cart.savSize).toBe(0);
   expect(cart.valid.header).toBe(true);
 
-  const backup = await cart.backUpRom(client);
+  const backup = await cart.backUpRom(client, null);
   expect(backup).toEqual(data);
 });
 

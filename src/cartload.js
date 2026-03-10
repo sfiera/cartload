@@ -1,5 +1,5 @@
-import {Client} from "./client.js";
 import * as agb from "./agb.js";
+import {Client} from "./client.js";
 import * as dmg from "./dmg.js";
 import cmds from "./gbxcart/cmds.js";
 import * as gg from "./gg.js";
@@ -31,6 +31,8 @@ const handleConnect = async function(platform) {
     sav: document.getElementById("sav"),
     logo: document.getElementById("logo"),
 
+    progress: document.getElementById("progress"),
+
     platform: document.getElementById("platform"),
     connect: document.getElementById("connect"),
     backUp: document.getElementById("back-up"),
@@ -55,7 +57,11 @@ const handleConnect = async function(platform) {
 
     const handleBackUp = async () => {
       ui.backUp.disabled = true;
-      const data = await cart.backUpRom(client);
+      const data = await cart.backUpRom(client, progress => {
+        const pct = Math.floor(1000 * progress / cart.romSize) / 10;
+        ui.progress.value = pct;
+        ui.progress.innerText = `${pct}%`;
+      });
       console.log(hex(await window.crypto.subtle.digest("SHA-1", data)));
       downloadUrl(`${cart.title || cart.code || "ROM"}.${cart.extension}`, await toDataUrl(data));
       ui.backUp.disabled = false;

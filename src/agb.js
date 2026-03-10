@@ -23,14 +23,14 @@ class AgbCart {
     });
   }
 
-  async backUpRom(client) {
+  async backUpRom(client, callback) {
     await client.command(cmds.CART_PWR_ON);
     try {
       await client.command(cmds.DISABLE_PULLUPS);
       await client.setVariable(vars.ADDRESS, 0x00000000);
       await client.setVariable(vars.AGB_READ_METHOD, 2);
       await client.setVariable(vars.CART_MODE, 2);
-      const data = await client.transfer(cmds.AGB_CART_READ, this.romSize);
+      const data = await client.transfer(cmds.AGB_CART_READ, this.romSize, callback);
       return new Uint8Array(data);
     } finally {
       await client.command(cmds.CART_PWR_OFF);
@@ -39,18 +39,18 @@ class AgbCart {
 };
 
 export const detect = async (client) => {
-  const header = new Uint8Array(await client.transfer(cmds.AGB_CART_READ, 0x180));
+  const header = new Uint8Array(await client.transfer(cmds.AGB_CART_READ, 0x180, null));
   for (let words = 0x4000; words <= 0x10000000; words <<= 1) {
     await client.command(cmds.ENABLE_PULLUPS);
     await client.setVariable(vars.ADDRESS, words);
-    const hiHeader = await client.transfer(cmds.AGB_CART_READ, 0x180);
+    const hiHeader = await client.transfer(cmds.AGB_CART_READ, 0x180, null);
     if (hiHeader.every((byte, index) => byte == header[index])) {
       return new AgbCart(header, words * 2);
     }
 
     await client.command(cmds.DISABLE_PULLUPS);
     await client.setVariable(vars.ADDRESS, words);
-    const loHeader = await client.transfer(cmds.AGB_CART_READ, 0x180);
+    const loHeader = await client.transfer(cmds.AGB_CART_READ, 0x180, null);
     if (loHeader.every((byte, index) => byte != hiHeader[index])) {
       return new AgbCart(header, words * 2);
     }

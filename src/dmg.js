@@ -118,7 +118,7 @@ class DmgCart {
     });
   }
 
-  async backUpRom(client) {
+  async backUpRom(client, callback) {
     await client.command(cmds.CART_PWR_ON);
     try {
       await client.command(cmds.DISABLE_PULLUPS);
@@ -131,7 +131,11 @@ class DmgCart {
       for (const [i, seg] of segs.entries()) {
         await this.selectRomSegment(client, seg);
         console.log(`Segment ${i + 1}/${segs.length}`);
-        data.push(...await client.transfer(cmds.DMG_CART_READ, seg.size));
+        data.push(...await client.transfer(cmds.DMG_CART_READ, seg.size, progress => {
+          if (callback) {
+            callback(seg.start + progress);
+          }
+        }));
       }
       return new Uint8Array(data);
     } finally {
@@ -237,7 +241,7 @@ dmgCarts[0xfe] = data => new HuC3(data);
 dmgCarts[0xff] = data => new HuC1(data);
 
 export const detect = async (client) => {
-  const header = new Uint8Array(await client.transfer(cmds.DMG_CART_READ, 0x180));
+  const header = new Uint8Array(await client.transfer(cmds.DMG_CART_READ, 0x180, null));
   let cartType = dmgCarts[header[0x147]];
   if (typeof cartType === "undefined") {
     cartType = dmgCarts[0];

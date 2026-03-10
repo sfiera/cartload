@@ -68,7 +68,7 @@ class GameGearCart {
     });
   }
 
-  async backUpRom(client) {
+  async backUpRom(client, callback) {
     await client.command(cmds.CART_PWR_ON);
     try {
       await client.command(cmds.DISABLE_PULLUPS);
@@ -80,8 +80,13 @@ class GameGearCart {
       const segs = this.romSegments;
       for (const [i, seg] of segs.entries()) {
         await this.selectRomSegment(client, seg);
-        console.log(`Segment ${i+1}/${segs.length}`);
-        const segData = unshuffleData(await client.transfer(cmds.DMG_CART_READ, 0x10000));
+        console.log(`Segment ${i + 1}/${segs.length}`);
+        const segData =
+            unshuffleData(await client.transfer(cmds.DMG_CART_READ, 0x10000, progress => {
+              if (callback) {
+                callback(seg.start + progress);
+              }
+            }));
         const begin = Math.min(seg.begin, 0x8000);
         data.push(...segData.slice(begin, begin + seg.size));
       }
@@ -101,13 +106,13 @@ class GameGearCart {
 
 export const detect = async (client) => {
   await client.setVariable(vars.ADDRESS, 0x0000);
-  const data =
-      unshuffleData(await client.transfer(cmds.DMG_CART_READ, 0x10000)).slice(0x4000, 0x8000);
+  const data = unshuffleData(await client.transfer(cmds.DMG_CART_READ, 0x10000, null))
+                   .slice(0x4000, 0x8000);
   for (let bankCount = 2; bankCount < 128; bankCount <<= 1) {
     await client.command(cmds.DMG_CART_WRITE, BANK1, bankCount + 1);
     await client.setVariable(vars.ADDRESS, 0x0000);
-    const newData =
-        unshuffleData(await client.transfer(cmds.DMG_CART_READ, 0x10000)).slice(0x4000, 0x8000);
+    const newData = unshuffleData(await client.transfer(cmds.DMG_CART_READ, 0x10000, null))
+                        .slice(0x4000, 0x8000);
     if (newData.every((byte, index) => byte == data[index])) {
       return new GameGearCart(data, bankCount * 0x4000);
     }

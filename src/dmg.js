@@ -133,7 +133,7 @@ class DmgCart {
         console.log(`Segment ${i + 1}/${segs.length}`);
         data.push(...await client.transfer(cmds.DMG_CART_READ, seg.size, progress => {
           if (callback) {
-            callback(seg.start + progress);
+            callback(seg.begin + progress);
           }
         }));
       }

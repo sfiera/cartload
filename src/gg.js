@@ -84,7 +84,7 @@ class GameGearCart {
         const segData =
             unshuffleData(await client.transfer(cmds.DMG_CART_READ, 0x10000, progress => {
               if (callback) {
-                callback(seg.start + progress);
+                callback(seg.begin + progress);
               }
             }));
         const begin = Math.min(seg.begin, 0x8000);

@@ -1,0 +1,114 @@
+import cmds from "./gbxcart/cmds.js";
+import vars from "./gbxcart/vars.js";
+import {arrayEq, ints, latin1, makeImage, Segment} from "./util.js";
+
+
+class NeoGeoPocketCart {
+  constructor(data, romSize) {
+    if (!(data instanceof Uint8Array)) {
+      throw new TypeError("data must be Uint8Array")
+    } else if (data.length < 0x10) {
+      throw new TypeError("data too short for header")
+    }
+    this.header = data.slice(0, 0x40);
+    this.trademark = latin1.decode(this.header.slice(0x00, 0x1C));
+    this.title = latin1.decode(this.header.slice(0x24, 0x30));
+    this.code =
+        ("NEOP" + this.header[0x21].toString(16).padStart(2, "0") +
+         this.header[0x20].toString(16).padStart(2, "0"));
+    this.romSize = romSize;
+
+    this.valid = {
+      trademark: [
+        " LICENSED BY SNK CORPORATION",
+        "COPYRIGHT BY SNK CORPORATION",
+      ].indexOf(this.trademark) >= 0,
+    };
+    this.valid.header = this.valid.trademark;
+  }
+
+  get mapperName() { return "None" }
+
+  get romSegments() {
+    return ints(this.romSize >> 16).map(i => new Segment(i * (1 << 16), (i + 1) * (1 << 16)));
+  }
+  get savSegments() { return []; }
+
+  get extension() { return "ngp"; }
+
+  logoImageUrl(header) {
+    return makeImage(64, 8, (ctx) => {
+      ctx.fillStyle = "black";
+
+      const trademark = header.slice(0, 8);
+      ctx.fillRect(0, 0, 64, 8);
+    });
+  }
+
+  async backUpRom(client, callback) {
+    await client.command(cmds.CART_PWR_ON);
+    try {
+      await client.command(cmds.DISABLE_PULLUPS);
+      await client.setVariable(vars.DMG_READ_METHOD, 1);
+      await client.setVariable(vars.DMG_ACCESS_MODE, 1);  // MODE_ROM_READ
+      await client.setVariable(vars.CART_MODE, 1);
+      let data = [];
+      const segs = this.romSegments;
+      for (const [i, seg] of segs.entries()) {
+        await this.selectRomSegment(client, seg);
+        await client.setVariable(vars.ADDRESS, 0x0000);
+        data.push(...await client.transfer(cmds.DMG_CART_READ, 0x10000, progress => {
+          if (callback) {
+            callback(seg.begin + progress);
+          }
+        }));
+      }
+      return new Uint8Array(data);
+    } finally {
+      await client.command(cmds.CART_PWR_OFF);
+    }
+  }
+
+  async selectRomSegment(client, segment) { await latch(client, segment.begin >> 16); }
+};
+
+const latch = async (client, value) => {
+  if (value != (value & 0b11111)) {
+    throw `invalid latch value ${value}`;
+  }
+  await client.command(cmds.SET_PIN, 0b00010, 1);                  // CLK
+  await client.command(cmds.SET_PIN, value << 6, 1);               // A1:5
+  await client.command(cmds.SET_PIN, (value ^ 0b11111) << 6, 0);   // A1:5
+  await client.command(cmds.SET_PIN, 0b00010, 0);                  // CLK
+  await client.command(cmds.SET_PIN, 0b00010, 1);                  // CLK
+  await client.command(cmds.SET_PIN, 0b111111111111111110100, 0);  // A0:15
+};
+
+export const detect = async (client) => {
+  await client.setVariable(vars.ADDRESS, 0x0000);
+  const data = await client.transfer(cmds.DMG_CART_READ, 0x40);
+  for (let i = 1; i <= 0x10; i <<= 1) {
+    await latch(client, i);
+    await client.setVariable(vars.ADDRESS, 0x0000);
+    const newData = await client.transfer(cmds.DMG_CART_READ, 0x40);
+    if (arrayEq(newData, data)) {
+      return new NeoGeoPocketCart(new Uint8Array(data), i * 0x10000);
+    }
+  }
+  return new NeoGeoPocketCart(new Uint8Array(data, 0x200000));
+};
+
+export const connect = async (client) => {
+  await client.setVariable(vars.DMG_READ_METHOD, 1);
+  await client.command(cmds.SET_MODE_DMG);
+  await client.command(cmds.SET_VOLTAGE_3_3V);
+  await client.command(cmds.CART_PWR_ON);
+  await client.command(cmds.DISABLE_PULLUPS);
+  await client.setVariable(vars.DMG_READ_METHOD, 1);
+  await client.setVariable(vars.CART_MODE, 1);
+  await client.setVariable(vars.DMG_READ_CS_PULSE, 0);
+  await client.setVariable(vars.DMG_WRITE_CS_PULSE, 0);
+  await client.setVariable(vars.DMG_ACCESS_MODE, 1);
+  await client.setVariable(vars.ADDRESS, 0x0000);
+  await latch(client, 0);
+};

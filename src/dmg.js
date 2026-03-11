@@ -125,7 +125,7 @@ class DmgCart {
       await client.setVariable(vars.DMG_READ_METHOD, 1);
       await client.setVariable(vars.DMG_ACCESS_MODE, 1);  // MODE_ROM_READ
       await client.setVariable(vars.CART_MODE, 1);
-      await client.setVariable(vars.DMG_READ_CS_PULSE, 0);
+      await client.setVariable(vars.DMG_READ_CS_PULSE, 1);
       let data = [];
       const segs = this.romSegments;
       for (const [i, seg] of segs.entries()) {
@@ -188,6 +188,16 @@ class MBC3 extends DmgCart {
 class MBC5 extends DmgCart {
   constructor(header, opts = {}) { super(header, opts); }
   get mapperName() { return "MBC5" }
+};
+
+class MBC6 extends DmgCart {
+  constructor(header, opts = {}) { super(header, opts); }
+  get mapperName() { return "MBC6" }
+};
+
+class MBC7 extends DmgCart {
+  constructor(header, opts = {}) { super(header, opts); }
+  get mapperName() { return "MBC7" }
 };
 
 class Camera extends DmgCart {
@@ -260,7 +270,7 @@ export const connect = async (client) => {
   await client.command(cmds.DISABLE_PULLUPS);
   await client.setVariable(vars.DMG_READ_METHOD, 1);
   await client.setVariable(vars.CART_MODE, 1);
-  await client.setVariable(vars.DMG_READ_CS_PULSE, 0);
+  await client.setVariable(vars.DMG_READ_CS_PULSE, 1);
   await client.setVariable(vars.DMG_WRITE_CS_PULSE, 0);
   await client.setVariable(vars.DMG_ACCESS_MODE, 1);
   await client.setVariable(vars.ADDRESS, 0x0000);

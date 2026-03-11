@@ -10,6 +10,7 @@ export class Segment {
 };
 
 export const arrayEq = (a, b) => (a.length == b.length) && a.every((x, i) => x == b[i]);
+export const ints = (length) => Array(length).fill(0).map((_, i) => i);
 
 export const unhex = (data) =>
     new Uint8Array(data.match(/[0-9a-fA-F]{2}/g).map((val) => parseInt(val, 16)));
@@ -21,13 +22,6 @@ export const hex = (array) => {
   return Array.prototype.map.call(array, (x) => x.toString(16).padStart(2, "0")).join("");
 };
 
-export const ints = (length) => {
-  let result = [];
-  for (let i = 0; i < length; ++i) {
-    result.push(i);
-  }
-  return result;
-};
 
 export const latin1 = new TextDecoder("latin1");
 

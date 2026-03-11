@@ -80,7 +80,6 @@ class GameGearCart {
       const segs = this.romSegments;
       for (const [i, seg] of segs.entries()) {
         await this.selectRomSegment(client, seg);
-        console.log(`Segment ${i + 1}/${segs.length}`);
         const segData =
             unshuffleData(await client.transfer(cmds.DMG_CART_READ, 0x10000, progress => {
               if (callback) {

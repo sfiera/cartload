@@ -130,7 +130,6 @@ class DmgCart {
       const segs = this.romSegments;
       for (const [i, seg] of segs.entries()) {
         await this.selectRomSegment(client, seg);
-        console.log(`Segment ${i + 1}/${segs.length}`);
         data.push(...await client.transfer(cmds.DMG_CART_READ, seg.size, progress => {
           if (callback) {
             callback(seg.begin + progress);

@@ -1,3 +1,5 @@
+// Cartload is (c) 2026 by sfiera. Licensed under GPLv3.
+
 import cmds from "./gbxcart/cmds.js";
 import vars from "./gbxcart/vars.js";
 import {pack, unpack} from "./struct.js";

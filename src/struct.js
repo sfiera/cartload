@@ -1,3 +1,5 @@
+// Cartload is (c) 2026 by sfiera. Licensed under GPLv3.
+
 const fixedSize = function(size, getter, setter) {
   return {
     marshal: (value, result) => {

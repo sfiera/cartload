@@ -1,3 +1,5 @@
+// Cartload is (c) 2026 by sfiera. Licensed under GPLv3.
+
 // const sum = require("./sum");
 
 test("adds 1 + 2 to equal 3", () => {

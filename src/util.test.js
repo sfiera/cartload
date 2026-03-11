@@ -1,3 +1,5 @@
+// Cartload is (c) 2026 by sfiera. Licensed under GPLv3.
+
 import {hex, unhex} from "./util.js";
 
 const b = (...bytes) => new Uint8Array([...bytes]);

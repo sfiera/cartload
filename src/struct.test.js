@@ -1,3 +1,5 @@
+// Cartload is (c) 2026 by sfiera. Licensed under GPLv3.
+
 import {pack, unpack} from "./struct.js";
 
 const b = (...bytes) => new Uint8Array([...bytes]);

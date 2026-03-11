@@ -1,3 +1,5 @@
+// Cartload is (c) 2026 by sfiera. Licensed under GPLv3.
+
 import * as agb from "./agb.js";
 import {Client} from "./client.js";
 import * as dmg from "./dmg.js";

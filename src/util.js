@@ -1,3 +1,5 @@
+// Cartload is (c) 2026 by sfiera. Licensed under GPLv3.
+
 export class Segment {
   constructor(begin, end) {
     this.begin = begin;

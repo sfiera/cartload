@@ -3,7 +3,7 @@
 import cmds from "./gbxcart/cmds.js";
 import vars from "./gbxcart/vars.js";
 import {pack, unpack} from "./struct.js";
-import {ints, latin1, makeImage, Segment} from "./util.js";
+import {arrayEq, ints, latin1, makeImage, Segment} from "./util.js";
 
 export const ram = true;
 export const battery = true;
@@ -41,6 +41,7 @@ class DmgCart {
     this.header = data;
     this.features = {ram, battery, timer, rumble, sensor, camera, infrared, speaker};
 
+    this.logo = data.slice(0x104, 0x134);
     this.cgbFlag = (data[0x143] >= 0x80) ? data[0x143] : 0;
     const titleRegexp =
         /^(.*?)\u0000*(?:([ABHKV][A-Z2-9][A-Z2-9][ABDEFIJKPSUXY])?[\u0080-\uffff])?$/;
@@ -76,7 +77,7 @@ class DmgCart {
     };
 
     this.valid = {
-      logo: !data.slice(0x104, 0x134).some((x, i) => nintendoLogo[i] != x),
+      logo: arrayEq(this.logo, nintendoLogo),
       headerCksum: data[0x14D] ==
           data.slice(0x134, 0x14D).reduce((cksum, x) => (cksum + 0xff - x) & 0xff, 0),
     };
@@ -94,11 +95,11 @@ class DmgCart {
     return this.compatibility.cgb ? "cgb" : this.compatibility.sgb ? "sgb" : "gb";
   }
 
-  logoImageUrl(header) {
+  logoImageUrl() {
     return makeImage(48, 8, (ctx) => {
       ctx.fillStyle = "black";
 
-      const logo = unpack("HHHHHHHHHHHHHHHHHHHHHHHH", header.slice(0x104, 0x134));
+      const logo = unpack("HHHHHHHHHHHHHHHHHHHHHHHH", this.logo);
       let tileIndex = 0;
       for (let tileRow = 0; tileRow < 2; ++tileRow) {
         for (let tileCol = 0; tileCol < 12; ++tileCol) {

@@ -31,7 +31,7 @@ const showInfo = cart => {
     sav.replaceChildren(unitBytes(cart.savSize));
 
     const img = new Image();
-    img.src = cart.logoImageUrl(cart.header);
+    img.src = cart.logoImageUrl();
     logo.replaceChildren(img);
   } else {
     title.replaceChildren();

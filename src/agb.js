@@ -104,7 +104,7 @@ class AgbCart {
     }
   }
 
-  logoImageUrl(header) { return makeImage(104, 16, this.drawImage); }
+  logoImageUrl() { return makeImage(104, 16, (ctx) => this.drawImage(ctx)); }
 
   async backUpRom(client, callback) {
     await client.command(cmds.CART_PWR_ON);

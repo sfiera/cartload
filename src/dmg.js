@@ -3,7 +3,7 @@
 import cmds from "./gbxcart/cmds.js";
 import vars from "./gbxcart/vars.js";
 import {pack, unpack} from "./struct.js";
-import {arrayEq, ints, latin1, makeImage, Segment} from "./util.js";
+import {arrayEq, ints, latin1, makeImage, Segment, unhex} from "./util.js";
 
 export const ram = true;
 export const battery = true;
@@ -15,11 +15,9 @@ export const camera = true;
 export const infrared = true;
 export const speaker = true;
 
-const nintendoLogo = new Uint8Array([
-  0xCE, 0xED, 0x66, 0x66, 0xCC, 0x0D, 0x00, 0x0B, 0x03, 0x73, 0x00, 0x83, 0x00, 0x0C, 0x00, 0x0D,
-  0x00, 0x08, 0x11, 0x1F, 0x88, 0x89, 0x00, 0x0E, 0xDC, 0xCC, 0x6E, 0xE6, 0xDD, 0xDD, 0xD9, 0x99,
-  0xBB, 0xBB, 0x67, 0x63, 0x6E, 0x0E, 0xEC, 0xCC, 0xDD, 0xDC, 0x99, 0x9F, 0xBB, 0xB9, 0x33, 0x3E,
-]);
+const nintendoLogo = unhex(
+    "ceed6666cc0d000b03730083000c000d0008111f8889000e" +
+    "dccc6ee6ddddd999bbbb67636e0eecccdddc999fbbb9333e");
 
 class DmgCart {
   constructor(data, {
@@ -95,31 +93,31 @@ class DmgCart {
     return this.compatibility.cgb ? "cgb" : this.compatibility.sgb ? "sgb" : "gb";
   }
 
-  logoImageUrl() {
-    return makeImage(48, 8, (ctx) => {
-      ctx.fillStyle = "black";
+  drawImage(ctx) {
+    ctx.fillStyle = "black";
 
-      const logo = unpack("HHHHHHHHHHHHHHHHHHHHHHHH", this.logo);
-      let tileIndex = 0;
-      for (let tileRow = 0; tileRow < 2; ++tileRow) {
-        for (let tileCol = 0; tileCol < 12; ++tileCol) {
-          const tileData = logo[tileIndex];
-          let bit = 0x8000;
-          for (let row = 0; row < 4; ++row) {
-            for (let col = 0; col < 4; ++col) {
-              const x = tileCol * 4 + col;
-              const y = tileRow * 4 + row;
-              if (tileData & bit) {
-                ctx.fillRect(x, y, 1, 1);
-              }
-              bit >>= 1;
+    const logo = unpack("HHHHHHHHHHHHHHHHHHHHHHHH", this.logo);
+    let tileIndex = 0;
+    for (let tileRow = 0; tileRow < 2; ++tileRow) {
+      for (let tileCol = 0; tileCol < 12; ++tileCol) {
+        const tileData = logo[tileIndex];
+        let bit = 0x8000;
+        for (let row = 0; row < 4; ++row) {
+          for (let col = 0; col < 4; ++col) {
+            const x = tileCol * 4 + col;
+            const y = tileRow * 4 + row;
+            if (tileData & bit) {
+              ctx.fillRect(x, y, 1, 1);
             }
+            bit >>= 1;
           }
-          ++tileIndex;
         }
+        ++tileIndex;
       }
-    });
+    }
   }
+
+  logoImageUrl() { return makeImage(48, 8, ctx => this.drawImage(ctx)); }
 
   async backUpRom(client, callback) {
     await client.command(cmds.CART_PWR_ON);

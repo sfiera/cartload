@@ -5,11 +5,20 @@ import cmds from "./gbxcart/cmds.js";
 import vars from "./gbxcart/vars.js";
 import {latin1, Segment, unhex} from "./util.js";
 
-const nintendoLogo = new Uint8Array([
-  0xCE, 0xED, 0x66, 0x66, 0xCC, 0x0D, 0x00, 0x0B, 0x03, 0x73, 0x00, 0x83, 0x00, 0x0C, 0x00, 0x0D,
-  0x00, 0x08, 0x11, 0x1F, 0x88, 0x89, 0x00, 0x0E, 0xDC, 0xCC, 0x6E, 0xE6, 0xDD, 0xDD, 0xD9, 0x99,
-  0xBB, 0xBB, 0x67, 0x63, 0x6E, 0x0E, 0xEC, 0xCC, 0xDD, 0xDC, 0x99, 0x9F, 0xBB, 0xB9, 0x33, 0x3E,
-]);
+const logoBits = unhex(
+    "ceed6666cc0d000b03730083000c000d0008111f8889000e" +
+    "dccc6ee6ddddd999bbbb67636e0eecccdddc999fbbb9333e");
+
+const logoGfx = [
+  "██   ██ ██                             ██       ",
+  "███  ██ ██        ██                   ██       ",
+  "███  ██          ████                  ██       ",
+  "██ █ ██ ██ ██ ██  ██  ████  ██ ██   █████  ████ ",
+  "██ █ ██ ██ ███ ██ ██ ██  ██ ███ ██ ██  ██ ██  ██",
+  "██  ███ ██ ██  ██ ██ ██████ ██  ██ ██  ██ ██  ██",
+  "██  ███ ██ ██  ██ ██ ██     ██  ██ ██  ██ ██  ██",
+  "██   ██ ██ ██  ██ ██  █████ ██  ██  █████  ████ ",
+].join("\n");
 
 function rand(n, seed) {
   seed = seed || 1;
@@ -135,10 +144,27 @@ class FakeMBC1Client extends FakeClient {
   }
 }
 
+test("draw logo", async () => {
+  const data = rand(0x8000);
+  copy(data, 0x104, ...logoBits);
+  const cart = await dmg.detect(new FakeClient(data));
+  const logo = Array(8).fill(0).map(_ => Array(48).fill(" "));
+  const ctx = {
+    fillRect: (x, y, w, h) => {
+      expect(w).toEqual(1);
+      expect(h).toEqual(1);
+      expect(ctx.fillStyle).toEqual("black");
+      logo[y][x] = "█";
+    },
+  };
+  cart.drawImage(ctx);
+  expect(logo.map(row => row.join("")).join("\n")).toEqual(logoGfx);
+});
+
 test("no mapper", async () => {
   const data = rand(0x8000);
   zero(data, 0x104, 0x150);
-  copy(data, 0x104, ...nintendoLogo);
+  copy(data, 0x104, ...logoBits);
   copy(data, 0x134, ...unhex("544554524953"));  // Title: TETRIS
   copy(data, 0x14B, 0x01);                      // Old licensee: Nintendo
   copy(data, 0x14C, 0x01);                      // ROM version: 1

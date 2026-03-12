@@ -147,7 +147,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (!navigator.serial) {
     platform.disabled = true;
-    runModal([h3("Web Serial missing"), p("Cartload requires a Web Serial-compatible browser, such as the desktop versions of Chrome, Edge, or Opera")], ["OK"]);
+    runModal(
+        [
+          h3("Web Serial missing"),
+          p("Cartload requires a ",
+            makeElement("a", {
+              href: "https://caniuse.com/web-serial",
+              children: "Web Serial-compatible browser",
+            }),
+            ", such as the desktop versions of Chrome, Edge, or Opera."),
+        ],
+        ["OK"]);
     return;
   }
 

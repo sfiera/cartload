@@ -108,7 +108,7 @@ export const detect = async (client) => {
   const data = unshuffleData(await client.transfer(cmds.DMG_CART_READ, 0x10000, null))
                    .slice(0x4000, 0x8000);
   if (data.every(x => x == 0)) {
-    return null;
+    throw new Error("No cartridge detected");
   }
 
   for (let bankCount = 2; bankCount < 128; bankCount <<= 1) {

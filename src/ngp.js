@@ -87,6 +87,10 @@ const latch = async (client, value) => {
 export const detect = async (client) => {
   await client.setVariable(vars.ADDRESS, 0x0000);
   const data = await client.transfer(cmds.DMG_CART_READ, 0x40);
+  if (data.every(x => x == 0)) {
+    throw new Error("No cartridge detected");
+  }
+
   for (let i = 1; i <= 0x10; i <<= 1) {
     await latch(client, i);
     await client.setVariable(vars.ADDRESS, 0x0000);

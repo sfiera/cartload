@@ -255,7 +255,7 @@ dmgCarts[0xff] = data => new HuC1(data);
 export const detect = async (client) => {
   const header = new Uint8Array(await client.transfer(cmds.DMG_CART_READ, 0x180, null));
   if (header.every(x => x == 0)) {
-    return null;
+    throw new Error("No cartridge detected");
   }
   let cartType = dmgCarts[header[0x147]];
   if (typeof cartType === "undefined") {

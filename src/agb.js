@@ -133,7 +133,7 @@ export const detect = async (client) => {
   const hiHeader = await readHeader(client, {pullups: true});
   const loHeader = await readHeader(client, {pullups: false});
   if (!arrayEq(hiHeader, loHeader)) {
-    return null;
+    throw new Error("No cartridge detected");
   }
   const header = hiHeader;
 

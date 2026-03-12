@@ -6,7 +6,7 @@ import * as dmg from "./dmg.js";
 import cmds from "./gbxcart/cmds.js";
 import * as gg from "./gg.js";
 import * as ngp from "./ngp.js";
-import {downloadUrl, hex, toDataUrl, unitBytes} from "./util.js";
+import {downloadUrl, hex, makeElement, toDataUrl, unitBytes} from "./util.js";
 
 const PLATFORMS = {
   dmg,
@@ -66,6 +66,8 @@ const handleConnect = async platform => {
 
   try {
     await run(client, platform, {signal});
+  } catch (e) {
+    showErr(e);
   } finally {
     ctrl.abort();
     await client.command(cmds.CART_PWR_OFF);
@@ -113,9 +115,41 @@ const run = async (client, platform, {signal}) => {
   await promise;
 };
 
+const runModal = (children, buttons) => new Promise(resolve => {
+  const dlog = makeElement("dialog", {children: children});
+
+  const form = makeElement("form", {
+    method: "dialog",
+    children: buttons.map(b => makeElement("button", {innerText: b, value: b})),
+  });
+  form.firstChild.autofocus = true;
+  dlog.appendChild(form);
+
+  dlog.addEventListener("close", e => {
+    document.body.removeChild(dlog);
+    resolve(dlog.returnValue);
+  });
+  document.body.appendChild(dlog);
+  dlog.showModal();
+});
+
+const [h3, p, ul, li, tt] = ["h3", "p", "ul", "li", "tt"].map(
+    tag => ((...children) => makeElement(tag, {children: children})));
+
+const showErr = e => {
+  console.log(e);
+  runModal([h3(e.name), p(e.message)], ["OK"]);
+};
+
 document.addEventListener("DOMContentLoaded", () => {
   const platform = document.getElementById("platform");
   const connect = document.getElementById("connect");
+
+  if (!navigator.serial) {
+    platform.disabled = true;
+    runModal([h3("Web Serial missing"), p("Cartload requires a Web Serial-compatible browser, such as the desktop versions of Chrome, Edge, or Opera")], ["OK"]);
+    return;
+  }
 
   platform.addEventListener("change", () => {
     connect.disabled = !platform.value;
@@ -124,8 +158,13 @@ document.addEventListener("DOMContentLoaded", () => {
   connect.addEventListener("click", async () => {
     connect.disabled = true;
     platform.disabled = true;
-    await handleConnect(PLATFORMS[platform.value]);
-    connect.disabled = false;
-    platform.disabled = false;
+    try {
+      await handleConnect(PLATFORMS[platform.value]);
+    } catch (e) {
+      showErr(e);
+    } finally {
+      connect.disabled = false;
+      platform.disabled = false;
+    }
   });
 });

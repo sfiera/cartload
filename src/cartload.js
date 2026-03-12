@@ -56,7 +56,11 @@ const handleConnect = async platform => {
 
   let ports = await navigator.serial.getPorts();
   if (!ports.length) {
-    ports = [await navigator.serial.requestPort()];
+    ports = [await navigator.serial.requestPort({
+      filters: [
+        {usbVendorId: 0x1a86, usbProductId: 0x7523},
+      ],
+    })];
   }
 
   const port = ports[0];

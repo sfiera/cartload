@@ -3,6 +3,7 @@
 import * as agb from "./agb.js";
 import cmds from "./gbxcart/cmds.js";
 import vars from "./gbxcart/vars.js";
+import {FakeClient} from "./testutil.js";
 import {unhex} from "./util.js";
 
 const logoBits = unhex(
@@ -29,7 +30,7 @@ const tiles = " ▘▝▀▖▌▞▛▗▚▐▜▄▙▟█";  // bitfield
 test("decompress logo", async () => {
   const data = Array(0x180).fill(0);
   data.splice(0x004, logoBits.length, ...logoBits);
-  const cart = await agb.detect(new FakeClient(data));
+  const cart = await agb.detect(new AgbFakeClient(data));
   const logo = Array(8).fill(0).map(_ => Array(52).fill(0));
   const ctx = {
     fillRect: (x, y, w, h) => {
@@ -44,12 +45,7 @@ test("decompress logo", async () => {
   expect(logo.map(row => row.map(x => tiles[x]).join("")).join("\n")).toEqual(logoGfx);
 });
 
-class FakeClient {
-  constructor(rom) {
-    this.address = 0;
-    this.rom = new Uint8Array(rom);
-  }
-
+class AgbFakeClient extends FakeClient {
   read(addr) {
     if (0 <= addr && addr < this.rom.length) {
       return this.rom[addr] || 0;
@@ -59,24 +55,13 @@ class FakeClient {
 
   write(addr, value) {}
 
-  async command(cmd, ...args) {
-    if (cmd === cmds.CART_PWR_ON) {
-    } else if (cmd === cmds.CART_PWR_OFF) {
-    } else if (cmd === cmds.ENABLE_PULLUPS) {
-    } else if (cmd === cmds.DISABLE_PULLUPS) {
-    } else {
-      expect(cmd).toEqual(null);
-    }
-  }
+  cmdCartPwrOn() {}
+  cmdCartPwrOff() {}
+  cmdEnablePullups() {}
+  cmdDisablePullups() {}
 
-  async setVariable(variable, value) {
-    if (variable === vars.ADDRESS) {
-      this.address = value & 0xFFFFFFFF;
-    } else if (variable === vars.CART_MODE) {
-    } else {
-      expect(variable).toEqual(null);
-    }
-  }
+  setAddress(value) { this.address = value & 0xFFFFFFFF; }
+  setCartMode(value) {}
 
   async transfer(cmd, size, callback, ...args) {
     expect(cmd.id).toBe(cmds.AGB_CART_READ.id);

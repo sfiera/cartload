@@ -3,6 +3,7 @@
 import * as dmg from "./dmg.js";
 import cmds from "./gbxcart/cmds.js";
 import vars from "./gbxcart/vars.js";
+import {copy, FakeClient, rand, zero} from "./testutil.js";
 import {latin1, Segment, unhex} from "./util.js";
 
 const logoBits = unhex(
@@ -20,28 +21,9 @@ const logoGfx = [
   "██   ██ ██ ██  ██ ██  █████ ██  ██  █████  ████ ",
 ].join("\n");
 
-function rand(n, seed) {
-  seed = seed || 1;
-  const data = new Uint8Array(n);
-  data.forEach((_, i) => {
-    seed = (48271 * seed) % 2147483647;
-    data[i] = seed;
-  });
-  return data;
-}
-
-function zero(array, start, end) {
-  while (start < end) {
-    array[start++] = 0;
-  }
-}
-
-function copy(array, start, ...data) { data.forEach((x, i) => array[start + i] = x); }
-
-class FakeClient {
+class DmgFakeClient extends FakeClient {
   constructor(rom, ram) {
-    this.address = 0;
-    this.rom = new Uint8Array(rom);
+    super(rom);
     this.ram = new Uint8Array(ram);
   }
 
@@ -56,29 +38,16 @@ class FakeClient {
 
   write(addr, value) {}
 
-  async command(cmd, ...args) {
-    if (cmd === cmds.CART_PWR_ON) {
-    } else if (cmd === cmds.CART_PWR_OFF) {
-    } else if (cmd === cmds.DISABLE_PULLUPS) {
-    } else if (cmd === cmds.DMG_CART_WRITE) {
-      const [addr, value] = args;
-      this.write(addr, value);
-    } else {
-      expect(cmd).toEqual(null);
-    }
-  }
+  cmdCartPwrOn() {}
+  cmdCartPwrOff() {}
+  cmdDisablePullups() {}
+  cmdDmgCartWrite(addr, value) { this.write(addr, value); }
 
-  async setVariable(variable, value) {
-    if (variable === vars.ADDRESS) {
-      this.address = value & 0xFFFF;
-    } else if (variable === vars.DMG_READ_METHOD) {
-    } else if (variable === vars.DMG_ACCESS_MODE) {
-    } else if (variable === vars.CART_MODE) {
-    } else if (variable === vars.DMG_READ_CS_PULSE) {
-    } else {
-      expect(variable).toEqual(null);
-    }
-  }
+  setAddress(value) { this.address = value & 0xFFFF; }
+  setDmgReadMethod(value) {}
+  setDmgAccessMode(value) {}
+  setCartMode(value) {}
+  setDmgReadCsPulse(value) {}
 
   async transfer(cmd, size, callback, ...args) {
     expect(cmd.id).toBe(cmds.DMG_CART_READ.id);
@@ -93,7 +62,7 @@ class FakeClient {
   }
 }
 
-class FakeMBC1Client extends FakeClient {
+class FakeMBC1Client extends DmgFakeClient {
   constructor(rom, ram, {multicart = false}) {
     super(rom, ram);
     this.ramEnabled = false;
@@ -147,7 +116,7 @@ class FakeMBC1Client extends FakeClient {
 test("draw logo", async () => {
   const data = rand(0x8000);
   copy(data, 0x104, ...logoBits);
-  const cart = await dmg.detect(new FakeClient(data));
+  const cart = await dmg.detect(new DmgFakeClient(data));
   const logo = Array(8).fill(0).map(_ => Array(48).fill(" "));
   const ctx = {
     fillRect: (x, y, w, h) => {
@@ -170,7 +139,7 @@ test("no mapper", async () => {
   copy(data, 0x14C, 0x01);                      // ROM version: 1
   copy(data, 0x14D, 0x0a);                      // Header checksum: $0A
   copy(data, 0x14E, 0x16, 0xbf);                // Global checksum: $16BF
-  const client = new FakeClient(data);
+  const client = new DmgFakeClient(data);
 
   const cart = await dmg.detect(client);
   expect(cart.title).toStrictEqual("TETRIS");
@@ -242,7 +211,7 @@ test.each([
      header.splice(0x148, 1, 0x01);  // ROM size: 64 KiB (4 banks)
      header.splice(0x149, 1, 0x03);  // RAM size: 8 KiB (4 banks)
 
-     const cart = await dmg.detect(new FakeClient(header));
+     const cart = await dmg.detect(new DmgFakeClient(header));
      expect(cart.mapperName).toBe(mapper);
      expect(cart.romSize).toBe(romSize);
      expect(cart.romSegments).toStrictEqual(romSegments);
@@ -307,7 +276,7 @@ test.each([
   const header = new Array(0x180);
   header.splice(0x134, data.length, ...data);
 
-  const cart = await dmg.detect(new FakeClient(header));
+  const cart = await dmg.detect(new DmgFakeClient(header));
   expect(cart.title).toStrictEqual(title);
   expect(cart.code).toStrictEqual(code);
   expect(cart.cgbFlag).toStrictEqual(cgbFlag);

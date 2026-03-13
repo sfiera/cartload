@@ -3,32 +3,10 @@
 import cmds from "./gbxcart/cmds.js";
 import vars from "./gbxcart/vars.js";
 import * as gg from "./gg.js";
+import {copy, FakeClient, rand, zero} from "./testutil.js";
 import {latin1, Segment, unhex} from "./util.js";
 
-function rand(n, seed) {
-  seed = seed || 1;
-  const data = new Uint8Array(n);
-  data.forEach((_, i) => {
-    seed = (48271 * seed) % 2147483647;
-    data[i] = seed;
-  });
-  return data;
-}
-
-function zero(array, start, end) {
-  while (start < end) {
-    array[start++] = 0;
-  }
-}
-
-function copy(array, start, ...data) { data.forEach((x, i) => array[start + i] = x); }
-
-class FakeClient {
-  constructor(rom, ram) {
-    this.address = 0;
-    this.rom = new Uint8Array(rom);
-  }
-
+class GgFakeClient extends FakeClient {
   read(addr) {
     if (0 <= addr && addr < 0xC000) {
       return this.rom[addr] || 0;
@@ -38,19 +16,13 @@ class FakeClient {
 
   write(addr, value) {}
 
-  async command(cmd, ...args) {}
+  cmdDmgCartWrite(addr, value) { this.write(addr, value); }
 
-  async setVariable(variable, value) {
-    if (variable === vars.ADDRESS) {
-      this.address = value & 0xFFFF;
-    } else if (variable === vars.DMG_READ_METHOD) {
-    } else if (variable === vars.DMG_ACCESS_MODE) {
-    } else if (variable === vars.CART_MODE) {
-    } else if (variable === vars.DMG_READ_CS_PULSE) {
-    } else {
-      expect(variable).toEqual(null);
-    }
-  }
+  setAddress(value) { this.address = value & 0xFFFF; }
+  setDmgReadMethod(value) {}
+  setDmgAccessMode(value) {}
+  setCartMode(value) {}
+  setDmgReadCsPulse(value) {}
 
   async transfer(cmd, size, callback, ...args) {
     expect(cmd.id).toBe(cmds.DMG_CART_READ.id);
@@ -76,7 +48,7 @@ test("no mapper", async () => {
   copy(data, 0x7FFA, 0xBB, 0xAA);                        // Checksum: 0xAABB
   copy(data, 0x7FFC, ...unhex("123456"));                // Product code: 53412; Version: 6
   copy(data, 0x7FFF, ...unhex("5c"));                    // Region: GG Japan; Size: 32 KiB
-  const client = new FakeClient(data);
+  const client = new GgFakeClient(data);
 
   const cart = await gg.detect(client);
   expect(cart.title).toBe(null);

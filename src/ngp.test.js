@@ -4,6 +4,7 @@ import cmds from "./gbxcart/cmds.js";
 import vars from "./gbxcart/vars.js";
 import * as ngp from "./ngp.js";
 import {pack} from "./struct.js";
+import {copy, FakeClient, rand, zero} from "./testutil.js";
 import {latin1, Segment, unhex} from "./util.js";
 
 test("no mapper", async () => {
@@ -15,7 +16,7 @@ test("no mapper", async () => {
   copy(data, 0x23, 0x10);                                  // Compatibility: Color
   copy(data, 0x24, ...unhex("48414e41424920312e303220"));  // Title: HANABI 1.02
   zero(data, 0x30, 0x10);
-  const client = new FakeClient(data);
+  const client = new NgpFakeClient(data);
 
   const cart = await ngp.detect(client);
   expect(cart.header.length).toBe(0x40);
@@ -45,33 +46,14 @@ test.each([
   const header = new Array(0x180).fill(0);
   copy(header, 0x00, ...data);
 
-  const cart = await ngp.detect(new FakeClient(header));
+  const cart = await ngp.detect(new NgpFakeClient(header));
   expect(cart.trademark).toStrictEqual(trademark);
   expect(cart.valid.header).toStrictEqual(valid);
 });
 
-function rand(n, seed) {
-  seed = seed || 1;
-  const data = new Uint8Array(n);
-  data.forEach((_, i) => {
-    seed = (48271 * seed) % 2147483647;
-    data[i] = seed;
-  });
-  return data;
-}
-
-function zero(array, start, end) {
-  while (start < end) {
-    array[start++] = 0;
-  }
-}
-
-function copy(array, start, ...data) { data.forEach((x, i) => array[start + i] = x); }
-
-class FakeClient {
-  constructor(rom, ram) {
-    this.address = 0;
-    this.rom = new Uint8Array(rom);
+class NgpFakeClient extends FakeClient {
+  constructor(rom) {
+    super(rom);
     this.latch = 0;
     this.hiPins = 0;
   }
@@ -84,41 +66,27 @@ class FakeClient {
 
   write(addr, value) {}
 
-  async command(cmd, ...args) {
-    if (cmd === cmds.CART_PWR_ON) {
-    } else if (cmd === cmds.CART_PWR_OFF) {
-    } else if (cmd === cmds.DISABLE_PULLUPS) {
-    } else if (cmd === cmds.DMG_CART_WRITE) {
-      const [addr, value] = args;
-      this.write(addr, value);
-    } else if (cmd === cmds.SET_PIN) {
-      const [mask, enabled] = args;
-      if ((this.hiPins & 0b00010) && (mask & 0b00010) && !enabled) {
-        expect(mask & (0xFF << 5)).toBe(0);  // don't change address pins while latching
-        this.latch = (this.hiPins >>> 6) & 0b11111;
-      }
-      if (enabled) {
-        this.hiPins |= mask;
-      } else {
-        this.hiPins &= ~mask;
-      }
+  cmdCartPwrOn() {}
+  cmdCartPwrOff() {}
+  cmdDisablePullups() {}
+
+  cmdSetPin(mask, enabled) {
+    if ((this.hiPins & 0b00010) && (mask & 0b00010) && !enabled) {
+      expect(mask & (0xFF << 5)).toBe(0);  // don't change address pins while latching
+      this.latch = (this.hiPins >>> 6) & 0b11111;
+    }
+    if (enabled) {
+      this.hiPins |= mask;
     } else {
-      expect(cmd).toEqual(null);
+      this.hiPins &= ~mask;
     }
   }
 
-  async setVariable(variable, value) {
-    if (variable === vars.ADDRESS) {
-      this.address = value & 0xFFFF;
-    } else if (variable === vars.DMG_READ_METHOD) {
-    } else if (variable === vars.DMG_ACCESS_MODE) {
-    } else if (variable === vars.CART_MODE) {
-    } else if (variable === vars.DMG_READ_CS_PULSE) {
-      expect(value).toBe(0);
-    } else {
-      expect(variable).toEqual(null);
-    }
-  }
+  setAddress(value) { this.address = value & 0xFFFF; }
+  setDmgReadMethod(value) {}
+  setDmgAccessMode(value) {}
+  setCartMode(value) {}
+  setDmgReadCsPulse(value) { expect(value).toBe(0); }
 
   async transfer(cmd, size, callback, ...args) {
     expect(cmd.id).toBe(cmds.DMG_CART_READ.id);

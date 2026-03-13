@@ -1,0 +1,116 @@
+// Cartload is (c) 2026 by sfiera. Licensed under GPLv3.
+
+import cmds from "./gbxcart/cmds.js";
+import vars from "./gbxcart/vars.js";
+import * as ngp from "./ngp.js";
+import {latin1, Segment, unhex} from "./util.js";
+
+test("no mapper", async () => {
+  const data = rand(0x10000);
+  copy(data, 0, ...unhex("204c4943454e53454420425920534e4b20434f52504f524154494f4e"));
+  copy(data, 0x1C, 0x00, 0x01, 0x20, 0x00);                // Startup address: 0x200100
+  copy(data, 0x20, 0x52, 0x00);                            // Code: BCD 0052
+  copy(data, 0x22, 0x03);                                  // Sub-code: 3
+  copy(data, 0x23, 0x10);                                  // Compatibility: Color
+  copy(data, 0x24, ...unhex("48414e41424920312e303220"));  // Title: HANABI 1.02
+  zero(data, 0x30, 0x10);
+  const client = new FakeClient(data);
+
+  const cart = await ngp.detect(client);
+  expect(cart.header.length).toBe(0x40);
+  expect(cart.title).toBe("HANABI 1.02 ");
+  expect(cart.code).toBe("NEOP0052");
+  expect(cart.romSize).toBe(65536);
+  expect(cart.valid.trademark).toBe(true);
+});
+
+test.each([
+  {
+    data: unhex("204c4943454e53454420425920534e4b20434f52504f524154494f4e"),
+    trademark: " LICENSED BY SNK CORPORATION",
+    valid: true,
+  },
+  {
+    data: unhex("434f5059524947485420425920534e4b20434f52504f524154494f4e"),
+    trademark: "COPYRIGHT BY SNK CORPORATION",
+    valid: true,
+  },
+  {
+    data: unhex("504952415445442046524f4d20534e4b20434f52504f524154494f4e2e"),
+    trademark: "PIRATED FROM SNK CORPORATION",
+    valid: false,
+  },
+])("trademark $trademark", async ({data, trademark, valid}) => {
+  const header = new Array(0x180).fill(0);
+  copy(header, 0x00, ...data);
+
+  const cart = await ngp.detect(new FakeClient(header));
+  expect(cart.trademark).toStrictEqual(trademark);
+  expect(cart.valid.header).toStrictEqual(valid);
+});
+
+function rand(n, seed) {
+  seed = seed || 1;
+  const data = new Uint8Array(n);
+  data.forEach((_, i) => {
+    seed = (48271 * seed) % 2147483647;
+    data[i] = seed;
+  });
+  return data;
+}
+
+function zero(array, start, end) {
+  while (start < end) {
+    array[start++] = 0;
+  }
+}
+
+function copy(array, start, ...data) { data.forEach((x, i) => array[start + i] = x); }
+
+class FakeClient {
+  constructor(rom, ram) {
+    this.address = 0;
+    this.rom = new Uint8Array(rom);
+    this.latch = 0;
+  }
+
+  read(addr) { return this.rom[(this.latch << 16) | addr]; }
+
+  write(addr, value) {}
+
+  async command(cmd, ...args) {
+    if (cmd === cmds.CART_PWR_ON) {
+    } else if (cmd === cmds.CART_PWR_OFF) {
+    } else if (cmd === cmds.DISABLE_PULLUPS) {
+    } else if (cmd === cmds.DMG_CART_WRITE) {
+      const [addr, value] = args;
+      this.write(addr, value);
+    } else if (cmd === cmds.SET_PIN) {
+    } else {
+      expect(cmd).toEqual(null);
+    }
+  }
+
+  async setVariable(variable, value) {
+    if (variable === vars.ADDRESS) {
+      this.address = value & 0xFFFF;
+    } else if (variable === vars.DMG_READ_METHOD) {
+    } else if (variable === vars.DMG_ACCESS_MODE) {
+    } else if (variable === vars.CART_MODE) {
+    } else if (variable === vars.DMG_READ_CS_PULSE) {
+    } else {
+      expect(variable).toEqual(null);
+    }
+  }
+
+  async transfer(cmd, size, callback, ...args) {
+    expect(cmd.id).toBe(cmds.DMG_CART_READ.id);
+    expect(args).toHaveLength(0);
+    const result = new Uint8Array(size);
+    for (let i = 0; i < size; ++i) {
+      result[i] = this.read(this.address++);
+      this.address &= 0xFFFF;
+    }
+    return result;
+  }
+}

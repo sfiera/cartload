@@ -3,13 +3,14 @@
 import cmds from "./gbxcart/cmds.js";
 import vars from "./gbxcart/vars.js";
 import * as ngp from "./ngp.js";
+import {pack} from "./struct.js";
 import {latin1, Segment, unhex} from "./util.js";
 
 test("no mapper", async () => {
   const data = rand(0x10000);
   copy(data, 0, ...unhex("204c4943454e53454420425920534e4b20434f52504f524154494f4e"));
-  copy(data, 0x1C, 0x00, 0x01, 0x20, 0x00);                // Startup address: 0x200100
-  copy(data, 0x20, 0x52, 0x00);                            // Code: BCD 0052
+  copy(data, 0x1C, ...pack("<I", 0x200100));               // Startup address: 0x200100
+  copy(data, 0x20, ...pack("<H", 0x0052));                 // Code: BCD 0052
   copy(data, 0x22, 0x03);                                  // Sub-code: 3
   copy(data, 0x23, 0x10);                                  // Compatibility: Color
   copy(data, 0x24, ...unhex("48414e41424920312e303220"));  // Title: HANABI 1.02

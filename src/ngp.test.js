@@ -72,9 +72,14 @@ class FakeClient {
     this.address = 0;
     this.rom = new Uint8Array(rom);
     this.latch = 0;
+    this.hiPins = 0;
   }
 
-  read(addr) { return this.rom[(this.latch << 16) | addr]; }
+  read(addr) {
+    addr |= this.latch << 16;
+    addr &= this.rom.length - 1;
+    return this.rom[addr];
+  }
 
   write(addr, value) {}
 
@@ -86,6 +91,16 @@ class FakeClient {
       const [addr, value] = args;
       this.write(addr, value);
     } else if (cmd === cmds.SET_PIN) {
+      const [mask, enabled] = args;
+      if ((this.hiPins & 0b00010) && (mask & 0b00010) && !enabled) {
+        expect(mask & (0xFF << 5)).toBe(0);  // don't change address pins while latching
+        this.latch = (this.hiPins >>> 6) & 0b11111;
+      }
+      if (enabled) {
+        this.hiPins |= mask;
+      } else {
+        this.hiPins &= ~mask;
+      }
     } else {
       expect(cmd).toEqual(null);
     }
@@ -98,6 +113,7 @@ class FakeClient {
     } else if (variable === vars.DMG_ACCESS_MODE) {
     } else if (variable === vars.CART_MODE) {
     } else if (variable === vars.DMG_READ_CS_PULSE) {
+      expect(value).toBe(0);
     } else {
       expect(variable).toEqual(null);
     }
@@ -106,6 +122,8 @@ class FakeClient {
   async transfer(cmd, size, callback, ...args) {
     expect(cmd.id).toBe(cmds.DMG_CART_READ.id);
     expect(args).toHaveLength(0);
+    expect(this.hiPins & (0xFF << 5)).toBe(0);  // All address pins low
+    expect(this.hiPins & 0b10100).toBe(0);      // CS and RD low
     const result = new Uint8Array(size);
     for (let i = 0; i < size; ++i) {
       result[i] = this.read(this.address++);

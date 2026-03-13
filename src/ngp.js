@@ -99,7 +99,7 @@ export const detect = async (client) => {
       return new NeoGeoPocketCart(new Uint8Array(data), i * 0x10000);
     }
   }
-  return new NeoGeoPocketCart(new Uint8Array(data, 0x200000));
+  return new NeoGeoPocketCart(new Uint8Array(data), 0x200000);
 };
 
 export const connect = async (client) => {

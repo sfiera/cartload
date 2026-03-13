@@ -20,6 +20,13 @@ test("ints and uints", () => {
   expect(unpack("i", b(0x12, 0x34, 0x56, 0x78))).toStrictEqual([0x12345678]);
   expect(unpack("I", b(0x12, 0x34, 0x56, 0x78))).toStrictEqual([0x12345678]);
 
+  expect(pack("<B", 0x12)).toStrictEqual(b(0x12));
+  expect(unpack("<B", b(0x12))).toStrictEqual([0x12]);
+  expect(pack("<H", 0x1234)).toStrictEqual(b(0x34, 0x12));
+  expect(unpack("<H", b(0x34, 0x12))).toStrictEqual([0x1234]);
+  expect(pack("<I", 0x12345678)).toStrictEqual(b(0x78, 0x56, 0x34, 0x12));
+  expect(unpack("<I", b(0x78, 0x56, 0x34, 0x12))).toStrictEqual([0x12345678]);
+
   expect(pack("b", -1)).toStrictEqual(b(0xff));
   expect(unpack("b", b(0xff))).toStrictEqual([-1]);
   expect(pack("h", -1)).toStrictEqual(b(0xff, 0xff));
@@ -36,8 +43,10 @@ test("ints and uints", () => {
 test("bools", () => {
   expect(pack("?", false)).toStrictEqual(b(0x00));
   expect(pack("?", true)).toStrictEqual(b(0x01));
+  expect(pack("??", true, false)).toStrictEqual(b(0x01, 0x00));
   expect(unpack("?", b(0x00))).toStrictEqual([false]);
   expect(unpack("?", b(0x01))).toStrictEqual([true]);
+  expect(unpack("??", b(0x00, 0x01))).toStrictEqual([false, true]);
   expect(() => unpack("?", b(0x02))).toThrow(Error);
 })
 

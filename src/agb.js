@@ -40,13 +40,13 @@ class AgbCart {
 
     const decompress = (data) => {
       const bits = data[0] & 0x0F;
-      const outLen = data[1] | (data[2] << 8);
+      const [outLen] = unpack("<H", data.slice(1, 3));
       let nodeOffs = 5, outUnits = 0, outReady = 0;
       const out = [];
 
       for (let i = 6 + data[4] * 2;; i += 4) {
-        const inUnit =
-            data[i] | (data[i + 1] << 8) | (data[i ^ 2] << 16) | (data[(i ^ 2) + 1] << 24)
+        const inUnit = unpack("<H", data.slice(i, i + 2))[0] |
+            (unpack("<H", data.slice(i ^ 2, (i ^ 2) + 2)) << 16);
         for (let b = 31; b >= 0; b -= 1) {
           const node = data[nodeOffs];
           nodeOffs &= 0xFFFFFFFE;
@@ -56,7 +56,7 @@ class AgbCart {
             outReady |= (data[nodeOffs] & ((1 << bits) - 1)) << (32 - bits);
             outUnits += 1;
             if (outUnits == bits % 8 + 4) {
-              out.push(...pack("I", outReady).toReversed());
+              out.push(...pack("<I", outReady));
               if (out.length >= outLen) {
                 data.splice(0, data.length, ...out);
                 return;
@@ -70,15 +70,15 @@ class AgbCart {
     };
 
     const undiff = (data) => {
-      const outLen = data[1] | (data[2] << 8);
+      const [outLen] = unpack("<H", data.slice(1, 3));
       let pos = 4;
       let prev = 0;
       while (pos < outLen) {
         if (pos + 2 > data.length) {
           break;
         }
-        const next = (data[pos] + (data[pos + 1] << 8) + prev) & 0xFFFF;
-        data.splice(pos, 2, ...pack("H", next).toReversed());
+        const next = (unpack("<H", data.slice(pos, pos + 2))[0] + prev) & 0xFFFF;
+        data.splice(pos, 2, ...pack("<H", next));
         pos += 2;
         prev = next;
       }

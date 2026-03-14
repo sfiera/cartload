@@ -20,6 +20,10 @@ class NeoGeoPocketCart {
          this.header[0x20].toString(16).padStart(2, "0"));
     this.romSize = romSize;
 
+    this.compatibility = {
+      color: !!(this.header[0x23] & 0x10),
+    };
+
     this.valid = {
       trademark: [
         " LICENSED BY SNK CORPORATION",

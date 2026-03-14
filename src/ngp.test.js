@@ -24,6 +24,7 @@ test("no mapper", async () => {
   expect(cart.code).toBe("NEOP0052");
   expect(cart.romSize).toBe(65536);
   expect(cart.valid.trademark).toBe(true);
+  expect(cart.compatibility.color).toBe(true);
 });
 
 test.each([

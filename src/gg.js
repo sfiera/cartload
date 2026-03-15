@@ -27,7 +27,7 @@ class GameGearCart {
   constructor(data, romSize) {
     if (!(data instanceof Uint8Array)) {
       throw new TypeError("data must be Uint8Array")
-    } else if (data.length < 0x10) {
+    } else if (data.length < 0x4000) {
       throw new TypeError("data too short for header")
     }
     this.header = data.slice(0x3FF0, 0x4000);
@@ -60,6 +60,8 @@ class GameGearCart {
   }
 
   get extension() { return this.compatibility.sms ? "sms" : "gg"; }
+
+  async headerDigest() { return await window.crypto.subtle.digest("SHA-1", this.header); }
 
   logoImageUrl() {
     return makeImage(64, 8, (ctx) => {

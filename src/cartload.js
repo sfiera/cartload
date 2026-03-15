@@ -92,7 +92,7 @@ const action = async (fn) => {
   try {
     return await fn();
   } finally {
-    ids.forEach(id => elements[id].disabled = disabled[id];);
+    ids.forEach(id => elements[id].disabled = disabled[id]);
   };
 };
 
@@ -110,7 +110,7 @@ const run = async (client, platform, {signal}) => {
     return;
   }
 
-  console.log(hex(await window.crypto.subtle.digest("SHA-1", cart.header)));
+  console.log(hex(await cart.headerDigest()));
   showInfo(cart);
   signal.addEventListener("abort", () => showInfo(null));
 

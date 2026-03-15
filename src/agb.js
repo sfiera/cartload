@@ -15,10 +15,20 @@ const nintendoLogo = unhex(
 
 class AgbCart {
   constructor(data, romSize) {
+    if (!(data instanceof Uint8Array)) {
+      throw new TypeError("data must be Uint8Array")
+    }
+
+    this.code = latin1.decode(data.slice(0x0AC, 0x0B0));
+    const headerSize = this.code.startsWith("M") ? 0x100 : 0x180;
+    if (data.length < headerSize) {
+      throw new TypeError("data too short for header")
+    }
+    data = data.slice(0, headerSize);
+
     this.header = data;
     this.logo = data.slice(0x004, 0x0A0);
     this.title = latin1.decode(data.slice(0x0A0, 0x0AC));
-    this.code = latin1.decode(data.slice(0x0AC, 0x0B0));
     this.romSize = romSize;
     this.savSize = 0;
 
@@ -29,6 +39,8 @@ class AgbCart {
     };
     this.valid.header = this.valid.logo && this.valid.headerCksum;
   }
+
+  async headerDigest() { return await window.crypto.subtle.digest("SHA-1", this.header); }
 
   get mapperName() { return "None" }
 

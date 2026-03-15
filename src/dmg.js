@@ -36,7 +36,7 @@ class DmgCart {
     } else if (data.length < 0x180) {
       throw new TypeError("data too short for header")
     }
-    this.header = data;
+    this.header = data.slice(0, 0x180);
     this.features = {ram, battery, timer, rumble, sensor, camera, infrared, speaker};
 
     this.logo = data.slice(0x104, 0x134);
@@ -88,6 +88,8 @@ class DmgCart {
   get savSegments() {
     return ints(this.savSize >> 13).map((i) => new Segment(i * (1 << 13), (i + 1) * (1 << 13)));
   }
+
+  async headerDigest() { return await window.crypto.subtle.digest("SHA-1", this.header); }
 
   get extension() {
     return this.compatibility.cgb ? "gbc" : this.compatibility.sgb ? "sgb" : "gb";

@@ -80,6 +80,22 @@ const handleConnect = async platform => {
   };
 };
 
+const action = async (fn) => {
+  const elements = {};
+  const disabled = {};
+  const ids = ["disconnect", "back-up-rom", "back-up-sav"];
+  ids.forEach(id => {
+    elements[id] = document.getElementById(id);
+    disabled[id] = !!elements[id].disabled;
+    elements[id].disabled = true;
+  });
+  try {
+    return await fn();
+  } finally {
+    ids.forEach(id => elements[id].disabled = disabled[id];);
+  };
+};
+
 const run = async (client, platform, {signal}) => {
   let cart = null;
   try {
@@ -98,20 +114,35 @@ const run = async (client, platform, {signal}) => {
   showInfo(cart);
   signal.addEventListener("abort", () => showInfo(null));
 
-  const backUp = document.getElementById("back-up");
-  const handleBackUp = async () => {
-    backUp.disabled = true;
-    const data = await cart.backUpRom(client, len => showProgress(len, cart.romSize));
-    console.log(hex(await window.crypto.subtle.digest("SHA-1", data)));
-    downloadUrl(`${cart.title || cart.code || "ROM"}.${cart.extension}`, await toDataUrl(data));
-    backUp.disabled = false;
+  const disconnect = document.getElementById("disconnect");
+  const backUpRom = document.getElementById("back-up-rom");
+  const backUpSav = document.getElementById("back-up-sav");
+
+  const handleBackUpRom = async () => {
+    await action(async () => {
+      const data = await cart.backUpRom(client, len => showProgress(len, cart.romSize));
+      console.log(hex(await window.crypto.subtle.digest("SHA-1", data)));
+      downloadUrl(`${cart.title || cart.code || "ROM"}.${cart.extension}`, await toDataUrl(data));
+    });
   };
-  backUp.disabled = false;
-  backUp.addEventListener("click", handleBackUp, {signal});
-  signal.addEventListener("abort", () => backUp.disabled = true);
+  backUpRom.disabled = false;
+  backUpRom.addEventListener("click", handleBackUpRom, {signal});
+  signal.addEventListener("abort", () => backUpRom.disabled = true);
+
+  if (cart.canBackUpSav) {
+    const handleBackUpSav = async () => {
+      await action(async () => {
+        const data = await cart.backUpSav(client, len => showProgress(len, cart.savSize));
+        console.log(hex(await window.crypto.subtle.digest("SHA-1", data)));
+        downloadUrl(`${cart.title || cart.code || "ROM"}.sav`, await toDataUrl(data));
+      });
+    };
+    backUpSav.disabled = false;
+    backUpSav.addEventListener("click", handleBackUpSav, {signal});
+    signal.addEventListener("abort", () => backUpSav.disabled = true);
+  }
 
   const {promise, resolve} = Promise.withResolvers();
-  const disconnect = document.getElementById("disconnect");
   disconnect.disabled = false;
   disconnect.addEventListener("click", () => resolve(), {signal});
   signal.addEventListener("abort", () => disconnect.disabled = true);

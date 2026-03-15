@@ -90,7 +90,7 @@ class DmgCart {
   }
 
   get extension() {
-    return this.compatibility.cgb ? "cgb" : this.compatibility.sgb ? "sgb" : "gb";
+    return this.compatibility.cgb ? "gbc" : this.compatibility.sgb ? "sgb" : "gb";
   }
 
   drawImage(ctx) {
@@ -143,12 +143,54 @@ class DmgCart {
     }
   }
 
+  get canBackUpSav() { return !!this.savSize; }
+
+  async backUpSav(client, callback) {
+    await client.command(cmds.CART_PWR_ON);
+    try {
+      await client.command(cmds.DISABLE_PULLUPS);
+      await client.setVariable(vars.DMG_READ_METHOD, 1);
+      await client.setVariable(vars.DMG_ACCESS_MODE, 1);  // MODE_ROM_READ
+      await client.setVariable(vars.CART_MODE, 1);
+      await client.setVariable(vars.DMG_READ_CS_PULSE, 1);
+      let data = [];
+      const segs = this.savSegments;
+      await this.withRamEnabled(client, async () => {
+        for (const [i, seg] of segs.entries()) {
+          await this.selectRamSegment(client, seg);
+          data.push(...await client.transfer(cmds.DMG_CART_READ, seg.size, progress => {
+            if (callback) {
+              callback(seg.begin + progress);
+            }
+          }));
+        }
+      });
+      return new Uint8Array(data);
+    } finally {
+      await client.command(cmds.CART_PWR_OFF);
+    }
+  }
+
   async selectRomSegment(client, segment) {
     if (segment.begin == 0) {
       await client.setVariable(vars.ADDRESS, 0);
     } else {
       await client.command(cmds.DMG_CART_WRITE, 0x2000, segment.begin >> 14);
       await client.setVariable(vars.ADDRESS, 0x4000);
+    }
+  }
+
+  async selectRamSegment(client, segment) {
+    await client.command(cmds.DMG_CART_WRITE, 0x4000, segment.begin >> 13);
+    await client.setVariable(vars.ADDRESS, 0xA000);
+  }
+
+  async withRamEnabled(client, fn) {
+    await client.command(cmds.DMG_CART_WRITE, 0x0000, 0x0A);
+    try {
+      return await fn()
+    } finally {
+      await client.command(cmds.DMG_CART_WRITE, 0x0000, 0x00);
     }
   }
 };

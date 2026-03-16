@@ -1,6 +1,5 @@
 // Cartload is (c) 2026 by sfiera. Licensed under GPLv3.
 
-import db from "./db/agb.json" with {type : "json"};
 import cmds from "./gbxcart/cmds.js";
 import vars from "./gbxcart/vars.js";
 import {pack, unpack} from "./struct.js";
@@ -176,4 +175,4 @@ export const connect = async (client) => {
   await client.command(cmds.AGB_BOOTUP_SEQUENCE);
 };
 
-export {db};
+export const db = async () => (await import("./db/agb.json", {with: {type: "json"}})).default;

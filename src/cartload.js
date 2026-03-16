@@ -113,7 +113,8 @@ const run = async (client, platform, {signal}) => {
   }
 
   const digest = hex(await cart.headerDigest());
-  const dbEntry = platform.db[digest];
+  const db = await platform.db();
+  const dbEntry = db[digest];
   const title = dbEntry ? `${dbEntry.gn} ${dbEntry.ne}` : (cart.title || cart.code || "game");
   console.log(title, digest, dbEntry);
 

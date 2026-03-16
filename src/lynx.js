@@ -1,6 +1,5 @@
 // Cartload is (c) 2026 by sfiera. Licensed under GPLv3.
 
-import db from "./db/lynx.json" with {type : "json"};
 import cmds from "./gbxcart/cmds.js";
 import vars from "./gbxcart/vars.js";
 import {arrayEq, ints, latin1, makeImage, Segment} from "./util.js";
@@ -103,4 +102,4 @@ export const connect = async (client) => {
   }
 };
 
-export {db};
+export const db = async () => (await import("./db/lynx.json", {with: {type: "json"}})).default;

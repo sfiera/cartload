@@ -1,6 +1,5 @@
 // Cartload is (c) 2026 by sfiera. Licensed under GPLv3.
 
-import db from "./db/dmg.json" with {type : "json"};
 import cmds from "./gbxcart/cmds.js";
 import vars from "./gbxcart/vars.js";
 import {pack, unpack} from "./struct.js";
@@ -323,4 +322,4 @@ export const connect = async (client) => {
   await client.command(cmds.DMG_CART_WRITE, 0x0000, 0xFF);
 };
 
-export {db};
+export const db = async () => (await import("./db/dmg.json", {with: {type: "json"}})).default;

@@ -2,7 +2,7 @@
 
 import cmds from "./gbxcart/cmds.js";
 import vars from "./gbxcart/vars.js";
-import * as ngp from "./ngp.js";
+import ngp from "./ngp.js";
 import {pack} from "./struct.js";
 import {copy, FakeClient, rand, zero} from "./testutil.js";
 import {latin1, Segment, unhex} from "./util.js";

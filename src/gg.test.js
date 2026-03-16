@@ -2,7 +2,7 @@
 
 import cmds from "./gbxcart/cmds.js";
 import vars from "./gbxcart/vars.js";
-import * as gg from "./gg.js";
+import {default as gg, shuffleAddr, unshuffleAddr} from "./gg.js";
 import {copy, FakeClient, rand, zero} from "./testutil.js";
 import {latin1, Segment, unhex} from "./util.js";
 
@@ -29,7 +29,7 @@ class GgFakeClient extends FakeClient {
     expect(args).toHaveLength(0);
     const result = new Uint8Array(size);
     for (let i = 0; i < size; ++i) {
-      result[i] = this.read(gg.unshuffleAddr(this.address++));
+      result[i] = this.read(unshuffleAddr(this.address++));
       this.address &= 0xFFFF;
     }
     return result;
@@ -37,9 +37,9 @@ class GgFakeClient extends FakeClient {
 }
 
 test("address shuffling", () => {
-  expect(gg.shuffleAddr(0x0000)).toBe(0x0000);
-  expect(gg.shuffleAddr(0xFFFF)).toBe(0xFFFF);
-  expect(gg.shuffleAddr(0x1234)).toBe(0x1059);
+  expect(shuffleAddr(0x0000)).toBe(0x0000);
+  expect(shuffleAddr(0xFFFF)).toBe(0xFFFF);
+  expect(shuffleAddr(0x1234)).toBe(0x1059);
 });
 
 test("no mapper", async () => {

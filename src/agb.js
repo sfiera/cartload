@@ -139,7 +139,7 @@ const readHeader = async (client, {address, pullups}) => {
   return new Uint8Array(await client.transfer(cmds.AGB_CART_READ, 0x180, null));
 };
 
-export const detect = async (client) => {
+const detect = async (client) => {
   // Read ROM header with pullups enabled and disabled.
   // If results don’t match, bus is open and no cart is present.
   const hiHeader = await readHeader(client, {pullups: true});
@@ -163,7 +163,7 @@ export const detect = async (client) => {
   return new AgbCart(header, 0);
 };
 
-export const connect = async (client) => {
+const connect = async (client) => {
   await client.command(cmds.DISABLE_PULLUPS);
   await client.command(cmds.SET_MODE_AGB);
   await client.command(cmds.SET_VOLTAGE_3_3V);
@@ -175,4 +175,6 @@ export const connect = async (client) => {
   await client.command(cmds.AGB_BOOTUP_SEQUENCE);
 };
 
-export const db = async () => (await import("./db/agb.json", {with: {type: "json"}})).default;
+const db = async () => (await import("./db/agb.json", {with: {type: "json"}})).default;
+
+export default {connect, detect, db};

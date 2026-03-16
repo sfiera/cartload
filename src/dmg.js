@@ -294,7 +294,7 @@ dmgCarts[0xfd] = data => new Tama5(data);
 dmgCarts[0xfe] = data => new HuC3(data);
 dmgCarts[0xff] = data => new HuC1(data);
 
-export const detect = async (client) => {
+const detect = async (client) => {
   const header = new Uint8Array(await client.transfer(cmds.DMG_CART_READ, 0x180, null));
   if (header.every(x => x == 0)) {
     throw new Error("No cartridge detected");
@@ -306,7 +306,7 @@ export const detect = async (client) => {
   return cartType(header);
 };
 
-export const connect = async (client) => {
+const connect = async (client) => {
   await client.setVariable(vars.DMG_READ_METHOD, 1);
   await client.command(cmds.SET_MODE_DMG);
   await client.command(cmds.SET_VOLTAGE_5V);
@@ -322,4 +322,6 @@ export const connect = async (client) => {
   await client.command(cmds.DMG_CART_WRITE, 0x0000, 0xFF);
 };
 
-export const db = async () => (await import("./db/dmg.json", {with: {type: "json"}})).default;
+const db = async () => (await import("./db/dmg.json", {with: {type: "json"}})).default;
+
+export default {connect, detect, db};

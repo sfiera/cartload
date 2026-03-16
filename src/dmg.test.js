@@ -1,6 +1,6 @@
 // Cartload is (c) 2026 by sfiera. Licensed under GPLv3.
 
-import * as dmg from "./dmg.js";
+import dmg from "./dmg.js";
 import cmds from "./gbxcart/cmds.js";
 import vars from "./gbxcart/vars.js";
 import {copy, FakeClient, rand, zero} from "./testutil.js";

@@ -76,7 +76,7 @@ const shift = async (client, value) => {
   await client.command(cmds.SET_PIN, 0b10000, 1);              // /CS
 };
 
-export const detect = async (client) => {
+const detect = async (client) => {
   await client.setVariable(vars.ADDRESS, 0x0000);
   const data = await client.transfer(cmds.DMG_CART_READ, 0x200);
   if (data.every(x => x == 0)) {
@@ -85,7 +85,7 @@ export const detect = async (client) => {
   return new LynxCart(new Uint8Array(data));
 };
 
-export const connect = async (client) => {
+const connect = async (client) => {
   await client.setVariable(vars.DMG_READ_METHOD, 1);
   await client.command(cmds.SET_MODE_DMG);
   await client.command(cmds.SET_VOLTAGE_5V);
@@ -102,4 +102,6 @@ export const connect = async (client) => {
   }
 };
 
-export const db = async () => (await import("./db/lynx.json", {with: {type: "json"}})).default;
+const db = async () => (await import("./db/lynx.json", {with: {type: "json"}})).default;
+
+export default {connect, detect, db};

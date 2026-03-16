@@ -89,7 +89,7 @@ const latch = async (client, value) => {
   await client.command(cmds.SET_PIN, 0b111111111111111110100, 0);  // A0:15
 };
 
-export const detect = async (client) => {
+const detect = async (client) => {
   await client.setVariable(vars.ADDRESS, 0x0000);
   const data = await client.transfer(cmds.DMG_CART_READ, 0x40);
   if (data.every(x => x == 0)) {
@@ -107,7 +107,7 @@ export const detect = async (client) => {
   return new NeoGeoPocketCart(new Uint8Array(data), 0x200000);
 };
 
-export const connect = async (client) => {
+const connect = async (client) => {
   await client.setVariable(vars.DMG_READ_METHOD, 1);
   await client.command(cmds.SET_MODE_DMG);
   await client.command(cmds.SET_VOLTAGE_3_3V);
@@ -122,4 +122,6 @@ export const connect = async (client) => {
   await latch(client, 0);
 };
 
-export const db = async () => (await import("./db/ngp.json", {with: {type: "json"}})).default;
+const db = async () => (await import("./db/ngp.json", {with: {type: "json"}})).default;
+
+export default {connect, detect, db};

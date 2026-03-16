@@ -1,12 +1,12 @@
 // Cartload is (c) 2026 by sfiera. Licensed under GPLv3.
 
-import * as agb from "./agb.js";
+import agb from "./agb.js";
 import {Client} from "./client.js";
-import * as dmg from "./dmg.js";
+import dmg from "./dmg.js";
 import cmds from "./gbxcart/cmds.js";
-import * as gg from "./gg.js";
-import * as lynx from "./lynx.js";
-import * as ngp from "./ngp.js";
+import gg from "./gg.js";
+import lynx from "./lynx.js";
+import ngp from "./ngp.js";
 import {downloadUrl, hex, makeElement, toDataUrl, unitBytes} from "./util.js";
 
 const PLATFORMS = {

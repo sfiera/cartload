@@ -105,7 +105,7 @@ class GameGearCart {
   }
 };
 
-export const detect = async (client) => {
+const detect = async (client) => {
   await client.setVariable(vars.ADDRESS, 0x0000);
   const data = unshuffleData(await client.transfer(cmds.DMG_CART_READ, 0x10000, null))
                    .slice(0x4000, 0x8000);
@@ -125,7 +125,7 @@ export const detect = async (client) => {
   throw new Error("failed to detect cartridge size");
 };
 
-export const connect = async (client) => {
+const connect = async (client) => {
   await client.setVariable(vars.DMG_READ_METHOD, 1);
   await client.command(cmds.SET_MODE_DMG);
   await client.command(cmds.SET_VOLTAGE_5V);
@@ -143,4 +143,6 @@ export const connect = async (client) => {
   await client.command(cmds.DMG_CART_WRITE, BANK2, 2);
 };
 
-export const db = {};
+const db = {};
+
+export default {connect, detect, db};

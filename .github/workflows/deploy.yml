@@ -1,0 +1,27 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with: {submodules: true}
+    - run: cp -r src _site
+    - run: find _site -name '*test*' | xargs rm
+    - uses: actions/upload-pages-artifact@v4
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions: {pages: write, id-token: write}
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+    - uses: actions/deploy-pages@v4
+

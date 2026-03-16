@@ -9,29 +9,37 @@
     </style>
   </head>
   <body>
-    <select id="platform">
-      <option value="">-- Select Platform --</option>
-      <option value="dmg">Game Boy</option>
-      <option value="agb">Game Boy Advance</option>
-      <option value="gg">Game Gear</option>
-      <option value="ngp">Neo Geo Pocket</option>
-      <option value="lynx">Atari Lynx</option>
-      <!--
-      <option value="pce">PC-Engine/TG-16</option>
-      -->
-    </select>
-    <button id="connect" disabled="true">Connect</button>
-    <button id="disconnect" disabled="true">Disconnect</button>
-    <button id="back-up-rom" disabled="true">Back up ROM</button>
-    <button id="back-up-sav" disabled="true">Back up SAV</button>
-    <ul>
-      <li>Title: <span id="title"></span></li>
-      <li>Code: <span id="code"></span></li>
-      <li>Mapper: <span id="mapper"></span></li>
-      <li>ROM: <span id="rom"></span></li>
-      <li>Save: <span id="sav"></span></li>
-      <li>Logo: <span id="logo"></span></li>
-    </ul>
-    <progress id="progress" value="0" max="100">0%</progress>
+    <header>
+      <select id="platform">
+        <option value="">-- Select Platform --</option>
+        <option value="dmg">Game Boy</option>
+        <option value="agb">Game Boy Advance</option>
+        <option value="gg">Game Gear</option>
+        <option value="ngp">Neo Geo Pocket</option>
+        <option value="lynx">Atari Lynx</option>
+        <!--
+        <option value="pce">PC-Engine/TG-16</option>
+        -->
+      </select>
+      <button id="connect" disabled="true">Connect</button>
+      <button id="disconnect" disabled="true">Disconnect</button>
+      <button id="back-up-rom" disabled="true">Back up ROM</button>
+      <button id="back-up-sav" disabled="true">Back up SAV</button>
+    </header>
+    <main>
+      <ul>
+        <li>Title: <span id="title"></span></li>
+        <li>Code: <span id="code"></span></li>
+        <li>Mapper: <span id="mapper"></span></li>
+        <li>ROM: <span id="rom"></span></li>
+        <li>Save: <span id="sav"></span></li>
+        <li>Logo: <span id="logo"></span></li>
+      </ul>
+      <progress id="progress" value="0" max="100">0%</progress>
+    </main>
+    <footer>
+      ©2026– cartload.org.
+      <a href="http://github.com/sfiera/cartload">Source</a> (<a href="https://github.com/sfiera/cartload/blob/main/LICENSE">GPLv3</a>).
+    </footer>
   </body>
 </html>

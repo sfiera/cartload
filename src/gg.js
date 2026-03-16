@@ -23,7 +23,7 @@ const BANK0 = shuffleAddr(0xFFFD);
 const BANK1 = shuffleAddr(0xFFFE);
 const BANK2 = shuffleAddr(0xFFFF);
 
-class GameGearCart {
+export default class GameGearCart {
   constructor(data, romSize) {
     if (!(data instanceof Uint8Array)) {
       throw new TypeError("data must be Uint8Array")
@@ -103,46 +103,44 @@ class GameGearCart {
     }
     await client.setVariable(vars.ADDRESS, 0x0000);
   }
-};
 
-const detect = async (client) => {
-  await client.setVariable(vars.ADDRESS, 0x0000);
-  const data = unshuffleData(await client.transfer(cmds.DMG_CART_READ, 0x10000, null))
-                   .slice(0x4000, 0x8000);
-  if (data.every(x => x == 0)) {
-    throw new Error("No cartridge detected");
-  }
-
-  for (let bankCount = 2; bankCount < 128; bankCount <<= 1) {
-    await client.command(cmds.DMG_CART_WRITE, BANK1, bankCount + 1);
+  static async detect(client) {
     await client.setVariable(vars.ADDRESS, 0x0000);
-    const newData = unshuffleData(await client.transfer(cmds.DMG_CART_READ, 0x10000, null))
-                        .slice(0x4000, 0x8000);
-    if (arrayEq(newData, data)) {
-      return new GameGearCart(data, bankCount * 0x4000);
+    const data = unshuffleData(await client.transfer(cmds.DMG_CART_READ, 0x10000, null))
+                     .slice(0x4000, 0x8000);
+    if (data.every(x => x == 0)) {
+      throw new Error("No cartridge detected");
     }
+
+    for (let bankCount = 2; bankCount < 128; bankCount <<= 1) {
+      await client.command(cmds.DMG_CART_WRITE, BANK1, bankCount + 1);
+      await client.setVariable(vars.ADDRESS, 0x0000);
+      const newData = unshuffleData(await client.transfer(cmds.DMG_CART_READ, 0x10000, null))
+                          .slice(0x4000, 0x8000);
+      if (arrayEq(newData, data)) {
+        return new GameGearCart(data, bankCount * 0x4000);
+      }
+    }
+    throw new Error("failed to detect cartridge size");
   }
-  throw new Error("failed to detect cartridge size");
-};
 
-const connect = async (client) => {
-  await client.setVariable(vars.DMG_READ_METHOD, 1);
-  await client.command(cmds.SET_MODE_DMG);
-  await client.command(cmds.SET_VOLTAGE_5V);
-  await client.command(cmds.CART_PWR_ON);
-  await client.command(cmds.DISABLE_PULLUPS);
-  await client.setVariable(vars.DMG_READ_METHOD, 1);
-  await client.setVariable(vars.CART_MODE, 1);
-  await client.setVariable(vars.DMG_READ_CS_PULSE, 1);
-  await client.setVariable(vars.DMG_WRITE_CS_PULSE, 1);
-  await client.setVariable(vars.DMG_ACCESS_MODE, 1);
-  await client.setVariable(vars.ADDRESS, 0x0000);
-  await client.command(cmds.DMG_CART_WRITE, BANKCTRL, 0);
-  await client.command(cmds.DMG_CART_WRITE, BANK0, 0);
-  await client.command(cmds.DMG_CART_WRITE, BANK1, 1);
-  await client.command(cmds.DMG_CART_WRITE, BANK2, 2);
-};
+  static async connect(client) {
+    await client.setVariable(vars.DMG_READ_METHOD, 1);
+    await client.command(cmds.SET_MODE_DMG);
+    await client.command(cmds.SET_VOLTAGE_5V);
+    await client.command(cmds.CART_PWR_ON);
+    await client.command(cmds.DISABLE_PULLUPS);
+    await client.setVariable(vars.DMG_READ_METHOD, 1);
+    await client.setVariable(vars.CART_MODE, 1);
+    await client.setVariable(vars.DMG_READ_CS_PULSE, 1);
+    await client.setVariable(vars.DMG_WRITE_CS_PULSE, 1);
+    await client.setVariable(vars.DMG_ACCESS_MODE, 1);
+    await client.setVariable(vars.ADDRESS, 0x0000);
+    await client.command(cmds.DMG_CART_WRITE, BANKCTRL, 0);
+    await client.command(cmds.DMG_CART_WRITE, BANK0, 0);
+    await client.command(cmds.DMG_CART_WRITE, BANK1, 1);
+    await client.command(cmds.DMG_CART_WRITE, BANK2, 2);
+  }
 
-const db = {};
-
-export default {connect, detect, db};
+  static async db() { return {}; }
+}

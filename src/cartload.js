@@ -1,20 +1,20 @@
 // Cartload is (c) 2026 by sfiera. Licensed under GPLv3.
 
-import agb from "./agb.js";
-import {Client} from "./client.js";
-import dmg from "./dmg.js";
+import AgbCart from "./agb.js";
+import Client from "./client.js";
+import DmgCart from "./dmg.js";
 import cmds from "./gbxcart/cmds.js";
-import gg from "./gg.js";
-import lynx from "./lynx.js";
-import ngp from "./ngp.js";
+import GameGearCart from "./gg.js";
+import LynxCart from "./lynx.js";
+import NeoGeoPocketCart from "./ngp.js";
 import {downloadUrl, hex, makeElement, toDataUrl, unitBytes} from "./util.js";
 
 const PLATFORMS = {
-  dmg,
-  agb,
-  gg,
-  ngp,
-  lynx,
+  dmg: DmgCart,
+  agb: AgbCart,
+  gg: GameGearCart,
+  ngp: NeoGeoPocketCart,
+  lynx: LynxCart,
 };
 
 const showInfo = cart => {

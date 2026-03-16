@@ -13,7 +13,7 @@ const nintendoLogo = unhex(
     "97fbc08560d68025a963be03014e38e2f9a234ffbb3e03447800" +
     "90cb88113a9465c07c6387f03cafd625e48b380aac7221d4f807")
 
-class AgbCart {
+export default class AgbCart {
   constructor(data, romSize) {
     if (!(data instanceof Uint8Array)) {
       throw new TypeError("data must be Uint8Array")
@@ -131,50 +131,48 @@ class AgbCart {
       await client.command(cmds.CART_PWR_OFF);
     }
   }
-};
 
-const readHeader = async (client, {address, pullups}) => {
-  await client.command(pullups ? cmds.ENABLE_PULLUPS : cmds.DISABLE_PULLUPS);
-  await client.setVariable(vars.ADDRESS, (address || 0) / 2);
-  return new Uint8Array(await client.transfer(cmds.AGB_CART_READ, 0x180, null));
-};
+  static async detect(client) {
+    const readHeader = async ({address, pullups}) => {
+      await client.command(pullups ? cmds.ENABLE_PULLUPS : cmds.DISABLE_PULLUPS);
+      await client.setVariable(vars.ADDRESS, (address || 0) / 2);
+      return new Uint8Array(await client.transfer(cmds.AGB_CART_READ, 0x180, null));
+    };
 
-const detect = async (client) => {
-  // Read ROM header with pullups enabled and disabled.
-  // If results don’t match, bus is open and no cart is present.
-  const hiHeader = await readHeader(client, {pullups: true});
-  const loHeader = await readHeader(client, {pullups: false});
-  if (!arrayEq(hiHeader, loHeader)) {
-    throw new Error("No cartridge detected");
-  }
-  const header = hiHeader;
-
-  // Detect ROM size by scanning upwards for the header.
-  // Size is found if header reappears or bus is open.
-  for (let address = 0x8000; address <= 0x20000000; address <<= 1) {
-    const hiHeader = await readHeader(client, {address, pullups: true});
-    const loHeader = await readHeader(client, {address, pullups: false});
-    if (arrayEq(hiHeader, header) || !arrayEq(hiHeader, loHeader)) {
-      return new AgbCart(header, address);
+    // Read ROM header with pullups enabled and disabled.
+    // If results don’t match, bus is open and no cart is present.
+    const hiHeader = await readHeader({pullups: true});
+    const loHeader = await readHeader({pullups: false});
+    if (!arrayEq(hiHeader, loHeader)) {
+      throw new Error("No cartridge detected");
     }
+    const header = hiHeader;
+
+    // Detect ROM size by scanning upwards for the header.
+    // Size is found if header reappears or bus is open.
+    for (let address = 0x8000; address <= 0x20000000; address <<= 1) {
+      const hiHeader = await readHeader({address, pullups: true});
+      const loHeader = await readHeader({address, pullups: false});
+      if (arrayEq(hiHeader, header) || !arrayEq(hiHeader, loHeader)) {
+        return new AgbCart(header, address);
+      }
+    }
+
+    // Failed to detect ROM size.
+    return new AgbCart(header, 0);
   }
 
-  // Failed to detect ROM size.
-  return new AgbCart(header, 0);
+  static async connect(client) {
+    await client.command(cmds.DISABLE_PULLUPS);
+    await client.command(cmds.SET_MODE_AGB);
+    await client.command(cmds.SET_VOLTAGE_3_3V);
+    await client.setVariable(vars.AGB_READ_METHOD, 2);
+    await client.setVariable(vars.CART_MODE, 2);
+    await client.setVariable(vars.AGB_IRQ_ENABLED, 0);
+    await client.setVariable(vars.ADDRESS, 0x00000000);
+    await client.command(cmds.CART_PWR_ON);
+    await client.command(cmds.AGB_BOOTUP_SEQUENCE);
+  }
+
+  static async db() { return (await import("./db/agb.json", {with: {type: "json"}})).default; }
 };
-
-const connect = async (client) => {
-  await client.command(cmds.DISABLE_PULLUPS);
-  await client.command(cmds.SET_MODE_AGB);
-  await client.command(cmds.SET_VOLTAGE_3_3V);
-  await client.setVariable(vars.AGB_READ_METHOD, 2);
-  await client.setVariable(vars.CART_MODE, 2);
-  await client.setVariable(vars.AGB_IRQ_ENABLED, 0);
-  await client.setVariable(vars.ADDRESS, 0x00000000);
-  await client.command(cmds.CART_PWR_ON);
-  await client.command(cmds.AGB_BOOTUP_SEQUENCE);
-};
-
-const db = async () => (await import("./db/agb.json", {with: {type: "json"}})).default;
-
-export default {connect, detect, db};

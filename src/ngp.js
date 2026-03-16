@@ -4,7 +4,7 @@ import cmds from "./gbxcart/cmds.js";
 import vars from "./gbxcart/vars.js";
 import {arrayEq, ints, latin1, makeImage, Segment} from "./util.js";
 
-class NeoGeoPocketCart {
+export default class NeoGeoPocketCart {
   constructor(data, romSize) {
     if (!(data instanceof Uint8Array)) {
       throw new TypeError("data must be Uint8Array")
@@ -75,6 +75,41 @@ class NeoGeoPocketCart {
   }
 
   async selectRomSegment(client, segment) { await latch(client, segment.begin >> 16); }
+
+  static async detect(client) {
+    await client.setVariable(vars.ADDRESS, 0x0000);
+    const data = await client.transfer(cmds.DMG_CART_READ, 0x40);
+    if (data.every(x => x == 0)) {
+      throw new Error("No cartridge detected");
+    }
+
+    for (let i = 1; i <= 0x10; i <<= 1) {
+      await latch(client, i);
+      await client.setVariable(vars.ADDRESS, 0x0000);
+      const newData = await client.transfer(cmds.DMG_CART_READ, 0x40);
+      if (arrayEq(newData, data)) {
+        return new NeoGeoPocketCart(new Uint8Array(data), i * 0x10000);
+      }
+    }
+    return new NeoGeoPocketCart(new Uint8Array(data), 0x200000);
+  }
+
+  static async connect(client) {
+    await client.setVariable(vars.DMG_READ_METHOD, 1);
+    await client.command(cmds.SET_MODE_DMG);
+    await client.command(cmds.SET_VOLTAGE_3_3V);
+    await client.command(cmds.CART_PWR_ON);
+    await client.command(cmds.DISABLE_PULLUPS);
+    await client.setVariable(vars.DMG_READ_METHOD, 1);
+    await client.setVariable(vars.CART_MODE, 1);
+    await client.setVariable(vars.DMG_READ_CS_PULSE, 0);
+    await client.setVariable(vars.DMG_WRITE_CS_PULSE, 0);
+    await client.setVariable(vars.DMG_ACCESS_MODE, 1);
+    await client.setVariable(vars.ADDRESS, 0x0000);
+    await latch(client, 0);
+  }
+
+  static async db() { return (await import("./db/ngp.json", {with: {type: "json"}})).default; }
 };
 
 const latch = async (client, value) => {
@@ -88,40 +123,3 @@ const latch = async (client, value) => {
   await client.command(cmds.SET_PIN, 0b00010, 1);                  // CLK
   await client.command(cmds.SET_PIN, 0b111111111111111110100, 0);  // A0:15
 };
-
-const detect = async (client) => {
-  await client.setVariable(vars.ADDRESS, 0x0000);
-  const data = await client.transfer(cmds.DMG_CART_READ, 0x40);
-  if (data.every(x => x == 0)) {
-    throw new Error("No cartridge detected");
-  }
-
-  for (let i = 1; i <= 0x10; i <<= 1) {
-    await latch(client, i);
-    await client.setVariable(vars.ADDRESS, 0x0000);
-    const newData = await client.transfer(cmds.DMG_CART_READ, 0x40);
-    if (arrayEq(newData, data)) {
-      return new NeoGeoPocketCart(new Uint8Array(data), i * 0x10000);
-    }
-  }
-  return new NeoGeoPocketCart(new Uint8Array(data), 0x200000);
-};
-
-const connect = async (client) => {
-  await client.setVariable(vars.DMG_READ_METHOD, 1);
-  await client.command(cmds.SET_MODE_DMG);
-  await client.command(cmds.SET_VOLTAGE_3_3V);
-  await client.command(cmds.CART_PWR_ON);
-  await client.command(cmds.DISABLE_PULLUPS);
-  await client.setVariable(vars.DMG_READ_METHOD, 1);
-  await client.setVariable(vars.CART_MODE, 1);
-  await client.setVariable(vars.DMG_READ_CS_PULSE, 0);
-  await client.setVariable(vars.DMG_WRITE_CS_PULSE, 0);
-  await client.setVariable(vars.DMG_ACCESS_MODE, 1);
-  await client.setVariable(vars.ADDRESS, 0x0000);
-  await latch(client, 0);
-};
-
-const db = async () => (await import("./db/ngp.json", {with: {type: "json"}})).default;
-
-export default {connect, detect, db};

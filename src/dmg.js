@@ -19,7 +19,7 @@ const nintendoLogo = unhex(
     "ceed6666cc0d000b03730083000c000d0008111f8889000e" +
     "dccc6ee6ddddd999bbbb67636e0eecccdddc999fbbb9333e");
 
-class DmgCart {
+export default class DmgCart {
   constructor(data, {
     ram = false,
     battery = false,
@@ -195,6 +195,36 @@ class DmgCart {
       await client.command(cmds.DMG_CART_WRITE, 0x0000, 0x00);
     }
   }
+
+  static async detect(client) {
+    const header = new Uint8Array(await client.transfer(cmds.DMG_CART_READ, 0x180, null));
+    if (header.every(x => x == 0)) {
+      throw new Error("No cartridge detected");
+    }
+    let cartType = dmgCarts[header[0x147]];
+    if (typeof cartType === "undefined") {
+      cartType = dmgCarts[0];
+    }
+    return cartType(header);
+  }
+
+  static async connect(client) {
+    await client.setVariable(vars.DMG_READ_METHOD, 1);
+    await client.command(cmds.SET_MODE_DMG);
+    await client.command(cmds.SET_VOLTAGE_5V);
+    await client.command(cmds.CART_PWR_ON);
+    await client.command(cmds.DISABLE_PULLUPS);
+    await client.setVariable(vars.DMG_READ_METHOD, 1);
+    await client.setVariable(vars.CART_MODE, 1);
+    await client.setVariable(vars.DMG_READ_CS_PULSE, 1);
+    await client.setVariable(vars.DMG_WRITE_CS_PULSE, 0);
+    await client.setVariable(vars.DMG_ACCESS_MODE, 1);
+    await client.setVariable(vars.ADDRESS, 0x0000);
+    await client.command(cmds.DMG_MBC_RESET);
+    await client.command(cmds.DMG_CART_WRITE, 0x0000, 0xFF);
+  }
+
+  static async db() { return (await import("./db/dmg.json", {with: {type: "json"}})).default; }
 };
 
 class NoMapper extends DmgCart {
@@ -293,35 +323,3 @@ dmgCarts[0xfc] = data => new Camera(data);
 dmgCarts[0xfd] = data => new Tama5(data);
 dmgCarts[0xfe] = data => new HuC3(data);
 dmgCarts[0xff] = data => new HuC1(data);
-
-const detect = async (client) => {
-  const header = new Uint8Array(await client.transfer(cmds.DMG_CART_READ, 0x180, null));
-  if (header.every(x => x == 0)) {
-    throw new Error("No cartridge detected");
-  }
-  let cartType = dmgCarts[header[0x147]];
-  if (typeof cartType === "undefined") {
-    cartType = dmgCarts[0];
-  }
-  return cartType(header);
-};
-
-const connect = async (client) => {
-  await client.setVariable(vars.DMG_READ_METHOD, 1);
-  await client.command(cmds.SET_MODE_DMG);
-  await client.command(cmds.SET_VOLTAGE_5V);
-  await client.command(cmds.CART_PWR_ON);
-  await client.command(cmds.DISABLE_PULLUPS);
-  await client.setVariable(vars.DMG_READ_METHOD, 1);
-  await client.setVariable(vars.CART_MODE, 1);
-  await client.setVariable(vars.DMG_READ_CS_PULSE, 1);
-  await client.setVariable(vars.DMG_WRITE_CS_PULSE, 0);
-  await client.setVariable(vars.DMG_ACCESS_MODE, 1);
-  await client.setVariable(vars.ADDRESS, 0x0000);
-  await client.command(cmds.DMG_MBC_RESET);
-  await client.command(cmds.DMG_CART_WRITE, 0x0000, 0xFF);
-};
-
-const db = async () => (await import("./db/dmg.json", {with: {type: "json"}})).default;
-
-export default {connect, detect, db};

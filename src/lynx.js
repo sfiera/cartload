@@ -4,7 +4,7 @@ import cmds from "./gbxcart/cmds.js";
 import vars from "./gbxcart/vars.js";
 import {arrayEq, ints, latin1, makeImage, Segment} from "./util.js";
 
-class LynxCart {
+export default class LynxCart {
   constructor(data) {
     if (!(data instanceof Uint8Array)) {
       throw new TypeError("data must be Uint8Array")
@@ -67,6 +67,34 @@ class LynxCart {
       await client.command(cmds.CART_PWR_OFF);
     }
   }
+
+  static async detect(client) {
+    await client.setVariable(vars.ADDRESS, 0x0000);
+    const data = await client.transfer(cmds.DMG_CART_READ, 0x200);
+    if (data.every(x => x == 0)) {
+      throw new Error("No cartridge detected");
+    }
+    return new LynxCart(new Uint8Array(data));
+  }
+
+  static async connect(client) {
+    await client.setVariable(vars.DMG_READ_METHOD, 1);
+    await client.command(cmds.SET_MODE_DMG);
+    await client.command(cmds.SET_VOLTAGE_5V);
+    await client.command(cmds.CART_PWR_ON);
+    await client.command(cmds.DISABLE_PULLUPS);
+    await client.setVariable(vars.DMG_READ_METHOD, 1);
+    await client.setVariable(vars.CART_MODE, 1);
+    await client.setVariable(vars.DMG_READ_CS_PULSE, 0);
+    await client.setVariable(vars.DMG_WRITE_CS_PULSE, 0);
+    await client.setVariable(vars.DMG_ACCESS_MODE, 1);
+    await client.setVariable(vars.ADDRESS, 0x0000);
+    for (const _ of ints(8)) {
+      await shift(client, 0);
+    }
+  }
+
+  static async db() { return (await import("./db/lynx.json", {with: {type: "json"}})).default; }
 };
 
 const shift = async (client, value) => {
@@ -75,33 +103,3 @@ const shift = async (client, value) => {
   await client.command(cmds.SET_PIN, 0b10000, 0);              // /CS
   await client.command(cmds.SET_PIN, 0b10000, 1);              // /CS
 };
-
-const detect = async (client) => {
-  await client.setVariable(vars.ADDRESS, 0x0000);
-  const data = await client.transfer(cmds.DMG_CART_READ, 0x200);
-  if (data.every(x => x == 0)) {
-    throw new Error("No cartridge detected");
-  }
-  return new LynxCart(new Uint8Array(data));
-};
-
-const connect = async (client) => {
-  await client.setVariable(vars.DMG_READ_METHOD, 1);
-  await client.command(cmds.SET_MODE_DMG);
-  await client.command(cmds.SET_VOLTAGE_5V);
-  await client.command(cmds.CART_PWR_ON);
-  await client.command(cmds.DISABLE_PULLUPS);
-  await client.setVariable(vars.DMG_READ_METHOD, 1);
-  await client.setVariable(vars.CART_MODE, 1);
-  await client.setVariable(vars.DMG_READ_CS_PULSE, 0);
-  await client.setVariable(vars.DMG_WRITE_CS_PULSE, 0);
-  await client.setVariable(vars.DMG_ACCESS_MODE, 1);
-  await client.setVariable(vars.ADDRESS, 0x0000);
-  for (const _ of ints(8)) {
-    await shift(client, 0);
-  }
-};
-
-const db = async () => (await import("./db/lynx.json", {with: {type: "json"}})).default;
-
-export default {connect, detect, db};

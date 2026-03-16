@@ -7,7 +7,7 @@ import {latin1} from "./util.js";
 
 const MAX_TRANSFER_SIZE = 64;
 
-export const Client = class {
+export default class Client {
   constructor(port) {
     this.reader = port.readable.getReader();
     this.writer = port.writable.getWriter();

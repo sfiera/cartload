@@ -142,3 +142,5 @@ export const connect = async (client) => {
   await client.command(cmds.DMG_CART_WRITE, BANK1, 1);
   await client.command(cmds.DMG_CART_WRITE, BANK2, 2);
 };
+
+export const db = {};

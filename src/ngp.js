@@ -122,3 +122,5 @@ export const connect = async (client) => {
   await client.setVariable(vars.ADDRESS, 0x0000);
   await latch(client, 0);
 };
+
+export const db = {};

@@ -110,7 +110,11 @@ const run = async (client, platform, {signal}) => {
     return;
   }
 
-  console.log(hex(await cart.headerDigest()));
+  const digest = hex(await cart.headerDigest());
+  const dbEntry = platform.db[digest];
+  const title = dbEntry ? `${dbEntry.gn} ${dbEntry.ne}` : (cart.title || cart.code || "game");
+  console.log(title, digest, dbEntry);
+
   showInfo(cart);
   signal.addEventListener("abort", () => showInfo(null));
 
@@ -122,7 +126,7 @@ const run = async (client, platform, {signal}) => {
     await action(async () => {
       const data = await cart.backUpRom(client, len => showProgress(len, cart.romSize));
       console.log(hex(await window.crypto.subtle.digest("SHA-1", data)));
-      downloadUrl(`${cart.title || cart.code || "ROM"}.${cart.extension}`, await toDataUrl(data));
+      downloadUrl(`${title}.${cart.extension}`, await toDataUrl(data));
     });
   };
   backUpRom.disabled = false;
@@ -134,7 +138,7 @@ const run = async (client, platform, {signal}) => {
       await action(async () => {
         const data = await cart.backUpSav(client, len => showProgress(len, cart.savSize));
         console.log(hex(await window.crypto.subtle.digest("SHA-1", data)));
-        downloadUrl(`${cart.title || cart.code || "ROM"}.sav`, await toDataUrl(data));
+        downloadUrl(`${title}.sav`, await toDataUrl(data));
       });
     };
     backUpSav.disabled = false;

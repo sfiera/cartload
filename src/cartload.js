@@ -5,6 +5,7 @@ import {Client} from "./client.js";
 import * as dmg from "./dmg.js";
 import cmds from "./gbxcart/cmds.js";
 import * as gg from "./gg.js";
+import * as lynx from "./lynx.js";
 import * as ngp from "./ngp.js";
 import {downloadUrl, hex, makeElement, toDataUrl, unitBytes} from "./util.js";
 
@@ -13,6 +14,7 @@ const PLATFORMS = {
   agb,
   gg,
   ngp,
+  lynx,
 };
 
 const showInfo = cart => {

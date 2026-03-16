@@ -1,5 +1,6 @@
 // Cartload is (c) 2026 by sfiera. Licensed under GPLv3.
 
+import db from "./db/lynx.json" with {type : "json"};
 import cmds from "./gbxcart/cmds.js";
 import vars from "./gbxcart/vars.js";
 import {arrayEq, ints, latin1, makeImage, Segment} from "./util.js";
@@ -45,7 +46,7 @@ class LynxCart {
       let acc = 0;
       let total = 0;
       for (let b of deBruijn) {
-        for (let i = 0; i < 8; ++i) {
+        for (const _ of ints(8)) {
           await shift(client, b & 1);
           acc = (b & 1) | ((acc << 1) & 0xFF);
           b >>>= 1;
@@ -59,7 +60,7 @@ class LynxCart {
         }
       };
       const data = [];
-      for (let i = 0; i < 256; ++i) {
+      for (const i of ints(256)) {
         data.push(...banks[i]);
       }
       return new Uint8Array(data);
@@ -97,14 +98,9 @@ export const connect = async (client) => {
   await client.setVariable(vars.DMG_WRITE_CS_PULSE, 0);
   await client.setVariable(vars.DMG_ACCESS_MODE, 1);
   await client.setVariable(vars.ADDRESS, 0x0000);
-  await shift(client, 0);
-  await shift(client, 0);
-  await shift(client, 0);
-  await shift(client, 0);
-  await shift(client, 0);
-  await shift(client, 0);
-  await shift(client, 0);
-  await shift(client, 1);
+  for (const _ of ints(8)) {
+    await shift(client, 0);
+  }
 };
 
-export const db = {};
+export {db};

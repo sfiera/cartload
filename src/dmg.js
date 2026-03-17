@@ -82,13 +82,6 @@ export default class DmgCart {
     this.valid.header = this.valid.logo && this.valid.headerCksum;
   }
 
-  get romSegments() {
-    return ints(this.romSize >> 14).map((i) => new Segment(i * (1 << 14), (i + 1) * (1 << 14)));
-  }
-  get savSegments() {
-    return ints(this.savSize >> 13).map((i) => new Segment(i * (1 << 13), (i + 1) * (1 << 13)));
-  }
-
   async headerDigest() { return await window.crypto.subtle.digest("SHA-1", this.header); }
 
   get extension() {
@@ -122,6 +115,7 @@ export default class DmgCart {
   logoImageUrl() { return makeImage(48, 8, ctx => this.drawImage(ctx)); }
 
   async backUpRom(client, callback) {
+    callback ||= () => {};
     await client.command(cmds.CART_PWR_ON);
     try {
       await client.command(cmds.DISABLE_PULLUPS);
@@ -131,13 +125,9 @@ export default class DmgCart {
       await client.setVariable(vars.DMG_READ_CS_PULSE, 1);
       let data = [];
       const segs = this.romSegments;
-      for (const [i, seg] of segs.entries()) {
-        await this.selectRomSegment(client, seg);
-        data.push(...await client.transfer(cmds.DMG_CART_READ, seg.size, progress => {
-          if (callback) {
-            callback(seg.begin + progress);
-          }
-        }));
+      for (const seg of segs) {
+        data.push(...await this.transferRomSegment(
+            client, seg, progress => callback(seg.begin + progress)));
       }
       return new Uint8Array(data);
     } finally {
@@ -148,6 +138,7 @@ export default class DmgCart {
   get canBackUpSav() { return !!this.savSize; }
 
   async backUpSav(client, callback) {
+    callback ||= () => {};
     await client.command(cmds.CART_PWR_ON);
     try {
       await client.command(cmds.DISABLE_PULLUPS);
@@ -157,40 +148,40 @@ export default class DmgCart {
       await client.setVariable(vars.DMG_READ_CS_PULSE, 1);
       let data = [];
       const segs = this.savSegments;
-      await this.withRamEnabled(client, async () => {
-        for (const [i, seg] of segs.entries()) {
-          await this.selectRamSegment(client, seg);
-          data.push(...await client.transfer(cmds.DMG_CART_READ, seg.size, progress => {
-            if (callback) {
-              callback(seg.begin + progress);
-            }
-          }));
-        }
-      });
+      for (const seg of segs) {
+        data.push(...await this.transferSavSegment(
+            client, seg, progress => callback(seg.begin + progress)));
+      }
       return new Uint8Array(data);
     } finally {
       await client.command(cmds.CART_PWR_OFF);
     }
   }
 
-  async selectRomSegment(client, segment) {
+  get romSegments() {
+    return ints(this.romSize >> 14).map((i) => new Segment(i * (1 << 14), (i + 1) * (1 << 14)));
+  }
+
+  async transferRomSegment(client, segment, progress, ...args) {
     if (segment.begin == 0) {
       await client.setVariable(vars.ADDRESS, 0);
     } else {
       await client.command(cmds.DMG_CART_WRITE, 0x2000, segment.begin >> 14);
       await client.setVariable(vars.ADDRESS, 0x4000);
     }
+    return await client.transfer(cmds.DMG_CART_READ, segment.size, progress, ...args);
   }
 
-  async selectRamSegment(client, segment) {
-    await client.command(cmds.DMG_CART_WRITE, 0x4000, segment.begin >> 13);
-    await client.setVariable(vars.ADDRESS, 0xA000);
+  get savSegments() {
+    return ints(this.savSize >> 13).map((i) => new Segment(i * (1 << 13), (i + 1) * (1 << 13)));
   }
 
-  async withRamEnabled(client, fn) {
+  async transferSavSegment(client, segment, progress, ...args) {
     await client.command(cmds.DMG_CART_WRITE, 0x0000, 0x0A);
     try {
-      return await fn()
+      await client.command(cmds.DMG_CART_WRITE, 0x4000, segment.begin >> 13);
+      await client.setVariable(vars.ADDRESS, 0xA000);
+      return await client.transfer(cmds.DMG_CART_READ, segment.size, progress, ...args);
     } finally {
       await client.command(cmds.DMG_CART_WRITE, 0x0000, 0x00);
     }

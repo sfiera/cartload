@@ -7,14 +7,39 @@ import {copy, FakeClient, rand, zero} from "./testutil.js";
 import {latin1, Segment, unhex} from "./util.js";
 
 class GgFakeClient extends FakeClient {
-  read(addr) {
-    if (0 <= addr && addr < 0xC000) {
-      return this.rom[addr] || 0;
-    }
-    return 0xFF;
+  constructor(rom) {
+    super(rom);
+    this.banks = [0, 1, 2];
   }
 
-  write(addr, value) {}
+  read(addr) {
+    const bank = this.banks[addr >>> 14];
+    if (typeof bank !== "number") {
+      return 0xFF;
+    }
+    addr &= 0x3FFF;
+    addr |= bank << 14;
+    addr &= this.rom.length - 1;
+    return this.rom[addr];
+  }
+
+  write(addr, value) {
+    addr = unshuffleAddr(addr);
+    switch (addr) {
+      case 0xFFFC:
+        expect(value).toBe(0);
+        break;
+      case 0xFFFD:
+        this.banks[0] = value;
+        break;
+      case 0xFFFE:
+        this.banks[1] = value;
+        break;
+      case 0xFFFF:
+        this.banks[2] = value;
+        break;
+    }
+  }
 
   cmdCartPwrOn(addr) {}
   cmdCartPwrOff(addr) {}
@@ -61,6 +86,14 @@ test("no mapper", async () => {
   expect(cart.romSize).toBe(32768);
   expect(cart.valid.trademark).toBe(true);
 
+  const backup = await cart.backUpRom(client);
+  expect(backup).toEqual(data);
+});
+
+test("64k", async () => {
+  const data = rand(0x10000);
+  const client = new GgFakeClient(data);
+  const cart = await gg.detect(client);
   const backup = await cart.backUpRom(client);
   expect(backup).toEqual(data);
 });

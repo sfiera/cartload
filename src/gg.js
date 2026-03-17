@@ -6,22 +6,23 @@ import {pack, unpack} from "./struct.js";
 import {arrayEq, ints, latin1, makeImage, Segment} from "./util.js";
 
 const GGBITS = [12, 7, 6, 5, 4, 3, 2, 1, 0, 10, 15, 11, 9, 8, 13, 14];
-export const shuffleAddr = (addr) =>
-    GGBITS.entries().reduce((a, [i, b]) => a + (((addr >> b) & 1) << i), 0);
-export const unshuffleAddr = (addr) =>
-    GGBITS.entries().reduce((a, [i, b]) => a + (((addr >> i) & 1) << b), 0);
-const unshuffleData = (data) => {
-  var result = new Uint8Array(0x10000);
-  for (let addr = 0; addr < 0x10000; ++addr) {
-    result[addr] = data[shuffleAddr(addr)];
+export const addr = {
+  gearToBoy: (addr) => GGBITS.entries().reduce((a, [i, b]) => a + (((addr >> b) & 1) << i), 0),
+  boyToGear: (addr) => GGBITS.entries().reduce((a, [i, b]) => a + (((addr >> i) & 1) << b), 0),
+};
+const gearData = (boyData) => {
+  const gearData = new Uint8Array(0x10000);
+  for (let gearAddr = 0; gearAddr < 0x10000; ++gearAddr) {
+    const boyAddr = addr.gearToBoy(gearAddr)
+    gearData[gearAddr] = boyData[boyAddr];
   }
-  return result;
+  return gearData;
 };
 
-const BANKCTRL = shuffleAddr(0xFFFC);
-const BANK0 = shuffleAddr(0xFFFD);
-const BANK1 = shuffleAddr(0xFFFE);
-const BANK2 = shuffleAddr(0xFFFF);
+const BANKCTRL = addr.gearToBoy(0xFFFC);
+const BANK0 = addr.gearToBoy(0xFFFD);
+const BANK1 = addr.gearToBoy(0xFFFE);
+const BANK2 = addr.gearToBoy(0xFFFF);
 
 export default class GameGearCart {
   constructor(data, romSize) {
@@ -82,7 +83,7 @@ export default class GameGearCart {
       let data = [];
       const segs = this.romSegments;
       for (const seg of segs) {
-        const segData = unshuffleData(await this.transferRomSegment(
+        const segData = gearData(await this.transferRomSegment(
             client, seg, progress => callback(seg.begin + (progress * seg.size / 0x10000))));
         const begin = Math.min(seg.begin, 0x8000);
         data.push(...segData.slice(begin, begin + seg.size));
@@ -103,8 +104,8 @@ export default class GameGearCart {
 
   static async detect(client) {
     await client.setVariable(vars.ADDRESS, 0x0000);
-    const data = unshuffleData(await client.transfer(cmds.DMG_CART_READ, 0x10000, null))
-                     .slice(0x4000, 0x8000);
+    const data =
+        gearData(await client.transfer(cmds.DMG_CART_READ, 0x10000, null)).slice(0x4000, 0x8000);
     if (data.every(x => x == 0)) {
       throw new Error("No cartridge detected");
     }
@@ -112,8 +113,8 @@ export default class GameGearCart {
     for (let bankCount = 2; bankCount < 128; bankCount <<= 1) {
       await client.command(cmds.DMG_CART_WRITE, BANK1, bankCount + 1);
       await client.setVariable(vars.ADDRESS, 0x0000);
-      const newData = unshuffleData(await client.transfer(cmds.DMG_CART_READ, 0x10000, null))
-                          .slice(0x4000, 0x8000);
+      const newData =
+          gearData(await client.transfer(cmds.DMG_CART_READ, 0x10000, null)).slice(0x4000, 0x8000);
       if (arrayEq(newData, data)) {
         return new GameGearCart(data, bankCount * 0x4000);
       }

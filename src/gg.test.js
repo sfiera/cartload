@@ -2,7 +2,8 @@
 
 import cmds from "./gbxcart/cmds.js";
 import vars from "./gbxcart/vars.js";
-import {default as gg, shuffleAddr, unshuffleAddr} from "./gg.js";
+import {addr as addrConv, default as gg} from "./gg.js";
+import {pack} from "./struct.js";
 import {copy, FakeClient, rand, zero} from "./testutil.js";
 import {latin1, Segment, unhex} from "./util.js";
 
@@ -13,18 +14,24 @@ class GgFakeClient extends FakeClient {
   }
 
   read(addr) {
-    const bank = this.banks[addr >>> 14];
-    if (typeof bank !== "number") {
-      return 0xFF;
+    if (this.rom.length >= 0x10000) {
+      const bank = this.banks[addr >>> 14];
+      if (typeof bank !== "number") {
+        return 0xFF;
+      }
+      addr &= 0x3FFF;
+      addr |= bank << 14;
+      addr &= this.rom.length - 1;
+    } else {
+      if (addr >= this.rom.length) {
+        return 0xFF;
+      }
     }
-    addr &= 0x3FFF;
-    addr |= bank << 14;
-    addr &= this.rom.length - 1;
     return this.rom[addr];
   }
 
   write(addr, value) {
-    addr = unshuffleAddr(addr);
+    addr = addrConv.boyToGear(addr);
     switch (addr) {
       case 0xFFFC:
         expect(value).toBe(0);
@@ -57,7 +64,7 @@ class GgFakeClient extends FakeClient {
     expect(args).toHaveLength(0);
     const result = new Uint8Array(size);
     for (let i = 0; i < size; ++i) {
-      result[i] = this.read(unshuffleAddr(this.address++));
+      result[i] = this.read(addrConv.boyToGear(this.address++));
       this.address &= 0xFFFF;
     }
     return result;
@@ -65,16 +72,19 @@ class GgFakeClient extends FakeClient {
 }
 
 test("address shuffling", () => {
-  expect(shuffleAddr(0x0000)).toBe(0x0000);
-  expect(shuffleAddr(0xFFFF)).toBe(0xFFFF);
-  expect(shuffleAddr(0x1234)).toBe(0x1059);
+  expect(addrConv.gearToBoy(0x0000)).toBe(0x0000);
+  expect(addrConv.gearToBoy(0xFFFF)).toBe(0xFFFF);
+  expect(addrConv.gearToBoy(0x1234)).toBe(0x1059);
+  expect(addrConv.boyToGear(0x0000)).toBe(0x0000);
+  expect(addrConv.boyToGear(0xFFFF)).toBe(0xFFFF);
+  expect(addrConv.boyToGear(0x1059)).toBe(0x1234);
 });
 
-test("no mapper", async () => {
+test("header", async () => {
   const data = rand(0x8000);
   copy(data, 0x7FF0, ...unhex("544d5220534547410000"));  // "TMR SEGA"
   copy(data, 0x7FFA, 0xBB, 0xAA);                        // Checksum: 0xAABB
-  copy(data, 0x7FFC, ...unhex("123456"));                // Product code: 53412; Version: 6
+  copy(data, 0x7FFC, ...pack("<I", 0x563412));           // Product code: 53412; Version: 6
   copy(data, 0x7FFF, ...unhex("5c"));                    // Region: GG Japan; Size: 32 KiB
   const client = new GgFakeClient(data);
 
@@ -90,10 +100,18 @@ test("no mapper", async () => {
   expect(backup).toEqual(data);
 });
 
-test("64k", async () => {
-  const data = rand(0x10000);
+test.each([
+  {size: 0x8000},
+  // {size: 0xc000},
+  {size: 0x10000},
+  {size: 0x20000},
+])("size $size", async ({size}) => {
+  const data = rand(size);
   const client = new GgFakeClient(data);
+
   const cart = await gg.detect(client);
+  expect(cart.romSize).toBe(size);
+
   const backup = await cart.backUpRom(client);
   expect(backup).toEqual(data);
 });

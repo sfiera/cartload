@@ -3,6 +3,9 @@ Cartload
 
 .. contents::
 
+Overview
+--------
+
 Cartload_ is a GPLv3_ cartridge backup utility in the browser for multiple handheld systems. It can back up cartridges for:
 
 * Nintendo `Game Boy`_
@@ -22,6 +25,9 @@ Cartload_ is a GPLv3_ cartridge backup utility in the browser for multiple handh
 Requirements
 ------------
 
+Software
+````````
+
 Cartload uses the `Web Serial API`_, which is available in Blink-based browsers such as the desktop versions of:
 
 * Google Chrome_
@@ -33,7 +39,10 @@ Cartload uses the `Web Serial API`_, which is available in Blink-based browsers 
 .. _edge: https://www.microsoft.com/edge/
 .. _opera: https://www.opera.com/
 
-In addition, it uses the following hardware:
+Hardware
+````````
+
+Cartload uses the following hardware:
 
 * InsideGadgets `GBxCart RW`_ (required, for all systems)
 * Analogue AP_A01_ (optional, for Sega Game Gear)

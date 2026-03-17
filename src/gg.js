@@ -71,6 +71,7 @@ export default class GameGearCart {
   }
 
   async backUpRom(client, callback) {
+    callback ||= () => {};
     await client.command(cmds.CART_PWR_ON);
     try {
       await client.command(cmds.DISABLE_PULLUPS);
@@ -80,14 +81,9 @@ export default class GameGearCart {
       await client.setVariable(vars.DMG_READ_CS_PULSE, 1);
       let data = [];
       const segs = this.romSegments;
-      for (const [i, seg] of segs.entries()) {
-        await this.selectRomSegment(client, seg);
-        const segData =
-            unshuffleData(await client.transfer(cmds.DMG_CART_READ, 0x10000, progress => {
-              if (callback) {
-                callback(seg.begin + progress);
-              }
-            }));
+      for (const seg of segs) {
+        const segData = unshuffleData(await this.transferRomSegment(
+            client, seg, progress => callback(seg.begin + (progress * seg.size / 0x10000))));
         const begin = Math.min(seg.begin, 0x8000);
         data.push(...segData.slice(begin, begin + seg.size));
       }
@@ -97,11 +93,12 @@ export default class GameGearCart {
     }
   }
 
-  async selectRomSegment(client, segment) {
+  async transferRomSegment(client, segment, progress, ...args) {
     if (segment.begin >= 0x8000) {
       await client.command(cmds.DMG_CART_WRITE, BANK2, segment.begin >> 14);
     }
     await client.setVariable(vars.ADDRESS, 0x0000);
+    return await client.transfer(cmds.DMG_CART_READ, 0x10000, progress, ...args);
   }
 
   static async detect(client) {

@@ -16,6 +16,9 @@ class GgFakeClient extends FakeClient {
 
   write(addr, value) {}
 
+  cmdCartPwrOn(addr) {}
+  cmdCartPwrOff(addr) {}
+  cmdDisablePullups() {}
   cmdDmgCartWrite(addr, value) { this.write(addr, value); }
 
   setAddress(value) { this.address = value & 0xFFFF; }
@@ -58,6 +61,6 @@ test("no mapper", async () => {
   expect(cart.romSize).toBe(32768);
   expect(cart.valid.trademark).toBe(true);
 
-  // const backup = await cart.backUpRom(client);
-  // expect(backup).toEqual(data);
+  const backup = await cart.backUpRom(client);
+  expect(backup).toEqual(data);
 });

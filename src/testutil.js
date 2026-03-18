@@ -5,7 +5,19 @@ export class FakeClient {
   constructor(rom) {
     this.address = 0;
     this.rom = new Uint8Array(rom);
+    this.pullups = undefined;
+    this.on = false;
   }
+
+  openBus() {
+    expect(this.pullups).toBeDefined();
+    return this.pullups ? 0xFF : 0x00;
+  }
+
+  cmdCartPwrOn() { this.on = true; }
+  cmdCartPwrOff() { this.on = false; }
+  cmdEnablePullups() { this.pullups = true; }
+  cmdDisablePullups() { this.pullups = false; }
 
   async command(cmd, ...args) {
     for (const [key, cmd2] of Object.entries(cmds)) {

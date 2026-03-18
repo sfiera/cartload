@@ -17,14 +17,14 @@ class GgFakeClient extends FakeClient {
     if (this.rom.length >= 0x10000) {
       const bank = this.banks[addr >>> 14];
       if (typeof bank !== "number") {
-        return 0xFF;
+        return openBus();
       }
       addr &= 0x3FFF;
       addr |= bank << 14;
       addr &= this.rom.length - 1;
     } else {
       if (addr >= this.rom.length) {
-        return 0xFF;
+        return openBus();
       }
     }
     return this.rom[addr];
@@ -48,9 +48,6 @@ class GgFakeClient extends FakeClient {
     }
   }
 
-  cmdCartPwrOn(addr) {}
-  cmdCartPwrOff(addr) {}
-  cmdDisablePullups() {}
   cmdDmgCartWrite(addr, value) { this.write(addr, value); }
 
   setAddress(value) { this.address = value & 0xFFFF; }

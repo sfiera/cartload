@@ -50,15 +50,10 @@ class AgbFakeClient extends FakeClient {
     if (0 <= addr && addr < this.rom.length) {
       return this.rom[addr] || 0;
     }
-    return 0xFF;
+    return this.openBus();
   }
 
   write(addr, value) {}
-
-  cmdCartPwrOn() {}
-  cmdCartPwrOff() {}
-  cmdEnablePullups() {}
-  cmdDisablePullups() {}
 
   setAddress(value) { this.address = value & 0xFFFFFFFF; }
   setCartMode(value) {}

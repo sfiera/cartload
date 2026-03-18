@@ -67,10 +67,6 @@ class NgpFakeClient extends FakeClient {
 
   write(addr, value) {}
 
-  cmdCartPwrOn() {}
-  cmdCartPwrOff() {}
-  cmdDisablePullups() {}
-
   cmdSetPin(mask, enabled) {
     if ((this.hiPins & 0b00010) && (mask & 0b00010) && !enabled) {
       expect(mask & (0xFF << 5)).toBe(0);  // don't change address pins while latching

@@ -33,14 +33,11 @@ class DmgFakeClient extends FakeClient {
     } else if (0xA000 <= addr && addr < 0xC000) {
       return this.ram[addr] || 0;
     }
-    return 0xFF;
+    return this.openBus();
   }
 
   write(addr, value) {}
 
-  cmdCartPwrOn() {}
-  cmdCartPwrOff() {}
-  cmdDisablePullups() {}
   cmdDmgCartWrite(addr, value) { this.write(addr, value); }
 
   setAddress(value) { this.address = value & 0xFFFF; }
@@ -89,7 +86,7 @@ class FakeMBC1Client extends DmgFakeClient {
         return this.ram[addr % this.ram.length];
       }
     }
-    return 0xFF;
+    return this.openBus();
   }
 
   write(addr, value) {

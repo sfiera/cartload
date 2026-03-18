@@ -34,6 +34,7 @@ export default class LynxCart {
   }
 
   async backUpRom(client, callback) {
+    callback ||= () => {};
     const deBruijn = Uint8Array.fromBase64("AoOCQ0LDwiMyKjomNi4+KTk1LT2zsnPz8quurW/v/gE=");
     await client.command(cmds.CART_PWR_ON);
     try {
@@ -41,27 +42,21 @@ export default class LynxCart {
       await client.setVariable(vars.DMG_READ_METHOD, 1);
       await client.setVariable(vars.DMG_ACCESS_MODE, 1);  // MODE_ROM_READ
       await client.setVariable(vars.CART_MODE, 1);
-      const banks = {};
       let acc = 0;
       let total = 0;
+      const data = new Uint8Array(this.romSize);
       for (let b of deBruijn) {
         for (const _ of ints(8)) {
           await shift(client, b & 1);
           acc = (b & 1) | ((acc << 1) & 0xFF);
           b >>>= 1;
           await client.setVariable(vars.ADDRESS, 0x0000);
-          banks[acc] = await client.transfer(cmds.DMG_CART_READ, 0x200, progress => {
-            if (callback) {
-              callback(total + progress);
-            }
-          });
+          const chunk = await client.transfer(
+              cmds.DMG_CART_READ, 0x200, progress => callback(total + progress));
+          chunk.forEach((b, i) => data[(acc << 9) | i] = b);
           total += 0x200;
         }
       };
-      const data = [];
-      for (const i of ints(256)) {
-        data.push(...banks[i]);
-      }
       return new Uint8Array(data);
     } finally {
       await client.command(cmds.CART_PWR_OFF);

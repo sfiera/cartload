@@ -3,7 +3,7 @@
 import agb from "./agb.js";
 import cmds from "./gbxcart/cmds.js";
 import vars from "./gbxcart/vars.js";
-import {FakeClient} from "./testutil.js";
+import {FakeClient, rand} from "./testutil.js";
 import {unhex} from "./util.js";
 
 const logoBits = unhex(
@@ -45,8 +45,28 @@ test("decompress logo", async () => {
   expect(logo.map(row => row.map(x => tiles[x]).join("")).join("\n")).toEqual(logoGfx);
 });
 
+const KIB = 1024;
+const MIB = 1024 * KIB;
+
+test.each([
+  {size: 4},   // less than 16 MiB → detection by open bus
+  {size: 16},  // exactly 16 MiB → detection by repeated header
+  {size: 32},  // more than 16 MiB → detection by repeated header
+])("detect size $size MiB", async ({size}) => {
+  size *= MIB;
+  const data = rand(size);
+  const cart = await agb.detect(new AgbFakeClient(data));
+  expect(cart.romSize).toBe(size);
+});
+
 class AgbFakeClient extends FakeClient {
   read(addr) {
+    if (this.rom.length >= (16 * MIB)) {
+      addr &= this.rom.length - 1;
+    } else {
+      addr &= (16 * MIB) - 1;
+    }
+
     if (0 <= addr && addr < this.rom.length) {
       return this.rom[addr] || 0;
     }
@@ -55,7 +75,7 @@ class AgbFakeClient extends FakeClient {
 
   write(addr, value) {}
 
-  setAddress(value) { this.address = value & 0xFFFFFFFF; }
+  setAddress(value) { this.address = (value * 2) & 0xFFFFFFFF; }
   setCartMode(value) {}
 
   async transfer(cmd, size, callback, ...args) {

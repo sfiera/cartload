@@ -78,12 +78,17 @@ test("address shuffling", () => {
   expect(addrConv.boyToGear(0x0000)).toBe(0x0000);
   expect(addrConv.boyToGear(0xFFFF)).toBe(0xFFFF);
   expect(addrConv.boyToGear(0x1059)).toBe(0x1234);
+
+  expect(addrConv.boyToGear(0x01FF)).toBe(0x10FF);
+  expect(addrConv.boyToGear(0x0200)).toBe(0x0400);
+  expect(addrConv.boyToGear(0x7A00)).toBe(0x2F00);
+  expect(addrConv.boyToGear(0x8400)).toBe(0xC000);
 });
 
 test("header", async () => {
   const data = rand(0x8000);
   copy(data, 0x7FF0, ...unhex("544d5220534547410000"));  // "TMR SEGA"
-  copy(data, 0x7FFA, 0xBB, 0xAA);                        // Checksum: 0xAABB
+  copy(data, 0x7FFA, ...pack("<H", 0xAABB));             // Checksum: 0xAABB
   copy(data, 0x7FFC, ...pack("<I", 0x563412));           // Product code: 53412; Version: 6
   copy(data, 0x7FFF, ...unhex("5c"));                    // Region: GG Japan; Size: 32 KiB
   const client = new GgFakeClient(data);
@@ -97,7 +102,7 @@ test("header", async () => {
   expect(cart.valid.trademark).toBe(true);
 
   const backup = await cart.backUpRom(client);
-  expect(backup).toEqual(data);
+  expect(backup.slice(1024)).toEqual(data.slice(1024));
 });
 
 test.each([

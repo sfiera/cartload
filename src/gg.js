@@ -83,10 +83,8 @@ export default class GameGearCart {
       let data = [];
       const segs = this.romSegments;
       for (const seg of segs) {
-        const segData = gearData(await this.transferRomSegment(
-            client, seg, progress => callback(seg.begin + (progress * seg.size / 0x10000))));
-        const begin = Math.min(seg.begin, 0x8000);
-        data.push(...segData.slice(begin, begin + seg.size));
+        data.push(
+            ...await transferRomSegment(client, seg, progress => callback(seg.begin + progress)));
       }
       return new Uint8Array(data);
     } finally {
@@ -94,18 +92,10 @@ export default class GameGearCart {
     }
   }
 
-  async transferRomSegment(client, segment, progress, ...args) {
-    if (segment.begin >= 0x8000) {
-      await client.command(cmds.DMG_CART_WRITE, BANK2, segment.begin >> 14);
-    }
-    await client.setVariable(vars.ADDRESS, 0x0000);
-    return await client.transfer(cmds.DMG_CART_READ, 0x10000, progress, ...args);
-  }
-
   static async detect(client) {
     await client.setVariable(vars.ADDRESS, 0x0000);
-    const data =
-        gearData(await client.transfer(cmds.DMG_CART_READ, 0x10000, null)).slice(0x4000, 0x8000);
+    const seg = new Segment(0x4000, 0x8000);
+    const data = await transferRomSegment(client, seg, () => {});
     if (data.every(x => x == 0)) {
       throw new Error("No cartridge detected");
     }
@@ -113,8 +103,7 @@ export default class GameGearCart {
     for (let bankCount = 2; bankCount < 128; bankCount <<= 1) {
       await client.command(cmds.DMG_CART_WRITE, BANK1, bankCount + 1);
       await client.setVariable(vars.ADDRESS, 0x0000);
-      const newData =
-          gearData(await client.transfer(cmds.DMG_CART_READ, 0x10000, null)).slice(0x4000, 0x8000);
+      const newData = await transferRomSegment(client, seg, () => {});
       if (arrayEq(newData, data)) {
         return new GameGearCart(data, bankCount * 0x4000);
       }
@@ -141,4 +130,40 @@ export default class GameGearCart {
   }
 
   static async db() { return {}; }
+}
+
+const nextBit = (val) => {
+  let shift = 0;
+  while (val & (1 << shift)) {
+    ++shift;
+  }
+  return 1 << shift;
+};
+
+const transferRomSegment = async (client, segment, progress, ...args) => {
+  if (segment.begin >= 0x8000) {
+    await client.command(cmds.DMG_CART_WRITE, BANK2, segment.begin >> 14);
+  }
+
+  const chunkSize = 0x200;
+  const skipBits = addr.boyToGear(chunkSize - 1);  // 0x10FF
+  const incr = nextBit(skipBits);                  // 0x0100
+
+  const begin = Math.min(segment.begin, 0x8000);
+  let gearAddr = begin;
+  const data = new Uint8Array(0x10000);
+  while (gearAddr < Math.min(segment.end, 0xC000)) {
+    const boyAddr = addr.gearToBoy(gearAddr);
+    await client.setVariable(vars.ADDRESS, boyAddr);
+    const chunk = await client.transfer(cmds.DMG_CART_READ, chunkSize, progress, ...args);
+    for (const [i, b] of chunk.entries()) {
+      data[addr.boyToGear(boyAddr + i)] = b;
+    }
+    gearAddr += incr;
+    while (gearAddr & skipBits) {
+      gearAddr += (gearAddr & skipBits);
+    }
+  }
+
+  return data.slice(begin, begin + segment.size);
 }

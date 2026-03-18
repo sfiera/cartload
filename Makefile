@@ -1,9 +1,7 @@
-NODE_OPTIONS := "$(NODE_OPTIONS) --experimental-vm-modules"
+.PHONY: test
+test:
+	npm test
 
 .PHONY: serve
 serve:
 	python3 -m http.server -d src
-
-.PHONY: test
-test:
-	NODE_OPTIONS=$(NODE_OPTIONS) npm test

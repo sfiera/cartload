@@ -133,27 +133,21 @@ export default class AgbCart {
   }
 
   static async detect(client) {
-    const readHeader = async ({address, pullups}) => {
-      await client.command(pullups ? cmds.ENABLE_PULLUPS : cmds.DISABLE_PULLUPS);
+    await client.command(cmds.DISABLE_PULLUPS);
+    const readHeader = async address => {
       await client.setVariable(vars.ADDRESS, (address || 0) / 2);
       return new Uint8Array(await client.transfer(cmds.AGB_CART_READ, 0x180, null));
     };
 
-    // Read ROM header with pullups enabled and disabled.
-    // If results don’t match, bus is open and no cart is present.
-    const hiHeader = await readHeader({pullups: true});
-    const loHeader = await readHeader({pullups: false});
-    if (!arrayEq(hiHeader, loHeader)) {
+    const header = await readHeader(0);
+    if (header.every(x => x == 0)) {
       throw new Error("No cartridge detected");
     }
-    const header = hiHeader;
 
     // Detect ROM size by scanning upwards for the header.
-    // Size is found if header reappears or bus is open.
     for (let address = 0x8000; address <= 0x20000000; address <<= 1) {
-      const hiHeader = await readHeader({address, pullups: true});
-      const loHeader = await readHeader({address, pullups: false});
-      if (arrayEq(hiHeader, header) || !arrayEq(hiHeader, loHeader)) {
+      const newHeader = await readHeader(address);
+      if (arrayEq(newHeader, header) || newHeader.every(x => x == 0)) {
         return new AgbCart(header, address);
       }
     }

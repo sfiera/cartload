@@ -17,7 +17,8 @@ const PLATFORMS = {
   lynx: LynxCart,
 };
 
-const showInfo = cart => {
+const showInfo = (cart, dbEntry) => {
+  const detected = document.getElementById("detected");
   const title = document.getElementById("title");
   const code = document.getElementById("code");
   const mapper = document.getElementById("mapper");
@@ -26,6 +27,7 @@ const showInfo = cart => {
   const logo = document.getElementById("logo");
 
   if (cart) {
+    detected.replaceChildren(dbEntry ? `${dbEntry.gn} ${dbEntry.ne}` : "(unknown)");
     title.replaceChildren(cart.title || "(none)");
     code.replaceChildren(cart.code || "(none)");
     mapper.replaceChildren(cart.mapperName);
@@ -36,6 +38,7 @@ const showInfo = cart => {
     img.src = cart.logoImageUrl();
     logo.replaceChildren(img);
   } else {
+    detected.replaceChildren();
     title.replaceChildren();
     code.replaceChildren();
     mapper.replaceChildren();
@@ -118,7 +121,7 @@ const run = async (client, platform, {signal}) => {
   const title = dbEntry ? `${dbEntry.gn} ${dbEntry.ne}` : (cart.title || cart.code || "game");
   console.log(title, digest, dbEntry);
 
-  showInfo(cart);
+  showInfo(cart, dbEntry);
   signal.addEventListener("abort", () => showInfo(null));
 
   const disconnect = document.getElementById("disconnect");

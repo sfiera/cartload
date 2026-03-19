@@ -9,13 +9,20 @@ const MAX_TRANSFER_SIZE = 64;
 
 export default class Client {
   constructor(port) {
+    this.port = port;
     this.reader = port.readable.getReader();
     this.writer = port.writable.getWriter();
+  }
+
+  static async open(port) {
+    await port.open({baudRate: 1000000});
+    return new Client(port);
   }
 
   async close() {
     await this.reader.releaseLock();
     await this.writer.releaseLock();
+    await this.port.close();
   }
 
   async command(cmd, ...args) {

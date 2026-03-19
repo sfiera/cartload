@@ -68,9 +68,7 @@ const handleConnect = async platform => {
     })];
   }
 
-  const port = ports[0];
-  await port.open({baudRate: 1000000});
-  const client = new Client(port);
+  const client = await Client.open(ports[0]);
   console.log(await client.identify());
 
   try {
@@ -81,7 +79,6 @@ const handleConnect = async platform => {
     ctrl.abort();
     await client.command(cmds.CART_PWR_OFF);
     await client.close();
-    await port.close();
   };
 };
 

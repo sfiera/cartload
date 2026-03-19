@@ -14,6 +14,8 @@ export default {
   DMG_CART_WRITE: {id: 0xB2, reqFormat: "BIB", respFormat: "B"},
   DMG_CART_WRITE_SRAM: {id: 0xB3, reqFormat: "B", respFormat: "B"},
   DMG_MBC_RESET: {id: 0xB4, reqFormat: "B", respFormat: "B"},
+  DMG_MBC7_READ_EEPROM: {id: 0xB5, reqFormat: "B", respFormat: ""},
+  DMG_MBC7_WRITE_EEPROM: {id: 0xB6, reqFormat: "B", respFormat: "B"},
   AGB_CART_READ: {id: 0xC1, reqFormat: "B", respFormat: ""},
   AGB_CART_WRITE: {id: 0xC2, reqFormat: "BIB", respFormat: "B"},
   AGB_CART_READ_SRAM: {id: 0xC3, reqFormat: "B", respFormat: ""},

@@ -261,8 +261,25 @@ class MBC6 extends DmgCart {
 };
 
 class MBC7 extends DmgCart {
-  constructor(header, opts = {}) { super(header, opts); }
+  constructor(header, opts = {}) {
+    super(header, opts);
+    this.savSize = 0x100;
+  }
   get mapperName() { return "MBC7" }
+
+  get savSegments() { return [new Segment(0, this.savSize)]; }
+
+  async transferSavSegment(client, segment, progress, ...args) {
+    await client.command(cmds.DMG_CART_WRITE, 0x0000, 0x0A);
+    await client.command(cmds.DMG_CART_WRITE, 0x4000, 0x40);
+    try {
+      await client.setVariable(vars.ADDRESS, 0x0000);
+      return await client.transfer(cmds.DMG_MBC7_READ_EEPROM, segment.size, progress, ...args);
+    } finally {
+      await client.command(cmds.DMG_CART_WRITE, 0x4000, 0x00);
+      await client.command(cmds.DMG_CART_WRITE, 0x0000, 0x00);
+    }
+  }
 };
 
 class Camera extends DmgCart {

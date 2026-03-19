@@ -21,95 +21,6 @@ const logoGfx = [
   "██   ██ ██ ██  ██ ██  █████ ██  ██  █████  ████ ",
 ].join("\n");
 
-class DmgFakeClient extends FakeClient {
-  constructor(rom, ram) {
-    super(rom);
-    this.ram = new Uint8Array(ram);
-  }
-
-  read(addr) {
-    if (0 <= addr && addr < 0x8000) {
-      return this.rom[addr] || 0;
-    } else if (0xA000 <= addr && addr < 0xC000) {
-      return this.ram[addr] || 0;
-    }
-    return this.openBus();
-  }
-
-  write(addr, value) {}
-
-  cmdDmgCartWrite(addr, value) { this.write(addr, value); }
-
-  setAddress(value) { this.address = value & 0xFFFF; }
-  setDmgReadMethod(value) {}
-  setDmgAccessMode(value) {}
-  setCartMode(value) {}
-  setDmgReadCsPulse(value) {}
-
-  async transfer(cmd, size, callback, ...args) {
-    expect(cmd.id).toBe(cmds.DMG_CART_READ.id);
-    expect(args).toHaveLength(0);
-    const result = new Uint8Array(size);
-    for (let i = 0; i < size; ++i) {
-      result[i] = this.read(this.address++);
-      this.address &= 0xFFFF;
-    }
-    expect(this.address).toBeLessThan(0x8001);
-    return result;
-  }
-}
-
-class FakeMBC1Client extends DmgFakeClient {
-  constructor(rom, ram, {multicart = false}) {
-    super(rom, ram);
-    this.ramEnabled = false;
-    this.romBank = 1;
-    this.ramBank = 0;
-    this.mode = 0;
-    this.multicart = multicart;
-  }
-
-  read(addr) {
-    if (0 <= addr && addr < 0x8000) {
-      const upper = addr >= 0x4000;
-      addr &= 0x3FFF;
-      if (this.mode || upper) {
-        addr += this.ramBank << (this.multicart ? 18 : 19);
-      }
-      if ((this.mode && this.multicart) || upper) {
-        addr += this.romBank << 14;
-      }
-      return this.rom[addr % this.rom.length];
-    } else if (0xA000 <= addr && addr < 0xC000) {
-      if (this.ramEnabled) {
-        addr = (this.ramBank << 13) + (addr & 0x1FFF);
-        return this.ram[addr % this.ram.length];
-      }
-    }
-    return this.openBus();
-  }
-
-  write(addr, value) {
-    if (0 <= addr && addr < 0x2000) {
-      this.ramEnabled = (value & 0x0F) == 0x0A;
-    } else if (0x2000 <= addr && addr < 0x4000) {
-      this.romBank = (value & 0x1F) || 1;
-      if (this.multicart) {
-        this.romBank &= 0x0F;
-      }
-    } else if (0x4000 <= addr && addr < 0x6000) {
-      this.ramBank = value & 3;
-    } else if (0x6000 <= addr && addr < 0x8000) {
-      this.mode = value & 1;
-    } else if (0xA000 <= addr && addr < 0xC000) {
-      if (this.ramEnabled) {
-        addr = (this.ramBank << 13) + (addr & 0x1FFF);
-        this.ram[addr % this.ram.length] = value;
-      }
-    }
-  }
-}
-
 test("draw logo", async () => {
   const data = rand(0x8000);
   copy(data, 0x104, ...logoBits);
@@ -278,3 +189,92 @@ test.each([
   expect(cart.code).toStrictEqual(code);
   expect(cart.cgbFlag).toStrictEqual(cgbFlag);
 });
+
+class DmgFakeClient extends FakeClient {
+  constructor(rom, ram) {
+    super(rom);
+    this.ram = new Uint8Array(ram);
+  }
+
+  read(addr) {
+    if (0 <= addr && addr < 0x8000) {
+      return this.rom[addr] || 0;
+    } else if (0xA000 <= addr && addr < 0xC000) {
+      return this.ram[addr] || 0;
+    }
+    return this.openBus();
+  }
+
+  write(addr, value) {}
+
+  cmdDmgCartWrite(addr, value) { this.write(addr, value); }
+
+  setAddress(value) { this.address = value & 0xFFFF; }
+  setDmgReadMethod(value) {}
+  setDmgAccessMode(value) {}
+  setCartMode(value) {}
+  setDmgReadCsPulse(value) {}
+
+  async transfer(cmd, size, callback, ...args) {
+    expect(cmd.id).toBe(cmds.DMG_CART_READ.id);
+    expect(args).toHaveLength(0);
+    const result = new Uint8Array(size);
+    for (let i = 0; i < size; ++i) {
+      result[i] = this.read(this.address++);
+      this.address &= 0xFFFF;
+    }
+    expect(this.address).toBeLessThan(0x8001);
+    return result;
+  }
+}
+
+class FakeMBC1Client extends DmgFakeClient {
+  constructor(rom, ram, {multicart = false}) {
+    super(rom, ram);
+    this.ramEnabled = false;
+    this.romBank = 1;
+    this.ramBank = 0;
+    this.mode = 0;
+    this.multicart = multicart;
+  }
+
+  read(addr) {
+    if (0 <= addr && addr < 0x8000) {
+      const upper = addr >= 0x4000;
+      addr &= 0x3FFF;
+      if (this.mode || upper) {
+        addr += this.ramBank << (this.multicart ? 18 : 19);
+      }
+      if ((this.mode && this.multicart) || upper) {
+        addr += this.romBank << 14;
+      }
+      return this.rom[addr % this.rom.length];
+    } else if (0xA000 <= addr && addr < 0xC000) {
+      if (this.ramEnabled) {
+        addr = (this.ramBank << 13) + (addr & 0x1FFF);
+        return this.ram[addr % this.ram.length];
+      }
+    }
+    return this.openBus();
+  }
+
+  write(addr, value) {
+    if (0 <= addr && addr < 0x2000) {
+      this.ramEnabled = (value & 0x0F) == 0x0A;
+    } else if (0x2000 <= addr && addr < 0x4000) {
+      this.romBank = (value & 0x1F) || 1;
+      if (this.multicart) {
+        this.romBank &= 0x0F;
+      }
+    } else if (0x4000 <= addr && addr < 0x6000) {
+      this.ramBank = value & 3;
+    } else if (0x6000 <= addr && addr < 0x8000) {
+      this.mode = value & 1;
+    } else if (0xA000 <= addr && addr < 0xC000) {
+      if (this.ramEnabled) {
+        addr = (this.ramBank << 13) + (addr & 0x1FFF);
+        this.ram[addr % this.ram.length] = value;
+      }
+    }
+  }
+}

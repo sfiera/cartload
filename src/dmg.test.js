@@ -190,6 +190,16 @@ test.each([
   expect(cart.cgbFlag).toStrictEqual(cgbFlag);
 });
 
+test("mbc7", async () => {
+  const rom = rand(0x8000);
+  const eep = rand(0x100);
+  copy(rom, 0x147, 0x22);
+  const client = new Mbc7FakeClient(rom, eep);
+  const cart = await dmg.detect(client);
+  const backup = await cart.backUpSav(client, null);
+  expect(backup).toEqual(eep);
+});
+
 class DmgFakeClient extends FakeClient {
   constructor(rom, ram) {
     super(rom);
@@ -228,7 +238,7 @@ class DmgFakeClient extends FakeClient {
   }
 }
 
-class FakeMBC1Client extends DmgFakeClient {
+class Mbc1FakeClient extends DmgFakeClient {
   constructor(rom, ram, {multicart = false}) {
     super(rom, ram);
     this.ramEnabled = false;
@@ -276,5 +286,51 @@ class FakeMBC1Client extends DmgFakeClient {
         this.ram[addr % this.ram.length] = value;
       }
     }
+  }
+}
+
+class Mbc7FakeClient extends DmgFakeClient {
+  constructor(rom, eep) {
+    super(rom);
+    this.eep = new Uint8Array(eep);
+    this.ramConf = 0x00;
+    this.eepConf = 0x00;
+  }
+
+  read(addr) {
+    if (0xA000 <= addr && addr < 0xC000) {
+      return this.eep[addr] || 0;
+    }
+    return super.read(addr);
+  }
+
+  write(addr, value) {
+    if (addr < 0x2000) {
+      this.ramConf = value;
+    } else if (addr < 0x4000) {
+      expect(value).toBe(0);
+    } else if (addr < 0x6000) {
+      this.eepConf = value;
+    } else {
+      expect(value).toBe(0);
+    }
+  }
+
+  async transfer(cmd, size, callback, ...args) {
+    if (cmd.id == cmds.DMG_CART_READ.id) {
+      return super.transfer(cmd, size, callback, ...args);
+    }
+
+    expect(cmd.id).toBe(cmds.DMG_MBC7_READ_EEPROM.id);
+    expect(args).toHaveLength(0);
+    expect(this.ramConf).toBe(0x0A);
+    expect(this.eepConf).toBe(0x40);
+
+    const result = new Uint8Array(size);
+    for (let i = 0; i < size; ++i) {
+      result[i] = this.eep[this.address++];
+      this.address &= 0xFF;
+    }
+    return result;
   }
 }

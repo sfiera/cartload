@@ -219,21 +219,20 @@ class DmgFakeClient extends FakeClient {
 
   cmdDmgCartWrite(addr, value) { this.write(addr, value); }
 
-  setAddress(value) { this.address = value & 0xFFFF; }
-  setDmgReadMethod(value) {}
-  setDmgAccessMode(value) {}
-  setCartMode(value) {}
-  setDmgReadCsPulse(value) {}
+  async transfer(mode, address, size, options) {
+    options ||= {};
+    const {csPulse, pullups} = options;
 
-  async transfer(cmd, size, callback, ...args) {
-    expect(cmd.id).toBe(cmds.DMG_CART_READ.id);
-    expect(args).toHaveLength(0);
+    expect(mode).toBe("dmg");
+    expect(!!csPulse).toBe(true);
+    expect(!!pullups).toBe(false);
+
+    address &= 0xFFFF;
     const result = new Uint8Array(size);
     for (let i = 0; i < size; ++i) {
-      result[i] = this.read(this.address++);
-      this.address &= 0xFFFF;
+      result[i] = this.read(address++);
+      address &= 0xFFFF;
     }
-    expect(this.address).toBeLessThan(0x8001);
     return result;
   }
 }
@@ -316,20 +315,23 @@ class Mbc7FakeClient extends DmgFakeClient {
     }
   }
 
-  async transfer(cmd, size, callback, ...args) {
-    if (cmd.id == cmds.DMG_CART_READ.id) {
-      return super.transfer(cmd, size, callback, ...args);
+  async transfer(mode, address, size, options) {
+    options ||= {};
+    if (mode === "dmg") {
+      return super.transfer(mode, address, size, options);
     }
 
-    expect(cmd.id).toBe(cmds.DMG_MBC7_READ_EEPROM.id);
-    expect(args).toHaveLength(0);
+    const {pullups} = options;
+    expect(mode).toBe("eep");
+    expect(!!pullups).toBe(false);
     expect(this.ramConf).toBe(0x0A);
     expect(this.eepConf).toBe(0x40);
 
+    address &= 0xFF;
     const result = new Uint8Array(size);
     for (let i = 0; i < size; ++i) {
-      result[i] = this.eep[this.address++];
-      this.address &= 0xFF;
+      result[i] = this.eep[address++];
+      address &= 0xFF;
     }
     return result;
   }

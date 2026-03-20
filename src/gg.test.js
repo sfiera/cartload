@@ -50,19 +50,19 @@ class GgFakeClient extends FakeClient {
 
   cmdDmgCartWrite(addr, value) { this.write(addr, value); }
 
-  setAddress(value) { this.address = value & 0xFFFF; }
-  setDmgReadMethod(value) {}
-  setDmgAccessMode(value) {}
-  setCartMode(value) {}
-  setDmgReadCsPulse(value) {}
+  async transfer(mode, address, size, options) {
+    options ||= {};
+    const {csPulse, pullups} = options;
 
-  async transfer(cmd, size, callback, ...args) {
-    expect(cmd.id).toBe(cmds.DMG_CART_READ.id);
-    expect(args).toHaveLength(0);
+    expect(mode).toBe("dmg");
+    expect(!!csPulse).toBe(true);
+    expect(!!pullups).toBe(false);
+
+    address &= 0xFFFF;
     const result = new Uint8Array(size);
     for (let i = 0; i < size; ++i) {
-      result[i] = this.read(addrConv.boyToGear(this.address++));
-      this.address &= 0xFFFF;
+      result[i] = this.read(addrConv.boyToGear(address++));
+      address &= 0xFFFF;
     }
     return result;
   }

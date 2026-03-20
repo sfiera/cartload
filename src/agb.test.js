@@ -60,7 +60,9 @@ test.each([
 });
 
 class AgbFakeClient extends FakeClient {
-  read(addr) {
+  read(addr, options) {
+    const {pullups} = options || {};
+
     if (this.rom.length >= (16 * MIB)) {
       addr &= this.rom.length - 1;
     } else {
@@ -69,21 +71,26 @@ class AgbFakeClient extends FakeClient {
 
     if (0 <= addr && addr < this.rom.length) {
       return this.rom[addr] || 0;
+    } else if (pullups) {
+      return 0xFF;
+    } else {
+      return 0x00;
     }
-    return this.openBus();
   }
 
   write(addr, value) {}
 
-  setAddress(value) { this.address = (value * 2) & 0xFFFFFFFF; }
-  setCartMode(value) {}
+  async transfer(mode, address, size, options) {
+    const {pullups} = options || {};
 
-  async transfer(cmd, size, callback, ...args) {
-    expect(cmd.id).toBe(cmds.AGB_CART_READ.id);
-    expect(args).toHaveLength(0);
+    expect(mode).toBe("agb");
+    expect(!!pullups).toBe(false);
+
+    address &= 0xFFFFFFFF;
     const result = new Uint8Array(size);
     for (let i = 0; i < size; ++i) {
-      result[i] = this.read(this.address++);
+      result[i] = this.read(address++, options);
+      address &= 0xFFFFFFFF;
     }
     return result;
   }

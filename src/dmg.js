@@ -118,11 +118,6 @@ export default class DmgCart {
     callback ||= () => {};
     await client.command(cmds.CART_PWR_ON);
     try {
-      await client.command(cmds.DISABLE_PULLUPS);
-      await client.setVariable(vars.DMG_READ_METHOD, 1);
-      await client.setVariable(vars.DMG_ACCESS_MODE, 1);  // MODE_ROM_READ
-      await client.setVariable(vars.CART_MODE, 1);
-      await client.setVariable(vars.DMG_READ_CS_PULSE, 1);
       let data = [];
       const segs = this.romSegments;
       for (const seg of segs) {
@@ -141,11 +136,6 @@ export default class DmgCart {
     callback ||= () => {};
     await client.command(cmds.CART_PWR_ON);
     try {
-      await client.command(cmds.DISABLE_PULLUPS);
-      await client.setVariable(vars.DMG_READ_METHOD, 1);
-      await client.setVariable(vars.DMG_ACCESS_MODE, 1);  // MODE_ROM_READ
-      await client.setVariable(vars.CART_MODE, 1);
-      await client.setVariable(vars.DMG_READ_CS_PULSE, 1);
       let data = [];
       const segs = this.savSegments;
       for (const seg of segs) {
@@ -162,33 +152,31 @@ export default class DmgCart {
     return ints(this.romSize >> 14).map((i) => new Segment(i * (1 << 14), (i + 1) * (1 << 14)));
   }
 
-  async transferRomSegment(client, segment, progress, ...args) {
+  async transferRomSegment(client, segment, progress) {
     if (segment.begin == 0) {
-      await client.setVariable(vars.ADDRESS, 0);
+      return await client.transfer("dmg", 0, segment.size, {progress, csPulse: true});
     } else {
       await client.command(cmds.DMG_CART_WRITE, 0x2000, segment.begin >> 14);
-      await client.setVariable(vars.ADDRESS, 0x4000);
+      return await client.transfer("dmg", 0x4000, segment.size, {progress, csPulse: true});
     }
-    return await client.transfer(cmds.DMG_CART_READ, segment.size, progress, ...args);
   }
 
   get savSegments() {
     return ints(this.savSize >> 13).map((i) => new Segment(i * (1 << 13), (i + 1) * (1 << 13)));
   }
 
-  async transferSavSegment(client, segment, progress, ...args) {
+  async transferSavSegment(client, segment, progress) {
     await client.command(cmds.DMG_CART_WRITE, 0x0000, 0x0A);
     try {
       await client.command(cmds.DMG_CART_WRITE, 0x4000, segment.begin >> 13);
-      await client.setVariable(vars.ADDRESS, 0xA000);
-      return await client.transfer(cmds.DMG_CART_READ, segment.size, progress, ...args);
+      return await client.transfer("dmg", 0xA000, segment.size, {progress, csPulse: true});
     } finally {
       await client.command(cmds.DMG_CART_WRITE, 0x0000, 0x00);
     }
   }
 
   static async detect(client) {
-    const header = new Uint8Array(await client.transfer(cmds.DMG_CART_READ, 0x180, null));
+    const header = new Uint8Array(await client.transfer("dmg", 0, 0x180, {csPulse: true}));
     if (header.every(x => x == 0)) {
       throw new Error("No cartridge detected");
     }
@@ -269,12 +257,11 @@ class MBC7 extends DmgCart {
 
   get savSegments() { return [new Segment(0, this.savSize)]; }
 
-  async transferSavSegment(client, segment, progress, ...args) {
+  async transferSavSegment(client, segment, progress) {
     await client.command(cmds.DMG_CART_WRITE, 0x0000, 0x0A);
     await client.command(cmds.DMG_CART_WRITE, 0x4000, 0x40);
     try {
-      await client.setVariable(vars.ADDRESS, 0x0000);
-      return await client.transfer(cmds.DMG_MBC7_READ_EEPROM, segment.size, progress, ...args);
+      return await client.transfer("eep", segment.begin, segment.size, {progress, csPulse: true});
     } finally {
       await client.command(cmds.DMG_CART_WRITE, 0x4000, 0x00);
       await client.command(cmds.DMG_CART_WRITE, 0x0000, 0x00);

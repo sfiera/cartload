@@ -52,19 +52,19 @@ class LynxFakeClient extends FakeClient {
     }
   }
 
-  setAddress(value) { this.address = value & 0x01FF; }
-  setDmgReadMethod(value) {}
-  setDmgAccessMode(value) {}
-  setCartMode(value) {}
-  setDmgReadCsPulse(value) { expect(value).toBe(0); }
+  async transfer(mode, address, size, options) {
+    options ||= {};
+    const {csPulse, pullups} = options;
 
-  async transfer(cmd, size, callback, ...args) {
-    expect(cmd.id).toBe(cmds.DMG_CART_READ.id);
-    expect(args).toHaveLength(0);
+    expect(mode).toBe("dmg");
+    expect(!!csPulse).toBe(false);
+    expect(!!pullups).toBe(false);
+
+    address &= 0x01FF;
     const result = new Uint8Array(size);
     for (let i = 0; i < size; ++i) {
-      result[i] = this.read(this.address++);
-      this.address &= 0x01FF;
+      result[i] = this.read(address++);
+      address &= 0x01FF;
     }
     return result;
   }

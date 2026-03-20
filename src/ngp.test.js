@@ -79,21 +79,21 @@ class NgpFakeClient extends FakeClient {
     }
   }
 
-  setAddress(value) { this.address = value & 0xFFFF; }
-  setDmgReadMethod(value) {}
-  setDmgAccessMode(value) {}
-  setCartMode(value) {}
-  setDmgReadCsPulse(value) { expect(value).toBe(0); }
+  async transfer(mode, address, size, options) {
+    options ||= {};
+    const {csPulse, pullups} = options;
 
-  async transfer(cmd, size, callback, ...args) {
-    expect(cmd.id).toBe(cmds.DMG_CART_READ.id);
-    expect(args).toHaveLength(0);
+    expect(mode).toBe("dmg");
+    expect(!!csPulse).toBe(false);
+    expect(!!pullups).toBe(false);
     expect(this.hiPins & (0xFF << 5)).toBe(0);  // All address pins low
     expect(this.hiPins & 0b10100).toBe(0);      // CS and RD low
+
+    address &= 0xFFFF;
     const result = new Uint8Array(size);
     for (let i = 0; i < size; ++i) {
-      result[i] = this.read(this.address++);
-      this.address &= 0xFFFF;
+      result[i] = this.read(address++);
+      address &= 0xFFFF;
     }
     return result;
   }

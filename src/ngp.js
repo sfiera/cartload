@@ -51,21 +51,16 @@ export default class NeoGeoPocketCart {
   }
 
   async backUpRom(client, callback) {
+    callback ||= () => {};
     await client.command(cmds.CART_PWR_ON);
     try {
-      await client.command(cmds.DISABLE_PULLUPS);
-      await client.setVariable(vars.DMG_READ_METHOD, 1);
-      await client.setVariable(vars.DMG_ACCESS_MODE, 1);  // MODE_ROM_READ
-      await client.setVariable(vars.CART_MODE, 1);
       let data = [];
       const segs = this.romSegments;
       for (const [i, seg] of segs.entries()) {
         await this.selectRomSegment(client, seg);
-        await client.setVariable(vars.ADDRESS, 0x0000);
-        data.push(...await client.transfer(cmds.DMG_CART_READ, 0x10000, progress => {
-          if (callback) {
-            callback(seg.begin + progress);
-          }
+        data.push(...await client.transfer("dmg", 0, 0x10000, {
+          progress: n => callback(seg.begin + n),
+          csPulse: false,
         }));
       }
       return new Uint8Array(data);
@@ -77,16 +72,14 @@ export default class NeoGeoPocketCart {
   async selectRomSegment(client, segment) { await latch(client, segment.begin >> 16); }
 
   static async detect(client) {
-    await client.setVariable(vars.ADDRESS, 0x0000);
-    const data = await client.transfer(cmds.DMG_CART_READ, 0x40);
+    const data = await client.transfer("dmg", 0, 0x40, {csPulse: false});
     if (data.every(x => x == 0)) {
       throw new Error("No cartridge detected");
     }
 
     for (let i = 1; i <= 0x10; i <<= 1) {
       await latch(client, i);
-      await client.setVariable(vars.ADDRESS, 0x0000);
-      const newData = await client.transfer(cmds.DMG_CART_READ, 0x40);
+      const newData = await client.transfer("dmg", 0, 0x40, {csPulse: false});
       if (arrayEq(newData, data)) {
         return new NeoGeoPocketCart(new Uint8Array(data), i * 0x10000);
       }

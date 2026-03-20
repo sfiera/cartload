@@ -121,11 +121,7 @@ export default class AgbCart {
   async backUpRom(client, callback) {
     await client.command(cmds.CART_PWR_ON);
     try {
-      await client.command(cmds.DISABLE_PULLUPS);
-      await client.setVariable(vars.ADDRESS, 0x00000000);
-      await client.setVariable(vars.AGB_READ_METHOD, 2);
-      await client.setVariable(vars.CART_MODE, 2);
-      const data = await client.transfer(cmds.AGB_CART_READ, this.romSize, callback);
+      const data = await client.transfer("agb", 0, this.romSize, {progress: callback});
       return new Uint8Array(data);
     } finally {
       await client.command(cmds.CART_PWR_OFF);
@@ -133,27 +129,21 @@ export default class AgbCart {
   }
 
   static async detect(client) {
-    await client.command(cmds.DISABLE_PULLUPS);
-    const readHeader = async address => {
-      await client.setVariable(vars.ADDRESS, (address || 0) / 2);
-      return new Uint8Array(await client.transfer(cmds.AGB_CART_READ, 0x180, null));
-    };
-
-    const header = await readHeader(0);
+    const header = await client.transfer("agb", 0, 0x180);
     if (header.every(x => x == 0)) {
       throw new Error("No cartridge detected");
     }
 
     // Detect ROM size by scanning upwards for the header.
     for (let address = 0x8000; address <= 0x20000000; address <<= 1) {
-      const newHeader = await readHeader(address);
+      const newHeader = await client.transfer("agb", address, 0x180);
       if (arrayEq(newHeader, header) || newHeader.every(x => x == 0)) {
-        return new AgbCart(header, address);
+        return new AgbCart(new Uint8Array(header), address);
       }
     }
 
     // Failed to detect ROM size.
-    return new AgbCart(header, 0);
+    return new AgbCart(new Uint8Array(header), 0);
   }
 
   static async connect(client) {

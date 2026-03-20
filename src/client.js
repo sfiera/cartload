@@ -71,24 +71,28 @@ export default class Client {
     }
   }
 
-  async #transfer(cmd, size, callback, ...args) {
+  async #getVariable(variable) {
+    return await this.#command(cmds.GET_VARIABLE, variable.size, variable.id);
+  }
+
+  async #setVariable(variable, value) {
+    return await this.#command(cmds.SET_VARIABLE, variable.size, variable.id, value);
+  }
+
+  async #transferAll(cmd, size, callback, ...args) {
     let result = [];
     if (size >= MAX_TRANSFER_SIZE) {
       await this.#setVariable(vars.TRANSFER_SIZE, MAX_TRANSFER_SIZE);
       while (size >= MAX_TRANSFER_SIZE) {
         await this.#transferChunk(cmd, result, MAX_TRANSFER_SIZE, ...args);
         size -= MAX_TRANSFER_SIZE;
-        if (callback) {
-          callback(result.length);
-        }
+        callback(result.length);
       }
     }
     if (size > 0) {
       await this.#setVariable(vars.TRANSFER_SIZE, size);
       await this.#transferChunk(cmd, result, size, ...args);
-      if (callback) {
-        callback(result.length);
-      }
+      callback(result.length);
     }
     return result;
   }
@@ -102,12 +106,48 @@ export default class Client {
     }
   }
 
-  async #getVariable(variable) {
-    return await this.#command(cmds.GET_VARIABLE, variable.size, variable.id);
+  async #transferDmg(address, size, {progress, csPulse}) {
+    await this.#setVariable(vars.CART_MODE, 1);
+    await this.#setVariable(vars.DMG_READ_METHOD, 1);
+    await this.#setVariable(vars.DMG_ACCESS_MODE, 1);
+    await this.#setVariable(vars.DMG_READ_CS_PULSE, csPulse ? 1 : 0);
+    await this.#setVariable(vars.ADDRESS, address);
+    return await this.#transferAll(cmds.DMG_CART_READ, size, progress);
   }
 
-  async #setVariable(variable, value) {
-    return await this.#command(cmds.SET_VARIABLE, variable.size, variable.id, value);
+  async #transferAgb(address, size, {progress}) {
+    await this.#setVariable(vars.CART_MODE, 2);
+    await this.#setVariable(vars.AGB_READ_METHOD, 2);
+    await this.#setVariable(vars.ADDRESS, address >>> 1);
+    return await this.#transferAll(cmds.AGB_CART_READ, size, progress);
+  }
+
+  async #transferEep(address, size, {progress}) {
+    await this.#setVariable(vars.ADDRESS, address);
+    return await this.#transferAll(cmds.DMG_MBC7_READ_EEPROM, size, progress);
+  }
+
+  async #transfer(mode, address, size, options) {
+    options ||= {};
+    options.progress ||= () => {};
+    const {pullups} = options;
+
+    if (pullups) {
+      await this.#command(cmds.ENABLE_PULLUPS);
+    } else {
+      await this.#command(cmds.DISABLE_PULLUPS);
+    }
+
+    switch (mode) {
+      case "dmg":
+        return this.#transferDmg(address, size, options);
+      case "agb":
+        return this.#transferAgb(address, size, options);
+      case "eep":
+        return this.#transferEep(address, size, options);
+      default:
+        throw new Error(`invalid transfer mode ${mode}`);
+    }
   }
 
   async #identify() {
@@ -136,8 +176,8 @@ export default class Client {
     return await this.#serialize(async () => await this.#command(cmd, ...args));
   }
 
-  async transfer(cmd, size, callback, ...args) {
-    return this.#serialize(async () => this.#transfer(cmd, size, callback, ...args));
+  async transfer(mode, address, size, options) {
+    return this.#serialize(async () => this.#transfer(mode, address, size, options));
   }
 
   async identify() { return this.#serialize(async () => this.#identify()); }

@@ -75,16 +75,10 @@ export default class GameGearCart {
     callback ||= () => {};
     await client.command(cmds.CART_PWR_ON);
     try {
-      await client.command(cmds.DISABLE_PULLUPS);
-      await client.setVariable(vars.DMG_READ_METHOD, 1);
-      await client.setVariable(vars.DMG_ACCESS_MODE, 1);  // MODE_ROM_READ
-      await client.setVariable(vars.CART_MODE, 1);
-      await client.setVariable(vars.DMG_READ_CS_PULSE, 1);
       let data = [];
       const segs = this.romSegments;
       for (const seg of segs) {
-        data.push(
-            ...await transferRomSegment(client, seg, progress => callback(seg.begin + progress)));
+        data.push(...await transferRomSegment(client, seg, n => callback(seg.begin + n)));
       }
       return new Uint8Array(data);
     } finally {
@@ -93,17 +87,15 @@ export default class GameGearCart {
   }
 
   static async detect(client) {
-    await client.setVariable(vars.ADDRESS, 0x0000);
     const seg = new Segment(0x4000, 0x8000);
-    const data = await transferRomSegment(client, seg, () => {});
+    const data = await transferRomSegment(client, seg);
     if (data.every(x => x == 0)) {
       throw new Error("No cartridge detected");
     }
 
     for (let bankCount = 2; bankCount < 128; bankCount <<= 1) {
       await client.command(cmds.DMG_CART_WRITE, BANK1, bankCount + 1);
-      await client.setVariable(vars.ADDRESS, 0x0000);
-      const newData = await transferRomSegment(client, seg, () => {});
+      const newData = await transferRomSegment(client, seg);
       if (arrayEq(newData, data)) {
         return new GameGearCart(data, bankCount * 0x4000);
       }
@@ -140,7 +132,7 @@ const nextBit = (val) => {
   return 1 << shift;
 };
 
-const transferRomSegment = async (client, segment, progress, ...args) => {
+const transferRomSegment = async (client, segment, progress) => {
   if (segment.begin >= 0x8000) {
     await client.command(cmds.DMG_CART_WRITE, BANK2, segment.begin >> 14);
   }
@@ -154,8 +146,7 @@ const transferRomSegment = async (client, segment, progress, ...args) => {
   const data = new Uint8Array(0x10000);
   while (gearAddr < Math.min(segment.end, 0xC000)) {
     const boyAddr = addr.gearToBoy(gearAddr);
-    await client.setVariable(vars.ADDRESS, boyAddr);
-    const chunk = await client.transfer(cmds.DMG_CART_READ, chunkSize, progress, ...args);
+    const chunk = await client.transfer("dmg", boyAddr, chunkSize, {progress, csPulse: true});
     for (const [i, b] of chunk.entries()) {
       data[addr.boyToGear(boyAddr + i)] = b;
     }

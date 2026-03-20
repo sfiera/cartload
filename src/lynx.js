@@ -38,10 +38,6 @@ export default class LynxCart {
     const deBruijn = Uint8Array.fromBase64("AoOCQ0LDwiMyKjomNi4+KTk1LT2zsnPz8quurW/v/gE=");
     await client.command(cmds.CART_PWR_ON);
     try {
-      await client.command(cmds.DISABLE_PULLUPS);
-      await client.setVariable(vars.DMG_READ_METHOD, 1);
-      await client.setVariable(vars.DMG_ACCESS_MODE, 1);  // MODE_ROM_READ
-      await client.setVariable(vars.CART_MODE, 1);
       let acc = 0;
       let total = 0;
       const data = new Uint8Array(this.romSize);
@@ -50,9 +46,10 @@ export default class LynxCart {
           await shift(client, b & 1);
           acc = (b & 1) | ((acc << 1) & 0xFF);
           b >>>= 1;
-          await client.setVariable(vars.ADDRESS, 0x0000);
-          const chunk = await client.transfer(
-              cmds.DMG_CART_READ, 0x200, progress => callback(total + progress));
+          const chunk = await client.transfer("dmg", 0, 0x200, {
+            progress: n => callback(total + n),
+            csPulse: false,
+          });
           chunk.forEach((b, i) => data[(acc << 9) | i] = b);
           total += 0x200;
         }
@@ -64,8 +61,7 @@ export default class LynxCart {
   }
 
   static async detect(client) {
-    await client.setVariable(vars.ADDRESS, 0x0000);
-    const data = await client.transfer(cmds.DMG_CART_READ, 0x200);
+    const data = await client.transfer("dmg", 0, 0x200, {csPulse: false});
     if (data.every(x => x == 0)) {
       throw new Error("No cartridge detected");
     }

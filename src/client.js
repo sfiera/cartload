@@ -7,40 +7,11 @@ import {latin1} from "./util.js";
 
 const MAX_TRANSFER_SIZE = 64;
 
-export default class Client {
+class LockedClient {
   constructor(port) {
     this.port = port;
     this.reader = port.readable.getReader();
     this.writer = port.writable.getWriter();
-    this.working = false;
-    this.queue = [];
-  }
-
-  async #work() {
-    while (!this.working && this.queue.length) {
-      const {resolve, reject, fn} = this.queue.shift();
-      this.working = true;
-      try {
-        const result = await fn();
-        resolve(result);
-      } catch (e) {
-        reject(e);
-      } finally {
-        this.working = false;
-      }
-    }
-  }
-
-  #serialize(fn) {
-    const {promise, resolve, reject} = Promise.withResolvers();
-    this.queue.push({resolve, reject, fn});
-    this.#work();
-    return promise;
-  }
-
-  static async open(port) {
-    await port.open({baudRate: 1000000});
-    return new Client(port);
   }
 
   async close() {
@@ -49,7 +20,7 @@ export default class Client {
     await this.port.close();
   }
 
-  async #command(cmd, ...args) {
+  async command(cmd, ...args) {
     await this.writer.write(pack(cmd.reqFormat, cmd.id, ...args));
     if (!cmd.respFormat.length) {
       return [];
@@ -71,20 +42,20 @@ export default class Client {
     }
   }
 
-  async #getVariable(variable) {
-    return await this.#command(cmds.GET_VARIABLE, variable.size, variable.id);
+  async getVariable(variable) {
+    return await this.command(cmds.GET_VARIABLE, variable.size, variable.id);
   }
 
-  async #setVariable(variable, value) {
-    return await this.#command(cmds.SET_VARIABLE, variable.size, variable.id, value);
+  async setVariable(variable, value) {
+    return await this.command(cmds.SET_VARIABLE, variable.size, variable.id, value);
   }
 
-  async #setPin(mask, value) { return await this.#command(cmds.SET_PIN, mask, value ? 1 : 0); }
+  async setPin(mask, value) { return await this.command(cmds.SET_PIN, mask, value ? 1 : 0); }
 
   async #transferAll(cmd, size, callback, ...args) {
     let result = [];
     if (size >= MAX_TRANSFER_SIZE) {
-      await this.#setVariable(vars.TRANSFER_SIZE, MAX_TRANSFER_SIZE);
+      await this.setVariable(vars.TRANSFER_SIZE, MAX_TRANSFER_SIZE);
       while (size >= MAX_TRANSFER_SIZE) {
         await this.#transferChunk(cmd, result, MAX_TRANSFER_SIZE, ...args);
         size -= MAX_TRANSFER_SIZE;
@@ -92,7 +63,7 @@ export default class Client {
       }
     }
     if (size > 0) {
-      await this.#setVariable(vars.TRANSFER_SIZE, size);
+      await this.setVariable(vars.TRANSFER_SIZE, size);
       await this.#transferChunk(cmd, result, size, ...args);
       callback(result.length);
     }
@@ -100,7 +71,7 @@ export default class Client {
   }
 
   async #transferChunk(cmd, result, size, ...args) {
-    await this.#command(cmd, ...args);
+    await this.command(cmd, ...args);
     while (size > 0) {
       let data = (await this.reader.read()).value;
       result.push(...data);
@@ -109,35 +80,35 @@ export default class Client {
   }
 
   async #transferDmg(address, size, {progress, csPulse}) {
-    await this.#setVariable(vars.CART_MODE, 1);
-    await this.#setVariable(vars.DMG_READ_METHOD, 1);
-    await this.#setVariable(vars.DMG_ACCESS_MODE, 1);
-    await this.#setVariable(vars.DMG_READ_CS_PULSE, csPulse ? 1 : 0);
-    await this.#setVariable(vars.ADDRESS, address);
+    await this.setVariable(vars.CART_MODE, 1);
+    await this.setVariable(vars.DMG_READ_METHOD, 1);
+    await this.setVariable(vars.DMG_ACCESS_MODE, 1);
+    await this.setVariable(vars.DMG_READ_CS_PULSE, csPulse ? 1 : 0);
+    await this.setVariable(vars.ADDRESS, address);
     return await this.#transferAll(cmds.DMG_CART_READ, size, progress);
   }
 
   async #transferAgb(address, size, {progress}) {
-    await this.#setVariable(vars.CART_MODE, 2);
-    await this.#setVariable(vars.AGB_READ_METHOD, 2);
-    await this.#setVariable(vars.ADDRESS, address >>> 1);
+    await this.setVariable(vars.CART_MODE, 2);
+    await this.setVariable(vars.AGB_READ_METHOD, 2);
+    await this.setVariable(vars.ADDRESS, address >>> 1);
     return await this.#transferAll(cmds.AGB_CART_READ, size, progress);
   }
 
   async #transferEep(address, size, {progress}) {
-    await this.#setVariable(vars.ADDRESS, address);
+    await this.setVariable(vars.ADDRESS, address);
     return await this.#transferAll(cmds.DMG_MBC7_READ_EEPROM, size, progress);
   }
 
-  async #transfer(mode, address, size, options) {
+  async transfer(mode, address, size, options) {
     options ||= {};
     options.progress ||= () => {};
     const {pullups} = options;
 
     if (pullups) {
-      await this.#command(cmds.ENABLE_PULLUPS);
+      await this.command(cmds.ENABLE_PULLUPS);
     } else {
-      await this.#command(cmds.DISABLE_PULLUPS);
+      await this.command(cmds.DISABLE_PULLUPS);
     }
 
     switch (mode) {
@@ -152,16 +123,15 @@ export default class Client {
     }
   }
 
-  async #identify() {
-    const [ofwPcbVer] = await this.#command(cmds.OFW_PCB_VER);
-    const [ofwFwVer] = await this.#command(cmds.OFW_FW_VER);
+  async identify() {
+    const [ofwPcbVer] = await this.command(cmds.OFW_PCB_VER);
+    const [ofwFwVer] = await this.command(cmds.OFW_FW_VER);
 
     if ((ofwPcbVer < 5) || (ofwFwVer == 0)) {
       throw new Error("unsupported ofw version", ofwPcbVer, ofwFwVer);
     }
 
-    const [info, nameEnc, cartPowerCtrl, bootloaderReset] =
-        await this.#command(cmds.QUERY_FW_INFO);
+    const [info, nameEnc, cartPowerCtrl, bootloaderReset] = await this.command(cmds.QUERY_FW_INFO);
     const [cfwID, fwVer, pcbVer, fwTs] = unpack("BHBI", info);
     const fwDate = new Date(fwTs * 1000);
     const name = latin1.decode(nameEnc).replaceAll("\u0000", "");
@@ -173,26 +143,39 @@ export default class Client {
 
     return {cfwID, fwVer, pcbVer, fwDate, name, cartPowerCtrl, bootloaderReset};
   }
+}
 
-  async command(cmd, ...args) {
-    return await this.#serialize(async () => await this.#command(cmd, ...args));
+export default class Client {
+  constructor(port) {
+    this.locked = new LockedClient(port);
+    this.working = false;
+    this.queue = [];
   }
 
-  async transfer(mode, address, size, options) {
-    return this.#serialize(async () => this.#transfer(mode, address, size, options));
+  async #work() {
+    while (!this.working && this.queue.length) {
+      const {resolve, reject, fn} = this.queue.shift();
+      this.working = true;
+      try {
+        const result = await fn(this.locked);
+        resolve(result);
+      } catch (e) {
+        reject(e);
+      } finally {
+        this.working = false;
+      }
+    }
   }
 
-  async identify() { return this.#serialize(async () => this.#identify()); }
-
-  async getVariable(variable) {
-    return await this.#serialize(async () => this.#getVariable(variable));
+  lock(fn) {
+    const {promise, resolve, reject} = Promise.withResolvers();
+    this.queue.push({resolve, reject, fn});
+    this.#work();
+    return promise;
   }
 
-  async setVariable(variable, value) {
-    return await this.#serialize(async () => this.#setVariable(variable, value));
-  }
-
-  async setPin(mask, value) {
-    return await this.#serialize(async () => this.#setPin(mask, value));
+  static async open(port) {
+    await port.open({baudRate: 1000000});
+    return new Client(port);
   }
 }

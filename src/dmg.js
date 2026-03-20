@@ -115,37 +115,41 @@ export default class DmgCart {
   logoImageUrl() { return makeImage(48, 8, ctx => this.drawImage(ctx)); }
 
   async backUpRom(client, callback) {
-    callback ||= () => {};
-    await client.command(cmds.CART_PWR_ON);
-    try {
-      let data = [];
-      const segs = this.romSegments;
-      for (const seg of segs) {
-        data.push(...await this.transferRomSegment(
-            client, seg, progress => callback(seg.begin + progress)));
+    return await client.lock(async client => {
+      callback ||= () => {};
+      await client.command(cmds.CART_PWR_ON);
+      try {
+        let data = [];
+        const segs = this.romSegments;
+        for (const seg of segs) {
+          data.push(...await this.transferRomSegment(
+              client, seg, progress => callback(seg.begin + progress)));
+        }
+        return new Uint8Array(data);
+      } finally {
+        await client.command(cmds.CART_PWR_OFF);
       }
-      return new Uint8Array(data);
-    } finally {
-      await client.command(cmds.CART_PWR_OFF);
-    }
+    });
   }
 
   get canBackUpSav() { return !!this.savSize; }
 
   async backUpSav(client, callback) {
-    callback ||= () => {};
-    await client.command(cmds.CART_PWR_ON);
-    try {
-      let data = [];
-      const segs = this.savSegments;
-      for (const seg of segs) {
-        data.push(...await this.transferSavSegment(
-            client, seg, progress => callback(seg.begin + progress)));
+    return await client.lock(async client => {
+      callback ||= () => {};
+      await client.command(cmds.CART_PWR_ON);
+      try {
+        let data = [];
+        const segs = this.savSegments;
+        for (const seg of segs) {
+          data.push(...await this.transferSavSegment(
+              client, seg, progress => callback(seg.begin + progress)));
+        }
+        return new Uint8Array(data);
+      } finally {
+        await client.command(cmds.CART_PWR_OFF);
       }
-      return new Uint8Array(data);
-    } finally {
-      await client.command(cmds.CART_PWR_OFF);
-    }
+    });
   }
 
   get romSegments() {
@@ -176,31 +180,35 @@ export default class DmgCart {
   }
 
   static async detect(client) {
-    const header = new Uint8Array(await client.transfer("dmg", 0, 0x180, {csPulse: true}));
-    if (header.every(x => x == 0)) {
-      throw new Error("No cartridge detected");
-    }
-    let cartType = dmgCarts[header[0x147]];
-    if (typeof cartType === "undefined") {
-      cartType = dmgCarts[0];
-    }
-    return cartType(header);
+    return await client.lock(async client => {
+      const header = new Uint8Array(await client.transfer("dmg", 0, 0x180, {csPulse: true}));
+      if (header.every(x => x == 0)) {
+        throw new Error("No cartridge detected");
+      }
+      let cartType = dmgCarts[header[0x147]];
+      if (typeof cartType === "undefined") {
+        cartType = dmgCarts[0];
+      }
+      return cartType(header);
+    });
   }
 
   static async connect(client) {
-    await client.setVariable(vars.DMG_READ_METHOD, 1);
-    await client.command(cmds.SET_MODE_DMG);
-    await client.command(cmds.SET_VOLTAGE_5V);
-    await client.command(cmds.CART_PWR_ON);
-    await client.command(cmds.DISABLE_PULLUPS);
-    await client.setVariable(vars.DMG_READ_METHOD, 1);
-    await client.setVariable(vars.CART_MODE, 1);
-    await client.setVariable(vars.DMG_READ_CS_PULSE, 1);
-    await client.setVariable(vars.DMG_WRITE_CS_PULSE, 0);
-    await client.setVariable(vars.DMG_ACCESS_MODE, 1);
-    await client.setVariable(vars.ADDRESS, 0x0000);
-    await client.command(cmds.DMG_MBC_RESET);
-    await client.command(cmds.DMG_CART_WRITE, 0x0000, 0xFF);
+    return await client.lock(async client => {
+      await client.setVariable(vars.DMG_READ_METHOD, 1);
+      await client.command(cmds.SET_MODE_DMG);
+      await client.command(cmds.SET_VOLTAGE_5V);
+      await client.command(cmds.CART_PWR_ON);
+      await client.command(cmds.DISABLE_PULLUPS);
+      await client.setVariable(vars.DMG_READ_METHOD, 1);
+      await client.setVariable(vars.CART_MODE, 1);
+      await client.setVariable(vars.DMG_READ_CS_PULSE, 1);
+      await client.setVariable(vars.DMG_WRITE_CS_PULSE, 0);
+      await client.setVariable(vars.DMG_ACCESS_MODE, 1);
+      await client.setVariable(vars.ADDRESS, 0x0000);
+      await client.command(cmds.DMG_MBC_RESET);
+      await client.command(cmds.DMG_CART_WRITE, 0x0000, 0xFF);
+    });
   }
 
   static async db() { return (await import("./db/dmg.json", {with: {type: "json"}})).default; }

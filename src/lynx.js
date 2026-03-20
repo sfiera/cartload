@@ -34,55 +34,61 @@ export default class LynxCart {
   }
 
   async backUpRom(client, callback) {
-    callback ||= () => {};
-    const deBruijn = Uint8Array.fromBase64("AoOCQ0LDwiMyKjomNi4+KTk1LT2zsnPz8quurW/v/gE=");
-    await client.command(cmds.CART_PWR_ON);
-    try {
-      let acc = 0;
-      let total = 0;
-      const data = new Uint8Array(this.romSize);
-      for (let b of deBruijn) {
-        for (const _ of ints(8)) {
-          await shift(client, b & 1);
-          acc = (b & 1) | ((acc << 1) & 0xFF);
-          b >>>= 1;
-          const chunk = await client.transfer("dmg", 0, 0x200, {
-            progress: n => callback(total + n),
-            csPulse: false,
-          });
-          chunk.forEach((b, i) => data[(acc << 9) | i] = b);
-          total += 0x200;
-        }
-      };
-      return new Uint8Array(data);
-    } finally {
-      await client.command(cmds.CART_PWR_OFF);
-    }
+    return await client.lock(async client => {
+      callback ||= () => {};
+      const deBruijn = Uint8Array.fromBase64("AoOCQ0LDwiMyKjomNi4+KTk1LT2zsnPz8quurW/v/gE=");
+      await client.command(cmds.CART_PWR_ON);
+      try {
+        let acc = 0;
+        let total = 0;
+        const data = new Uint8Array(this.romSize);
+        for (let b of deBruijn) {
+          for (const _ of ints(8)) {
+            await shift(client, b & 1);
+            acc = (b & 1) | ((acc << 1) & 0xFF);
+            b >>>= 1;
+            const chunk = await client.transfer("dmg", 0, 0x200, {
+              progress: n => callback(total + n),
+              csPulse: false,
+            });
+            chunk.forEach((b, i) => data[(acc << 9) | i] = b);
+            total += 0x200;
+          }
+        };
+        return new Uint8Array(data);
+      } finally {
+        await client.command(cmds.CART_PWR_OFF);
+      }
+    });
   }
 
   static async detect(client) {
-    const data = await client.transfer("dmg", 0, 0x200, {csPulse: false});
-    if (data.every(x => x == 0)) {
-      throw new Error("No cartridge detected");
-    }
-    return new LynxCart(new Uint8Array(data));
+    return await client.lock(async client => {
+      const data = await client.transfer("dmg", 0, 0x200, {csPulse: false});
+      if (data.every(x => x == 0)) {
+        throw new Error("No cartridge detected");
+      }
+      return new LynxCart(new Uint8Array(data));
+    });
   }
 
   static async connect(client) {
-    await client.setVariable(vars.DMG_READ_METHOD, 1);
-    await client.command(cmds.SET_MODE_DMG);
-    await client.command(cmds.SET_VOLTAGE_5V);
-    await client.command(cmds.CART_PWR_ON);
-    await client.command(cmds.DISABLE_PULLUPS);
-    await client.setVariable(vars.DMG_READ_METHOD, 1);
-    await client.setVariable(vars.CART_MODE, 1);
-    await client.setVariable(vars.DMG_READ_CS_PULSE, 0);
-    await client.setVariable(vars.DMG_WRITE_CS_PULSE, 0);
-    await client.setVariable(vars.DMG_ACCESS_MODE, 1);
-    await client.setVariable(vars.ADDRESS, 0x0000);
-    for (const _ of ints(8)) {
-      await shift(client, 0);
-    }
+    return await client.lock(async client => {
+      await client.setVariable(vars.DMG_READ_METHOD, 1);
+      await client.command(cmds.SET_MODE_DMG);
+      await client.command(cmds.SET_VOLTAGE_5V);
+      await client.command(cmds.CART_PWR_ON);
+      await client.command(cmds.DISABLE_PULLUPS);
+      await client.setVariable(vars.DMG_READ_METHOD, 1);
+      await client.setVariable(vars.CART_MODE, 1);
+      await client.setVariable(vars.DMG_READ_CS_PULSE, 0);
+      await client.setVariable(vars.DMG_WRITE_CS_PULSE, 0);
+      await client.setVariable(vars.DMG_ACCESS_MODE, 1);
+      await client.setVariable(vars.ADDRESS, 0x0000);
+      for (const _ of ints(8)) {
+        await shift(client, 0);
+      }
+    });
   }
 
   static async db() { return (await import("./db/lynx.json", {with: {type: "json"}})).default; }

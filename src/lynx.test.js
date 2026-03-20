@@ -38,7 +38,7 @@ class LynxFakeClient extends FakeClient {
 
   write(addr, value) {}
 
-  cmdSetPin(mask, enabled) {
+  setPin(mask, enabled) {
     expect([0b10000, 0b00010]).toContain(mask);  // set only CLK or /CS, one at a time
     if ((this.hiPins & 0b10000) && (mask & 0b10000) && !enabled) {
       this.latch <<= 1;

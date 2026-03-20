@@ -109,10 +109,10 @@ const latch = async (client, value) => {
   if (value != (value & 0b11111)) {
     throw `invalid latch value ${value}`;
   }
-  await client.command(cmds.SET_PIN, 0b00010, 1);                  // CLK
-  await client.command(cmds.SET_PIN, value << 6, 1);               // A1:5
-  await client.command(cmds.SET_PIN, (value ^ 0b11111) << 6, 0);   // A1:5
-  await client.command(cmds.SET_PIN, 0b00010, 0);                  // CLK
-  await client.command(cmds.SET_PIN, 0b00010, 1);                  // CLK
-  await client.command(cmds.SET_PIN, 0b111111111111111110100, 0);  // A0:15
+  await client.setPin(0b00010, 1);                  // CLK
+  await client.setPin(value << 6, 1);               // A1:5
+  await client.setPin((value ^ 0b11111) << 6, 0);   // A1:5
+  await client.setPin(0b00010, 0);                  // CLK
+  await client.setPin(0b00010, 1);                  // CLK
+  await client.setPin(0b111111111111111110100, 0);  // A0:15
 };

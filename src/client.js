@@ -79,6 +79,8 @@ export default class Client {
     return await this.#command(cmds.SET_VARIABLE, variable.size, variable.id, value);
   }
 
+  async #setPin(mask, value) { return await this.#command(cmds.SET_PIN, mask, value ? 1 : 0); }
+
   async #transferAll(cmd, size, callback, ...args) {
     let result = [];
     if (size >= MAX_TRANSFER_SIZE) {
@@ -188,5 +190,9 @@ export default class Client {
 
   async setVariable(variable, value) {
     return await this.#serialize(async () => this.#setVariable(variable, value));
+  }
+
+  async setPin(mask, value) {
+    return await this.#serialize(async () => this.#setPin(mask, value));
   }
 }

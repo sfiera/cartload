@@ -89,8 +89,8 @@ export default class LynxCart {
 };
 
 const shift = async (client, value) => {
-  await client.command(cmds.SET_PIN, 0b10000, 1);              // /CS
-  await client.command(cmds.SET_PIN, 0b00010, value ? 1 : 0);  // CLK
-  await client.command(cmds.SET_PIN, 0b10000, 0);              // /CS
-  await client.command(cmds.SET_PIN, 0b10000, 1);              // /CS
+  await client.setPin(0b10000, 1);              // /CS
+  await client.setPin(0b00010, value ? 1 : 0);  // CLK
+  await client.setPin(0b10000, 0);              // /CS
+  await client.setPin(0b10000, 1);              // /CS
 };

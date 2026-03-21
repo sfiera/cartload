@@ -51,7 +51,7 @@ export default class NeoGeoPocketCart {
   }
 
   async backUpRom(client, callback) {
-    return await client.lock(async client => {
+    return await client.lock(0, async client => {
       callback ||= () => {};
       await client.command(cmds.CART_PWR_ON);
       try {
@@ -74,7 +74,7 @@ export default class NeoGeoPocketCart {
   async selectRomSegment(client, segment) { await latch(client, segment.begin >> 16); }
 
   static async detect(client) {
-    return await client.lock(async client => {
+    return await client.lock(0, async client => {
       const data = await client.transfer("dmg", 0, 0x40, {csPulse: false});
       if (data.every(x => x == 0)) {
         throw new Error("No cartridge detected");
@@ -92,7 +92,7 @@ export default class NeoGeoPocketCart {
   }
 
   static async connect(client) {
-    return await client.lock(async client => {
+    return await client.lock(0, async client => {
       await client.setVariable(vars.DMG_READ_METHOD, 1);
       await client.command(cmds.SET_MODE_DMG);
       await client.command(cmds.SET_VOLTAGE_3_3V);

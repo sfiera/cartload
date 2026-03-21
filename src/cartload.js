@@ -69,7 +69,7 @@ const handleConnect = async platform => {
   }
 
   const client = await Client.open(ports[0]);
-  await client.lock(async client => {
+  await client.lock(0, async client => {
     console.log(await client.identify());
   });
 
@@ -79,7 +79,7 @@ const handleConnect = async platform => {
     showErr(e);
   } finally {
     ctrl.abort();
-    await client.lock(async client => {
+    await client.lock(0, async client => {
       await client.command(cmds.CART_PWR_OFF);
       await client.close();
     });
@@ -105,7 +105,7 @@ const run = async (client, platform, {signal}) => {
     await platform.connect(client);
     cart = await platform.detect(client);
   } finally {
-    await client.lock(async client => {
+    await client.lock(0, async client => {
       await client.command(cmds.CART_PWR_OFF);
     });
   }

@@ -14,7 +14,7 @@ export class FakeClient {
     return this.pullups ? 0xFF : 0x00;
   }
 
-  async lock(fn) { return await fn(this); }
+  async lock(priority, fn) { return await fn(this); }
 
   cmdCartPwrOn() { this.on = true; }
   cmdCartPwrOff() { this.on = false; }

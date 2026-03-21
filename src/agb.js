@@ -119,7 +119,7 @@ export default class AgbCart {
   logoImageUrl() { return makeImage(104, 16, (ctx) => this.drawImage(ctx)); }
 
   async backUpRom(client, callback) {
-    return await client.lock(async client => {
+    return await client.lock(0, async client => {
       await client.command(cmds.CART_PWR_ON);
       try {
         const data = await client.transfer("agb", 0, this.romSize, {progress: callback});
@@ -131,7 +131,7 @@ export default class AgbCart {
   }
 
   static async detect(client) {
-    return await client.lock(async client => {
+    return await client.lock(0, async client => {
       const header = await client.transfer("agb", 0, 0x180);
       if (header.every(x => x == 0)) {
         throw new Error("No cartridge detected");
@@ -151,7 +151,7 @@ export default class AgbCart {
   }
 
   static async connect(client) {
-    return await client.lock(async client => {
+    return await client.lock(0, async client => {
       await client.command(cmds.DISABLE_PULLUPS);
       await client.command(cmds.SET_MODE_AGB);
       await client.command(cmds.SET_VOLTAGE_3_3V);

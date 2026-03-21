@@ -34,7 +34,7 @@ export default class LynxCart {
   }
 
   async backUpRom(client, callback) {
-    return await client.lock(async client => {
+    return await client.lock(0, async client => {
       callback ||= () => {};
       const deBruijn = Uint8Array.fromBase64("AoOCQ0LDwiMyKjomNi4+KTk1LT2zsnPz8quurW/v/gE=");
       await client.command(cmds.CART_PWR_ON);
@@ -63,7 +63,7 @@ export default class LynxCart {
   }
 
   static async detect(client) {
-    return await client.lock(async client => {
+    return await client.lock(0, async client => {
       const data = await client.transfer("dmg", 0, 0x200, {csPulse: false});
       if (data.every(x => x == 0)) {
         throw new Error("No cartridge detected");
@@ -73,7 +73,7 @@ export default class LynxCart {
   }
 
   static async connect(client) {
-    return await client.lock(async client => {
+    return await client.lock(0, async client => {
       await client.setVariable(vars.DMG_READ_METHOD, 1);
       await client.command(cmds.SET_MODE_DMG);
       await client.command(cmds.SET_VOLTAGE_5V);

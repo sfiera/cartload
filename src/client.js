@@ -154,7 +154,10 @@ export default class Client {
 
   async #work() {
     while (!this.working && this.queue.length) {
-      const {resolve, reject, fn} = this.queue.shift();
+      const n = this.queue.slice(1).reduce(
+          (i, _, j) => (this.queue[i].priority < this.queue[j].priority) ? i : j, 0);
+      const {resolve, reject, fn} = this.queue[n];
+      this.queue.splice(n, 1);
       this.working = true;
       try {
         const result = await fn(this.locked);
@@ -167,9 +170,9 @@ export default class Client {
     }
   }
 
-  lock(fn) {
+  lock(priority, fn) {
     const {promise, resolve, reject} = Promise.withResolvers();
-    this.queue.push({resolve, reject, fn});
+    this.queue.push({resolve, reject, fn, priority});
     this.#work();
     return promise;
   }

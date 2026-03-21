@@ -72,7 +72,7 @@ export default class GameGearCart {
   }
 
   async backUpRom(client, callback) {
-    return await client.lock(async client => {
+    return await client.lock(0, async client => {
       callback ||= () => {};
       await client.command(cmds.CART_PWR_ON);
       try {
@@ -89,7 +89,7 @@ export default class GameGearCart {
   }
 
   static async detect(client) {
-    return await client.lock(async client => {
+    return await client.lock(0, async client => {
       const seg = new Segment(0x4000, 0x8000);
       const data = await transferRomSegment(client, seg);
       if (data.every(x => x == 0)) {
@@ -108,7 +108,7 @@ export default class GameGearCart {
   }
 
   static async connect(client) {
-    return await client.lock(async client => {
+    return await client.lock(0, async client => {
       await client.setVariable(vars.DMG_READ_METHOD, 1);
       await client.command(cmds.SET_MODE_DMG);
       await client.command(cmds.SET_VOLTAGE_5V);

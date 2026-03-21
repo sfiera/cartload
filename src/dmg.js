@@ -115,7 +115,7 @@ export default class DmgCart {
   logoImageUrl() { return makeImage(48, 8, ctx => this.drawImage(ctx)); }
 
   async backUpRom(client, callback) {
-    return await client.lock(async client => {
+    return await client.lock(0, async client => {
       callback ||= () => {};
       await client.command(cmds.CART_PWR_ON);
       try {
@@ -135,7 +135,7 @@ export default class DmgCart {
   get canBackUpSav() { return !!this.savSize; }
 
   async backUpSav(client, callback) {
-    return await client.lock(async client => {
+    return await client.lock(0, async client => {
       callback ||= () => {};
       await client.command(cmds.CART_PWR_ON);
       try {
@@ -180,7 +180,7 @@ export default class DmgCart {
   }
 
   static async detect(client) {
-    return await client.lock(async client => {
+    return await client.lock(0, async client => {
       const header = new Uint8Array(await client.transfer("dmg", 0, 0x180, {csPulse: true}));
       if (header.every(x => x == 0)) {
         throw new Error("No cartridge detected");
@@ -194,7 +194,7 @@ export default class DmgCart {
   }
 
   static async connect(client) {
-    return await client.lock(async client => {
+    return await client.lock(0, async client => {
       await client.setVariable(vars.DMG_READ_METHOD, 1);
       await client.command(cmds.SET_MODE_DMG);
       await client.command(cmds.SET_VOLTAGE_5V);

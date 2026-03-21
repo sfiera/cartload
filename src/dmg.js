@@ -160,7 +160,7 @@ export default class DmgCart {
     if (segment.begin == 0) {
       return await client.transfer("dmg", 0, segment.size, {progress, csPulse: true});
     } else {
-      await client.command(cmds.DMG_CART_WRITE, 0x2000, segment.begin >> 14);
+      await client.write("dmg", 0x2000, segment.begin >> 14);
       return await client.transfer("dmg", 0x4000, segment.size, {progress, csPulse: true});
     }
   }
@@ -170,12 +170,12 @@ export default class DmgCart {
   }
 
   async transferSavSegment(client, segment, progress) {
-    await client.command(cmds.DMG_CART_WRITE, 0x0000, 0x0A);
+    await client.write("dmg", 0x0000, 0x0A);
     try {
-      await client.command(cmds.DMG_CART_WRITE, 0x4000, segment.begin >> 13);
+      await client.write("dmg", 0x4000, segment.begin >> 13);
       return await client.transfer("dmg", 0xA000, segment.size, {progress, csPulse: true});
     } finally {
-      await client.command(cmds.DMG_CART_WRITE, 0x0000, 0x00);
+      await client.write("dmg", 0x0000, 0x00);
     }
   }
 
@@ -207,7 +207,7 @@ export default class DmgCart {
       await client.setVariable(vars.DMG_ACCESS_MODE, 1);
       await client.setVariable(vars.ADDRESS, 0x0000);
       await client.command(cmds.DMG_MBC_RESET);
-      await client.command(cmds.DMG_CART_WRITE, 0x0000, 0xFF);
+      await client.write("dmg", 0x0000, 0xFF);
     });
   }
 
@@ -266,13 +266,13 @@ class MBC7 extends DmgCart {
   get savSegments() { return [new Segment(0, this.savSize)]; }
 
   async transferSavSegment(client, segment, progress) {
-    await client.command(cmds.DMG_CART_WRITE, 0x0000, 0x0A);
-    await client.command(cmds.DMG_CART_WRITE, 0x4000, 0x40);
+    await client.write("dmg", 0x0000, 0x0A);
+    await client.write("dmg", 0x4000, 0x40);
     try {
       return await client.transfer("eep", segment.begin, segment.size, {progress, csPulse: true});
     } finally {
-      await client.command(cmds.DMG_CART_WRITE, 0x4000, 0x00);
-      await client.command(cmds.DMG_CART_WRITE, 0x0000, 0x00);
+      await client.write("dmg", 0x4000, 0x00);
+      await client.write("dmg", 0x0000, 0x00);
     }
   }
 };

@@ -215,9 +215,7 @@ class DmgFakeClient extends FakeClient {
     return this.openBus();
   }
 
-  write(addr, value) {}
-
-  cmdDmgCartWrite(addr, value) { this.write(addr, value); }
+  write(mode, addr, value) {}
 
   async transfer(mode, address, size, options) {
     options ||= {};
@@ -267,7 +265,8 @@ class Mbc1FakeClient extends DmgFakeClient {
     return this.openBus();
   }
 
-  write(addr, value) {
+  write(mode, addr, value) {
+    expect(mode).toBe("dmg");
     if (0 <= addr && addr < 0x2000) {
       this.ramEnabled = (value & 0x0F) == 0x0A;
     } else if (0x2000 <= addr && addr < 0x4000) {
@@ -303,7 +302,8 @@ class Mbc7FakeClient extends DmgFakeClient {
     return super.read(addr);
   }
 
-  write(addr, value) {
+  write(mode, addr, value) {
+    expect(mode).toBe("dmg");
     if (addr < 0x2000) {
       this.ramConf = value;
     } else if (addr < 0x4000) {

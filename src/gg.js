@@ -97,7 +97,7 @@ export default class GameGearCart {
       }
 
       for (let bankCount = 2; bankCount < 128; bankCount <<= 1) {
-        await client.command(cmds.DMG_CART_WRITE, BANK1, bankCount + 1);
+        await client.write("dmg", BANK1, bankCount + 1);
         const newData = await transferRomSegment(client, seg);
         if (arrayEq(newData, data)) {
           return new GameGearCart(data, bankCount * 0x4000);
@@ -120,10 +120,10 @@ export default class GameGearCart {
       await client.setVariable(vars.DMG_WRITE_CS_PULSE, 1);
       await client.setVariable(vars.DMG_ACCESS_MODE, 1);
       await client.setVariable(vars.ADDRESS, 0x0000);
-      await client.command(cmds.DMG_CART_WRITE, BANKCTRL, 0);
-      await client.command(cmds.DMG_CART_WRITE, BANK0, 0);
-      await client.command(cmds.DMG_CART_WRITE, BANK1, 1);
-      await client.command(cmds.DMG_CART_WRITE, BANK2, 2);
+      await client.write("dmg", BANKCTRL, 0);
+      await client.write("dmg", BANK0, 0);
+      await client.write("dmg", BANK1, 1);
+      await client.write("dmg", BANK2, 2);
     });
   }
 
@@ -140,7 +140,7 @@ const nextBit = (val) => {
 
 const transferRomSegment = async (client, segment, progress) => {
   if (segment.begin >= 0x8000) {
-    await client.command(cmds.DMG_CART_WRITE, BANK2, segment.begin >> 14);
+    await client.write("dmg", BANK2, segment.begin >> 14);
   }
 
   const chunkSize = 0x200;

@@ -30,7 +30,8 @@ class GgFakeClient extends FakeClient {
     return this.rom[addr];
   }
 
-  write(addr, value) {
+  write(mode, addr, value) {
+    expect(mode).toBe("dmg");
     addr = addrConv.boyToGear(addr);
     switch (addr) {
       case 0xFFFC:
@@ -47,8 +48,6 @@ class GgFakeClient extends FakeClient {
         break;
     }
   }
-
-  cmdDmgCartWrite(addr, value) { this.write(addr, value); }
 
   async transfer(mode, address, size, options) {
     options ||= {};

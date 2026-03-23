@@ -20,6 +20,7 @@ export default class LynxCart {
     this.valid.header = true;
   }
 
+  get platform() { return "lynx" }
   get mapperName() { return "None" }
 
   get extension() { return "lyx"; }

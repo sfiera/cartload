@@ -42,6 +42,7 @@ export default class AgbCart {
 
   async headerDigest() { return await window.crypto.subtle.digest("SHA-1", this.header); }
 
+  get platform() { return "agb" }
   get mapperName() { return "None" }
 
   get extension() { return "gba"; }

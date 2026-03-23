@@ -51,6 +51,7 @@ export default class GameGearCart {
     this.valid.header = this.valid.trademark;
   }
 
+  get platform() { return "gg" }
   get mapperName() { return "Sega" }
 
   get romSegments() {

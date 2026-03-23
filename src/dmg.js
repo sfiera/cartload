@@ -82,6 +82,8 @@ export default class DmgCart {
     this.valid.header = this.valid.logo && this.valid.headerCksum;
   }
 
+  get platform() { return "dmg" }
+
   async headerDigest() { return await window.crypto.subtle.digest("SHA-1", this.header); }
 
   get extension() {

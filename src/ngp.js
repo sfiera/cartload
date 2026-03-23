@@ -32,6 +32,7 @@ export default class NeoGeoPocketCart {
     this.valid.header = this.valid.trademark;
   }
 
+  get platform() { return "ngp" }
   get mapperName() { return "None" }
 
   get romSegments() {

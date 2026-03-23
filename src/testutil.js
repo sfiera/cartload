@@ -9,6 +9,8 @@ export class FakeClient {
     this.on = false;
     this.pullups = undefined;
     this.voltage = undefined;
+    this.queue = [];
+    this.working = false;
   }
 
   openBus() {
@@ -16,7 +18,30 @@ export class FakeClient {
     return this.pullups ? 0xFF : 0x00;
   }
 
-  async lock(priority, fn) { return await fn(this); }
+  async #work() {
+    while (!this.working && this.queue.length) {
+      const n = this.queue.slice(1).reduce(
+          (i, _, j) => (this.queue[i].priority < this.queue[j].priority) ? i : j, 0);
+      const {resolve, reject, fn} = this.queue[n];
+      this.queue.splice(n, 1);
+      this.working = true;
+      try {
+        const result = await fn(this);
+        resolve(result);
+      } catch (e) {
+        reject(e);
+      } finally {
+        this.working = false;
+      }
+    }
+  }
+
+  lock(priority, fn) {
+    const {promise, resolve, reject} = Promise.withResolvers();
+    this.queue.push({resolve, reject, fn, priority});
+    this.#work();
+    return promise;
+  }
 
   cmdSetVoltage5v() { this.voltage = 5; }
   cmdSetVoltage33v() { this.voltage = 3.3; }

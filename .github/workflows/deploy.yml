@@ -12,7 +12,7 @@ jobs:
     - uses: actions/checkout@v3
       with: {submodules: true}
     - run: cp -r src _site
-    - run: find _site -name '*test*' | xargs rm
+    - run: find _site -name '*test*' | xargs rm -R
     - uses: actions/upload-pages-artifact@v4
 
   deploy:

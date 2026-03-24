@@ -5,7 +5,7 @@ import vars from "./gbxcart/vars.js";
 import {arrayEq, ints, latin1, makeImage, Segment} from "./util.js";
 
 export default class LynxCart {
-  constructor(data) {
+  constructor(data, romSize) {
     if (!(data instanceof Uint8Array)) {
       throw new TypeError("data must be Uint8Array")
     } else if (data.length < 0x200) {
@@ -14,7 +14,7 @@ export default class LynxCart {
     this.header = data.slice(0, 0x200);
     this.title = null;
     this.code = null;
-    this.romSize = 0x20000;
+    this.romSize = romSize;
 
     this.valid = {};
     this.valid.header = true;
@@ -47,12 +47,12 @@ export default class LynxCart {
             await shift(client, b & 1);
             acc = (b & 1) | ((acc << 1) & 0xFF);
             b >>>= 1;
-            const chunk = await client.transfer("dmg", 0, 0x200, {
+            const chunk = await client.transfer("dmg", 0, this.romSize >>> 8, {
               progress: n => callback(total + n),
               csPulse: false,
             });
-            chunk.forEach((b, i) => data[(acc << 9) | i] = b);
-            total += 0x200;
+            chunk.forEach((b, i) => data[(acc * (this.romSize >>> 8)) | i] = b);
+            total += this.romSize >>> 8;
           }
         };
         return new Uint8Array(data);
@@ -64,11 +64,16 @@ export default class LynxCart {
 
   static async detect(client) {
     return await client.lock(0, async client => {
-      const data = await client.transfer("dmg", 0, 0x200, {csPulse: false});
+      const data = await client.transfer("dmg", 0, 0x800, {csPulse: false});
       if (data.every(x => x == 0)) {
         throw new Error("No cartridge detected");
+      } else if (!data.slice(0x400).every((x, i) => x === data[0x3FF] || x === data[i])) {
+        return new LynxCart(new Uint8Array(data), 0x80000);
+      } else if (!data.slice(0x200, 0x400).every((x, i) => x === data[0x1FF] || x === data[i])) {
+        return new LynxCart(new Uint8Array(data), 0x40000);
+      } else {
+        return new LynxCart(new Uint8Array(data), 0x20000);
       }
-      return new LynxCart(new Uint8Array(data));
     });
   }
 

@@ -12,8 +12,8 @@ test("128kib rom", async () => {
   const client = new LynxFakeClient(data);
 
   const cart = await lynx.detect(client);
-  expect(cart.header.length).toBe(0x200);
-  expect(cart.header).toEqual(data.slice(0, 0x200));
+  expect(cart.header.length).toBe(0x400);
+  expect(cart.header).toEqual(data.slice(0, 0x400));
   expect(cart.title).toBeNull();
   expect(cart.code).toBeNull();
   expect(cart.romSize).toBe(0x20000);
@@ -61,9 +61,9 @@ class LynxFakeClient extends FakeClient {
     expect(!!pullups).toBe(false);
 
     address &= 0x01FF;
-    const result = new Uint8Array(size);
+    const result = [];
     for (let i = 0; i < size; ++i) {
-      result[i] = this.read(address++);
+      result.push(this.read(address++));
       address &= 0x01FF;
     }
     return result;

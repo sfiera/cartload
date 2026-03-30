@@ -8,10 +8,10 @@ export default class LynxCart {
   constructor(data, romSize) {
     if (!(data instanceof Uint8Array)) {
       throw new TypeError("data must be Uint8Array")
-    } else if (data.length < 0x200) {
+    } else if (data.length < 0x400) {
       throw new TypeError("data too short for header")
     }
-    this.header = data.slice(0, 0x200);
+    this.header = data.slice(0, 0x400);
     this.title = null;
     this.code = null;
     this.romSize = romSize;
@@ -38,13 +38,14 @@ export default class LynxCart {
       callback ||= () => {};
       const deBruijn = Uint8Array.fromBase64("AoOCQ0LDwiMyKjomNi4+KTk1LT2zsnPz8quurW/v/gE=");
       await client.command(cmds.CART_PWR_ON);
+      await shift(client, 7, 0);
       try {
         let acc = 0;
         let total = 0;
         const data = new Uint8Array(this.romSize);
         for (let b of deBruijn) {
           for (const _ of ints(8)) {
-            await shift(client, b & 1);
+            await shift(client, 1, b & 1);
             acc = (b & 1) | ((acc << 1) & 0xFF);
             b >>>= 1;
             const chunk = await client.transfer("dmg", 0, this.romSize >>> 8, {
@@ -74,9 +75,7 @@ export default class LynxCart {
         await client.setVariable(vars.ADDRESS, 0x0000);
 
         await client.command(cmds.CART_PWR_ON);
-        for (const _ of ints(8)) {
-          await shift(client, 0);
-        }
+        await shift(client, 8, 0);
 
         const data = await client.transfer("dmg", 0, 0x800, {csPulse: false});
         if (data.every(x => x == 0)) {
@@ -86,6 +85,9 @@ export default class LynxCart {
         } else if (!data.slice(0x200, 0x400).every((x, i) => x === data[0x1FF] || x === data[i])) {
           return new LynxCart(new Uint8Array(data), 0x40000);
         } else {
+          data.splice(0x200);
+          await shift(client, 1, 1);
+          data.push(...await client.transfer("dmg", 0, 0x200, {csPulse: false}));
           return new LynxCart(new Uint8Array(data), 0x20000);
         }
       } finally {
@@ -97,9 +99,11 @@ export default class LynxCart {
   static async db() { return (await import("./db/lynx.json", {with: {type: "json"}})).default; }
 };
 
-const shift = async (client, value) => {
-  await client.setPin(0b10000, 1);              // /CS
-  await client.setPin(0b00010, value ? 1 : 0);  // CLK
-  await client.setPin(0b10000, 0);              // /CS
-  await client.setPin(0b10000, 1);              // /CS
+const shift = async (client, count, value) => {
+  for (const i of ints(count)) {
+    await client.setPin(0b10000, 1);                           // /CS
+    await client.setPin(0b00010, (value & (1 << i)) ? 1 : 0);  // CLK
+    await client.setPin(0b10000, 0);                           // /CS
+    await client.setPin(0b10000, 1);                           // /CS
+  }
 };

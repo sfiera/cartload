@@ -90,40 +90,38 @@ export default class GameGearCart {
 
   static async detect(client) {
     return await client.lock(0, async client => {
-      const seg = new Segment(0x4000, 0x8000);
-      const data = await transferRomSegment(client, seg);
-      if (data.every(x => x == 0)) {
-        throw new Error("No cartridge detected");
-      }
+      try {
+        await client.command(cmds.SET_VOLTAGE_5V);
+        await client.command(cmds.SET_MODE_DMG);
+        await client.command(cmds.DISABLE_PULLUPS);
+        await client.setVariable(vars.CART_MODE, 1);
+        await client.setVariable(vars.DMG_READ_METHOD, 1);
+        await client.setVariable(vars.DMG_ACCESS_MODE, 1);
+        await client.setVariable(vars.ADDRESS, 0x0000);
 
-      for (let bankCount = 2; bankCount < 128; bankCount <<= 1) {
-        await client.write("dmg", BANK1, bankCount + 1);
-        const newData = await transferRomSegment(client, seg);
-        if (arrayEq(newData, data)) {
-          return new GameGearCart(data, bankCount * 0x4000);
+        await client.command(cmds.CART_PWR_ON);
+        await client.write("dmg", BANKCTRL, 0);
+        await client.write("dmg", BANK0, 0);
+        await client.write("dmg", BANK1, 1);
+        await client.write("dmg", BANK2, 2);
+
+        const seg = new Segment(0x4000, 0x8000);
+        const data = await transferRomSegment(client, seg);
+        if (data.every(x => x == 0)) {
+          throw new Error("No cartridge detected");
         }
-      }
-      throw new Error("failed to detect cartridge size");
-    });
-  }
 
-  static async connect(client) {
-    return await client.lock(0, async client => {
-      await client.setVariable(vars.DMG_READ_METHOD, 1);
-      await client.command(cmds.SET_MODE_DMG);
-      await client.command(cmds.SET_VOLTAGE_5V);
-      await client.command(cmds.CART_PWR_ON);
-      await client.command(cmds.DISABLE_PULLUPS);
-      await client.setVariable(vars.DMG_READ_METHOD, 1);
-      await client.setVariable(vars.CART_MODE, 1);
-      await client.setVariable(vars.DMG_READ_CS_PULSE, 1);
-      await client.setVariable(vars.DMG_WRITE_CS_PULSE, 1);
-      await client.setVariable(vars.DMG_ACCESS_MODE, 1);
-      await client.setVariable(vars.ADDRESS, 0x0000);
-      await client.write("dmg", BANKCTRL, 0);
-      await client.write("dmg", BANK0, 0);
-      await client.write("dmg", BANK1, 1);
-      await client.write("dmg", BANK2, 2);
+        for (let bankCount = 2; bankCount < 128; bankCount <<= 1) {
+          await client.write("dmg", BANK1, bankCount + 1);
+          const newData = await transferRomSegment(client, seg);
+          if (arrayEq(newData, data)) {
+            return new GameGearCart(data, bankCount * 0x4000);
+          }
+        }
+        throw new Error("failed to detect cartridge size");
+      } finally {
+        await client.command(cmds.CART_PWR_OFF);
+      }
     });
   }
 

@@ -60,6 +60,8 @@ test.each([
 });
 
 class AgbFakeClient extends FakeClient {
+  constructor(rom) { super(rom, 3.3); }
+
   read(addr, options) {
     const {pullups} = options || {};
 

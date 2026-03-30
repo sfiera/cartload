@@ -64,34 +64,32 @@ export default class LynxCart {
 
   static async detect(client) {
     return await client.lock(0, async client => {
-      const data = await client.transfer("dmg", 0, 0x800, {csPulse: false});
-      if (data.every(x => x == 0)) {
-        throw new Error("No cartridge detected");
-      } else if (!data.slice(0x400).every((x, i) => x === data[0x3FF] || x === data[i])) {
-        return new LynxCart(new Uint8Array(data), 0x80000);
-      } else if (!data.slice(0x200, 0x400).every((x, i) => x === data[0x1FF] || x === data[i])) {
-        return new LynxCart(new Uint8Array(data), 0x40000);
-      } else {
-        return new LynxCart(new Uint8Array(data), 0x20000);
-      }
-    });
-  }
+      try {
+        await client.command(cmds.SET_VOLTAGE_5V);
+        await client.command(cmds.SET_MODE_DMG);
+        await client.command(cmds.DISABLE_PULLUPS);
+        await client.setVariable(vars.CART_MODE, 1);
+        await client.setVariable(vars.DMG_READ_METHOD, 1);
+        await client.setVariable(vars.DMG_ACCESS_MODE, 1);
+        await client.setVariable(vars.ADDRESS, 0x0000);
 
-  static async connect(client) {
-    return await client.lock(0, async client => {
-      await client.setVariable(vars.DMG_READ_METHOD, 1);
-      await client.command(cmds.SET_MODE_DMG);
-      await client.command(cmds.SET_VOLTAGE_5V);
-      await client.command(cmds.CART_PWR_ON);
-      await client.command(cmds.DISABLE_PULLUPS);
-      await client.setVariable(vars.DMG_READ_METHOD, 1);
-      await client.setVariable(vars.CART_MODE, 1);
-      await client.setVariable(vars.DMG_READ_CS_PULSE, 0);
-      await client.setVariable(vars.DMG_WRITE_CS_PULSE, 0);
-      await client.setVariable(vars.DMG_ACCESS_MODE, 1);
-      await client.setVariable(vars.ADDRESS, 0x0000);
-      for (const _ of ints(8)) {
-        await shift(client, 0);
+        await client.command(cmds.CART_PWR_ON);
+        for (const _ of ints(8)) {
+          await shift(client, 0);
+        }
+
+        const data = await client.transfer("dmg", 0, 0x800, {csPulse: false});
+        if (data.every(x => x == 0)) {
+          throw new Error("No cartridge detected");
+        } else if (!data.slice(0x400).every((x, i) => x === data[0x3FF] || x === data[i])) {
+          return new LynxCart(new Uint8Array(data), 0x80000);
+        } else if (!data.slice(0x200, 0x400).every((x, i) => x === data[0x1FF] || x === data[i])) {
+          return new LynxCart(new Uint8Array(data), 0x40000);
+        } else {
+          return new LynxCart(new Uint8Array(data), 0x20000);
+        }
+      } finally {
+        await client.command(cmds.CART_PWR_OFF);
       }
     });
   }

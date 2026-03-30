@@ -2,11 +2,13 @@ import cmds from "./gbxcart/cmds.js";
 import vars from "./gbxcart/vars.js";
 
 export class FakeClient {
-  constructor(rom) {
+  constructor(rom, voltage) {
     this.address = 0;
     this.rom = new Uint8Array(rom);
-    this.pullups = undefined;
+    this.expectedVoltage = voltage;
     this.on = false;
+    this.pullups = undefined;
+    this.voltage = undefined;
   }
 
   openBus() {
@@ -16,8 +18,19 @@ export class FakeClient {
 
   async lock(priority, fn) { return await fn(this); }
 
-  cmdCartPwrOn() { this.on = true; }
+  cmdSetVoltage5v() { this.voltage = 5; }
+  cmdSetVoltage33v() { this.voltage = 3.3; }
+
+  cmdCartPwrOn() {
+    expect(this.voltage).toBe(this.expectedVoltage);
+    this.on = true;
+  }
   cmdCartPwrOff() { this.on = false; }
+  cmdSetModeDmg() {}
+  cmdSetModeAgb() {}
+  cmdDisablePullups() {}
+  cmdDmgMbcReset() {}
+  cmdAgbBootupSequence() {}
 
   async command(cmd, ...args) {
     for (const [key, cmd2] of Object.entries(cmds)) {
@@ -31,6 +44,13 @@ export class FakeClient {
     }
     throw new Error(`unknown command ${cmd.id}`);
   }
+
+  setCartMode(mode) {}
+  setDmgReadMethod(method) {}
+  setDmgAccessMode(mode) {}
+  setAgbReadMethod(method) {}
+  setAgbIrqEnabled(enabled) {}
+  setAddress(address) {}
 
   async setVariable(variable, value) {
     for (const [key, variable2] of Object.entries(vars)) {

@@ -54,7 +54,7 @@ test.each([
 
 class NgpFakeClient extends FakeClient {
   constructor(rom) {
-    super(rom);
+    super(rom, 3.3);
     this.latch = 0;
     this.hiPins = 0;
   }

@@ -132,35 +132,36 @@ export default class AgbCart {
 
   static async detect(client) {
     return await client.lock(0, async client => {
-      const header = await client.transfer("agb", 0, 0x180);
-      if (header.every(x => x == 0)) {
-        throw new Error("No cartridge detected");
-      }
+      try {
+        await client.command(cmds.SET_VOLTAGE_3_3V);
+        await client.command(cmds.SET_MODE_AGB);
+        await client.command(cmds.DISABLE_PULLUPS);
+        await client.setVariable(vars.CART_MODE, 2);
+        await client.setVariable(vars.AGB_READ_METHOD, 2);
+        await client.setVariable(vars.AGB_IRQ_ENABLED, 0);
+        await client.setVariable(vars.ADDRESS, 0x00000000);
 
-      // Detect ROM size by scanning upwards for the header.
-      for (let address = 0x8000; address <= 0x20000000; address <<= 1) {
-        const newHeader = await client.transfer("agb", address, 0x180);
-        if (arrayEq(newHeader, header) || newHeader.every(x => x == 0)) {
-          return new AgbCart(new Uint8Array(header), address);
+        await client.command(cmds.CART_PWR_ON);
+        await client.command(cmds.AGB_BOOTUP_SEQUENCE);
+
+        const header = await client.transfer("agb", 0, 0x180);
+        if (header.every(x => x == 0)) {
+          throw new Error("No cartridge detected");
         }
+
+        // Detect ROM size by scanning upwards for the header.
+        for (let address = 0x8000; address <= 0x20000000; address <<= 1) {
+          const newHeader = await client.transfer("agb", address, 0x180);
+          if (arrayEq(newHeader, header) || newHeader.every(x => x == 0)) {
+            return new AgbCart(new Uint8Array(header), address);
+          }
+        }
+
+        // Failed to detect ROM size.
+        return new AgbCart(new Uint8Array(header), 0);
+      } finally {
+        await client.command(cmds.CART_PWR_OFF);
       }
-
-      // Failed to detect ROM size.
-      return new AgbCart(new Uint8Array(header), 0);
-    });
-  }
-
-  static async connect(client) {
-    return await client.lock(0, async client => {
-      await client.command(cmds.DISABLE_PULLUPS);
-      await client.command(cmds.SET_MODE_AGB);
-      await client.command(cmds.SET_VOLTAGE_3_3V);
-      await client.setVariable(vars.AGB_READ_METHOD, 2);
-      await client.setVariable(vars.CART_MODE, 2);
-      await client.setVariable(vars.AGB_IRQ_ENABLED, 0);
-      await client.setVariable(vars.ADDRESS, 0x00000000);
-      await client.command(cmds.CART_PWR_ON);
-      await client.command(cmds.AGB_BOOTUP_SEQUENCE);
     });
   }
 

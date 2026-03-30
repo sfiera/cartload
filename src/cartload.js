@@ -100,16 +100,7 @@ const action = async (fn) => {
 };
 
 const run = async (client, platform, {signal}) => {
-  let cart = null;
-  try {
-    await platform.connect(client);
-    cart = await platform.detect(client);
-  } finally {
-    await client.lock(0, async client => {
-      await client.command(cmds.CART_PWR_OFF);
-    });
-  }
-
+  const cart = await platform.detect(client);
   console.log(cart);
   if (!cart) {
     return;

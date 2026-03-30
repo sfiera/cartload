@@ -202,7 +202,7 @@ test("mbc7", async () => {
 
 class DmgFakeClient extends FakeClient {
   constructor(rom, ram) {
-    super(rom);
+    super(rom, 5);
     this.ram = new Uint8Array(ram);
   }
 

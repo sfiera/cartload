@@ -9,7 +9,7 @@ import {latin1, Segment, unhex} from "./util.js";
 
 class GgFakeClient extends FakeClient {
   constructor(rom) {
-    super(rom);
+    super(rom, 5);
     this.banks = [0, 1, 2];
   }
 

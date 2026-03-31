@@ -13,7 +13,9 @@ export default class NeoGeoPocketCart {
     }
     this.header = data.slice(0, 0x40);
     this.trademark = latin1.decode(this.header.slice(0x00, 0x1C));
-    this.title = latin1.decode(this.header.slice(0x24, 0x30));
+    const titleRegexp = /^(.*?)[\u0000 ]*$/;
+    const titleMatch = latin1.decode(this.header.slice(0x24, 0x30)).match(titleRegexp);
+    this.title = titleMatch[1];
     this.code =
         ("NEOP" + this.header[0x21].toString(16).padStart(2, "0") +
          this.header[0x20].toString(16).padStart(2, "0"));

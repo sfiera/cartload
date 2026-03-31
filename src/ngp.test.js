@@ -20,7 +20,7 @@ test("no mapper", async () => {
 
   const cart = await ngp.detect(client);
   expect(cart.header.length).toBe(0x40);
-  expect(cart.title).toBe("HANABI 1.02 ");
+  expect(cart.title).toBe("HANABI 1.02");
   expect(cart.code).toBe("NEOP0052");
   expect(cart.romSize).toBe(65536);
   expect(cart.valid.trademark).toBe(true);

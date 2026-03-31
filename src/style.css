@@ -78,4 +78,6 @@ progress {
   header, main, footer, dialog { background: #333; color: white; border: 1px solid #666; }
   main > * { border: 1px solid #666; }
   a:link { color: #7bf; }
+  a:visited { color: #b7f; }
+  a:active { color: #f77; }
 }

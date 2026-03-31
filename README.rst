@@ -62,3 +62,17 @@ Q: What about PC-Engine/TurboGrafx-16 HuCards, with the AP\_A04?
 
 Q: Why don’t my Neo Geo Pocket backups match public digests?
   A: NGP cartridges store game code and save data in a single flash chip, and backup utilities can’t distinguish one from the other. Unless the cartridge has never been used, any backup will likely contain save data that prevents it from matching.
+
+Q: How does Cartload compare to FlashGBX_?
+  A: At present, FlashGBX:
+
+  * has many more features for Game Boy and Game Boy Advance cartridges, such as write support
+  * supports devices other than GBxCart RW, such as GBFlash and Joey Jr.
+  * is a Python app, so users of Firefox or Safari can use it
+
+  Cartload:
+
+  * supports Game Gear, Lynx, and Neo Geo Pocket through adapters
+  * is a web app, but requires the use of specific browsers
+
+.. _flashgbx: https://github.com/lesserkuma/FlashGBX

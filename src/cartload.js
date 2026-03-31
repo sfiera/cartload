@@ -18,38 +18,62 @@ const PLATFORMS = {
 };
 
 const showInfo = (cart, dbEntry) => {
-  const detected = document.getElementById("detected");
-  const title = document.getElementById("title");
-  const code = document.getElementById("code");
-  const mapper = document.getElementById("mapper");
-  const rom = document.getElementById("rom");
-  const sav = document.getElementById("sav");
-  const logo = document.getElementById("logo");
+  const detected = document.querySelector("#detected");
+  const rom = document.querySelector("#rom");
+  const sav = document.querySelector("#sav");
 
-  if (cart) {
-    detected.replaceChildren(dbEntry ? `${dbEntry.gn} ${dbEntry.ne}` : "(unknown)");
-    title.replaceChildren(cart.title || "(none)");
-    code.replaceChildren(cart.code || "(none)");
-    mapper.replaceChildren(cart.mapperName);
-    rom.replaceChildren(unitBytes(cart.romSize));
-    sav.replaceChildren(unitBytes(cart.savSize));
+  if (!cart) {
+    detected.replaceChildren(
+        h2("Database"),
+        p("Disconnected"),
+    );
+    rom.replaceChildren(
+        h2("ROM Data"),
+        p("Disconnected"),
+    );
+    sav.replaceChildren(
+        h2("Save Data"),
+        p("Disconnected"),
+    );
+    return;
+  }
 
-    const img = new Image();
-    img.src = cart.logoImageUrl();
-    logo.replaceChildren(img);
+  if (dbEntry) {
+    detected.replaceChildren(
+        h2("Database"),
+        ul(li(`Title: ${dbEntry.gn} ${dbEntry.ne}`)),
+    );
   } else {
-    detected.replaceChildren();
-    title.replaceChildren();
-    code.replaceChildren();
-    mapper.replaceChildren();
-    rom.replaceChildren();
-    sav.replaceChildren();
-    logo.replaceChildren();
+    detected.replaceChildren(
+        h2("Database"),
+        p("Not found"),
+    );
+  }
+
+  rom.replaceChildren(
+      h2("ROM Data"),
+      ul(li(`Title: ${cart.title || "(none)"}`),
+         li(`Code: ${cart.code || "(none)"}`),
+         li(`Mapper: ${cart.mapperName}`),
+         li(`Size: ${cart.romSize}`),
+         li("Logo: ", makeElement("img", {src: cart.logoImageUrl()}))),
+  );
+
+  if (cart.savSize) {
+    sav.replaceChildren(
+        h2("Save Data"),
+        ul(li(`Size: ${cart.romSize}`)),
+    );
+  } else {
+    sav.replaceChildren(
+        h2("Save Data"),
+        p("None"),
+    );
   }
 };
 
 const showProgress = (curr, max) => {
-  const progress = document.getElementById("progress");
+  const progress = document.querySelector("progress");
   const pct = Math.floor(1000 * curr / max) / 10;
   progress.value = pct;
   progress.innerText = `${pct}%`;
@@ -115,8 +139,7 @@ const run = async (client, platform, {signal}) => {
   showInfo(cart, dbEntry);
   signal.addEventListener("abort", () => showInfo(null));
 
-  const disconnect = document.getElementById("disconnect");
-  const header = disconnect.parentElement;
+  const disconnect = document.querySelector("#disconnect");
 
   const backUpRom = makeElement("button", {
     children: [`Back up .${cart.extension}`],
@@ -128,7 +151,7 @@ const run = async (client, platform, {signal}) => {
       });
     },
   });
-  header.append(backUpRom);
+  document.querySelector("#rom").append(backUpRom);
   signal.addEventListener("abort", () => backUpRom.remove());
 
   if (cart.canBackUpSav) {
@@ -142,7 +165,7 @@ const run = async (client, platform, {signal}) => {
         });
       },
     });
-    header.append(" ", backUpSav);
+    document.querySelector("#sav").append(backUpSav);
     signal.addEventListener("abort", () => backUpSav.remove());
   }
 
@@ -172,7 +195,7 @@ const runModal = (children, buttons) => new Promise(resolve => {
   dlog.showModal();
 });
 
-const [h3, p, ul, li, tt] = ["h3", "p", "ul", "li", "tt"].map(
+const [h2, p, ul, li, tt] = ["h2", "p", "ul", "li", "tt"].map(
     tag => ((...children) => makeElement(tag, {children: children})));
 
 const showErr = e => {
@@ -181,8 +204,9 @@ const showErr = e => {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
-  const platform = document.getElementById("platform");
-  const connect = document.getElementById("connect");
+  const platform = document.querySelector("#platform");
+  const connect = document.querySelector("#connect");
+  showInfo(null);
 
   if (!navigator.serial) {
     platform.disabled = true;

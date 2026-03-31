@@ -1,19 +1,53 @@
 body {
   font-family: sans-serif;
-  max-width: 50em;
-  margin: 1em auto;
+  max-width: 800px;
+  margin: 0 auto;
   background: #ccc;
 }
 
-header, main, footer {
-  margin: 1em;
+header, main, footer, dialog, h1 {
+  margin: 10px;
 }
 
 header, main, footer, dialog {
+  padding: 10px;
   background: white;
-  padding: 0.5em;
   border: 1px solid #999;
   border-radius: 2px;
+}
+
+main {
+  display: grid;
+  grid-gap: 10px;
+}
+
+main > * {
+  border: 1px solid #ccc;
+  padding: 10px;
+}
+
+main p {
+  text-align: center;
+  font-style: italic;
+}
+
+#detected, #progress {
+  grid-column: 1/-1;
+}
+
+@media (min-width: 400px) {
+  main {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+h1, h2 {
+  text-align: center;
+}
+
+h2 {
+  margin: 0 0 10px 0;
+  font-size: 100%;
 }
 
 footer {
@@ -21,14 +55,27 @@ footer {
   text-align: center;
 }
 
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
 img {
   image-rendering: pixelated;
 }
 
 progress {
-  height: 1.5em;
+  height: 30px;
   width: 100%;
-  max-width: 25em;
+  max-width: 400px;
   display: block;
   margin: 0 auto;
+}
+
+@media (prefers-color-scheme: dark) {
+  body { background: black; color: white; }
+  header, main, footer, dialog { background: #333; color: white; border: 1px solid #666; }
+  main > * { border: 1px solid #666; }
+  a:link { color: #7bf; }
 }

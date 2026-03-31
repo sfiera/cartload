@@ -9,6 +9,7 @@
     </style>
   </head>
   <body>
+    <h1>Cartload</h1>
     <header>
       <select id="platform">
         <option value="">-- Select Platform --</option>
@@ -25,16 +26,21 @@
       <button id="disconnect" disabled="true">Disconnect</button>
     </header>
     <main>
-      <ul>
-        <li>Detected: <span id="detected"></span></li>
-        <li>Title: <span id="title"></span></li>
-        <li>Code: <span id="code"></span></li>
-        <li>Mapper: <span id="mapper"></span></li>
-        <li>ROM: <span id="rom"></span></li>
-        <li>Save: <span id="sav"></span></li>
-        <li>Logo: <span id="logo"></span></li>
-      </ul>
-      <progress id="progress" value="0" max="100">0%</progress>
+      <div id="detected">
+        <h2>Database</h2>
+        <p>Disconnected</p>
+      </div>
+      <div id="rom">
+        <h2>ROM Data</h2>
+        <p>Disconnected</p>
+      </div>
+      <div id="sav">
+        <h2>Save Data</h2>
+        <p>Disconnected</p>
+      </div>
+      <div id="progress">
+        <progress value="0" max="100">0%</progress>
+      </div>
     </main>
     <footer>
       ©2026– cartload.org.

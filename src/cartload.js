@@ -210,7 +210,7 @@ const [h2, p, ul, li, tt] = ["h2", "p", "ul", "li", "tt"].map(
 
 const showErr = e => {
   console.log(e);
-  runModal([h3(e.name), p(e.message)], ["OK"]);
+  runModal([h2(e.name), p(e.message)], ["OK"]);
 };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -221,7 +221,7 @@ document.addEventListener("DOMContentLoaded", () => {
     platform.disabled = true;
     runModal(
         [
-          h3("Web Serial missing"),
+          h2("Web Serial missing"),
           p("Cartload requires a ",
             makeElement("a", {
               href: "https://caniuse.com/web-serial",

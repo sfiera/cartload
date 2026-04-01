@@ -123,6 +123,8 @@ const nextBit = (val) => {
 };
 
 const transferRomSegment = async (client, segment, progress) => {
+  progress ||= () => {};
+
   if (segment.begin >= 0x8000) {
     await client.write("dmg", BANK2, segment.begin >> 14);
   }
@@ -134,9 +136,14 @@ const transferRomSegment = async (client, segment, progress) => {
   const begin = Math.min(segment.begin, 0x8000);
   let gearAddr = begin;
   const data = new Uint8Array(0x10000);
+  let total = 0;
   while (gearAddr < Math.min(segment.end, 0xC000)) {
     const boyAddr = addr.gearToBoy(gearAddr);
-    const chunk = await client.transfer("dmg", boyAddr, chunkSize, {progress, csPulse: true});
+    const chunk = await client.transfer("dmg", boyAddr, chunkSize, {
+      progress: n => progress(n + total),
+      csPulse: true,
+    });
+    total += chunk.length;
     for (const [i, b] of chunk.entries()) {
       data[addr.boyToGear(boyAddr + i)] = b;
     }

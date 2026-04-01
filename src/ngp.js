@@ -47,7 +47,7 @@ export default class NeoGeoPocketCart {
   async backUpRom(client, callback) {
     return await client.lock(0, async client => {
       callback ||= () => {};
-      await client.command(cmds.CART_PWR_ON);
+      await client.setPower(true);
       try {
         let data = [];
         const segs = this.romSegments;
@@ -60,7 +60,7 @@ export default class NeoGeoPocketCart {
         }
         return new Uint8Array(data);
       } finally {
-        await client.command(cmds.CART_PWR_OFF);
+        await client.setPower(false);
       }
     });
   }
@@ -73,15 +73,8 @@ export default class NeoGeoPocketCart {
   static async detect(client) {
     return await client.lock(0, async client => {
       try {
-        await client.command(cmds.SET_VOLTAGE_3_3V);
-        await client.command(cmds.SET_MODE_DMG);
-        await client.command(cmds.DISABLE_PULLUPS);
-        await client.setVariable(vars.CART_MODE, 1);
-        await client.setVariable(vars.DMG_READ_METHOD, 1);
-        await client.setVariable(vars.DMG_ACCESS_MODE, 1);
-        await client.setVariable(vars.ADDRESS, 0x0000);
-
-        await client.command(cmds.CART_PWR_ON);
+        await client.setMode("dmg", 3.3);
+        await client.setPower(true);
         await latch(client, 0);
         await cs(client, 0);
 
@@ -107,7 +100,7 @@ export default class NeoGeoPocketCart {
 
         return new NeoGeoPocketCart(new Uint8Array(data), 0x400000);
       } finally {
-        await client.command(cmds.CART_PWR_OFF);
+        await client.setPower(false);
       }
     });
   }

@@ -25,7 +25,7 @@ test("128kib rom", async () => {
 
 class LynxFakeClient extends FakeClient {
   constructor(rom) {
-    super(rom, 5);
+    super("dmg", 5, rom);
     this.latch = 0;
     this.hiPins = 0;
   }

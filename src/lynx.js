@@ -27,7 +27,7 @@ export default class LynxCart {
     return await client.lock(0, async client => {
       callback ||= () => {};
       const deBruijn = Uint8Array.fromBase64("AoOCQ0LDwiMyKjomNi4+KTk1LT2zsnPz8quurW/v/gE=");
-      await client.command(cmds.CART_PWR_ON);
+      await client.setPower(true);
       await shift(client, 7, 0);
       try {
         let acc = 0;
@@ -48,7 +48,7 @@ export default class LynxCart {
         };
         return new Uint8Array(data);
       } finally {
-        await client.command(cmds.CART_PWR_OFF);
+        await client.setPower(false);
       }
     });
   }
@@ -56,15 +56,8 @@ export default class LynxCart {
   static async detect(client) {
     return await client.lock(0, async client => {
       try {
-        await client.command(cmds.SET_VOLTAGE_5V);
-        await client.command(cmds.SET_MODE_DMG);
-        await client.command(cmds.DISABLE_PULLUPS);
-        await client.setVariable(vars.CART_MODE, 1);
-        await client.setVariable(vars.DMG_READ_METHOD, 1);
-        await client.setVariable(vars.DMG_ACCESS_MODE, 1);
-        await client.setVariable(vars.ADDRESS, 0x0000);
-
-        await client.command(cmds.CART_PWR_ON);
+        await client.setMode("dmg", 5);
+        await client.setPower(true);
         await shift(client, 8, 0);
 
         const data = await client.transfer("dmg", 0, 0x800, {csPulse: false});
@@ -81,7 +74,7 @@ export default class LynxCart {
           return new LynxCart(new Uint8Array(data), 0x20000);
         }
       } finally {
-        await client.command(cmds.CART_PWR_OFF);
+        await client.setPower(false);
       }
     });
   }

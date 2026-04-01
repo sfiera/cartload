@@ -67,7 +67,7 @@ export default class GameGearCart {
   async backUpRom(client, callback) {
     return await client.lock(0, async client => {
       callback ||= () => {};
-      await client.command(cmds.CART_PWR_ON);
+      await client.setPower(true);
       try {
         let data = [];
         const segs = this.romSegments;
@@ -76,7 +76,7 @@ export default class GameGearCart {
         }
         return new Uint8Array(data);
       } finally {
-        await client.command(cmds.CART_PWR_OFF);
+        await client.setPower(false);
       }
     });
   }
@@ -84,15 +84,8 @@ export default class GameGearCart {
   static async detect(client) {
     return await client.lock(0, async client => {
       try {
-        await client.command(cmds.SET_VOLTAGE_5V);
-        await client.command(cmds.SET_MODE_DMG);
-        await client.command(cmds.DISABLE_PULLUPS);
-        await client.setVariable(vars.CART_MODE, 1);
-        await client.setVariable(vars.DMG_READ_METHOD, 1);
-        await client.setVariable(vars.DMG_ACCESS_MODE, 1);
-        await client.setVariable(vars.ADDRESS, 0x0000);
-
-        await client.command(cmds.CART_PWR_ON);
+        await client.setMode("dmg", 5);
+        await client.setPower(true);
         await client.write("dmg", BANKCTRL, 0);
         await client.write("dmg", BANK0, 0);
         await client.write("dmg", BANK1, 1);
@@ -113,7 +106,7 @@ export default class GameGearCart {
         }
         throw new Error("failed to detect cartridge size");
       } finally {
-        await client.command(cmds.CART_PWR_OFF);
+        await client.setPower(false);
       }
     });
   }

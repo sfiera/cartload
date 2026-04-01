@@ -117,12 +117,12 @@ export default class AgbCart {
 
   async backUpRom(client, callback) {
     return await client.lock(0, async client => {
-      await client.command(cmds.CART_PWR_ON);
+      await client.setPower(true);
       try {
         const data = await client.transfer("agb", 0, this.romSize, {progress: callback});
         return new Uint8Array(data);
       } finally {
-        await client.command(cmds.CART_PWR_OFF);
+        await client.setPower(false);
       }
     });
   }
@@ -130,16 +130,9 @@ export default class AgbCart {
   static async detect(client) {
     return await client.lock(0, async client => {
       try {
-        await client.command(cmds.SET_VOLTAGE_3_3V);
-        await client.command(cmds.SET_MODE_AGB);
-        await client.command(cmds.DISABLE_PULLUPS);
-        await client.setVariable(vars.CART_MODE, 2);
-        await client.setVariable(vars.AGB_READ_METHOD, 2);
-        await client.setVariable(vars.AGB_IRQ_ENABLED, 0);
-        await client.setVariable(vars.ADDRESS, 0x00000000);
-
-        await client.command(cmds.CART_PWR_ON);
-        await client.command(cmds.AGB_BOOTUP_SEQUENCE);
+        await client.setMode("agb", 3.3);
+        await client.setPower(true);
+        await client.agbBoot();
 
         const header = await client.transfer("agb", 0, 0x180);
         if (header.every(x => x == 0)) {
@@ -157,7 +150,7 @@ export default class AgbCart {
         // Failed to detect ROM size.
         return new AgbCart(new Uint8Array(header), 0);
       } finally {
-        await client.command(cmds.CART_PWR_OFF);
+        await client.setPower(false);
       }
     });
   }

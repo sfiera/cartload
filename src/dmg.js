@@ -119,7 +119,7 @@ export default class DmgCart {
   async backUpRom(client, callback) {
     return await client.lock(0, async client => {
       callback ||= () => {};
-      await client.command(cmds.CART_PWR_ON);
+      await client.setPower(true);
       try {
         let data = [];
         const segs = this.romSegments;
@@ -129,7 +129,7 @@ export default class DmgCart {
         }
         return new Uint8Array(data);
       } finally {
-        await client.command(cmds.CART_PWR_OFF);
+        await client.setPower(false);
       }
     });
   }
@@ -139,7 +139,7 @@ export default class DmgCart {
   async backUpSav(client, callback) {
     return await client.lock(0, async client => {
       callback ||= () => {};
-      await client.command(cmds.CART_PWR_ON);
+      await client.setPower(true);
       try {
         let data = [];
         const segs = this.savSegments;
@@ -149,7 +149,7 @@ export default class DmgCart {
         }
         return new Uint8Array(data);
       } finally {
-        await client.command(cmds.CART_PWR_OFF);
+        await client.setPower(false);
       }
     });
   }
@@ -184,16 +184,9 @@ export default class DmgCart {
   static async detect(client) {
     return await client.lock(0, async client => {
       try {
-        await client.command(cmds.SET_VOLTAGE_5V);
-        await client.command(cmds.SET_MODE_DMG);
-        await client.command(cmds.DISABLE_PULLUPS);
-        await client.setVariable(vars.CART_MODE, 1);
-        await client.setVariable(vars.DMG_READ_METHOD, 1);
-        await client.setVariable(vars.DMG_ACCESS_MODE, 1);
-        await client.setVariable(vars.ADDRESS, 0x0000);
-
-        await client.command(cmds.CART_PWR_ON);
-        await client.command(cmds.DMG_MBC_RESET);
+        await client.setMode("dmg", 5);
+        await client.setPower(true);
+        await client.dmgBoot();
         await client.write("dmg", 0x0000, 0xFF);
 
         const header = new Uint8Array(await client.transfer("dmg", 0, 0x180, {csPulse: true}));
@@ -206,7 +199,7 @@ export default class DmgCart {
         }
         return cartType(header);
       } finally {
-        await client.command(cmds.CART_PWR_OFF);
+        await client.setPower(false);
       }
     });
   }

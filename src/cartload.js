@@ -114,7 +114,7 @@ const handleConnect = async platform => {
   } finally {
     ctrl.abort();
     await client.lock(0, async client => {
-      await client.command(cmds.CART_PWR_OFF);
+      await client.setPower(false);
       await client.close();
     });
   };

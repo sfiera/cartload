@@ -9,6 +9,8 @@ import LynxCart from "./lynx.js";
 import NeoGeoPocketCart from "./ngp.js";
 import {downloadUrl, hex, makeElement, toDataUrl, unitBytes} from "./util.js";
 
+const q = (...args) => document.querySelector(...args);
+
 const PLATFORMS = {
   dmg: DmgCart,
   agb: AgbCart,
@@ -17,16 +19,17 @@ const PLATFORMS = {
   lynx: LynxCart,
 };
 
-ROM_PROPS = {
+const ROM_PROPS = {
+  romSize: "Size",
   title: "Title",
   code: "Code",
   mapperName: "Mapper",
 };
 
 const showInfo = (cart, dbEntry) => {
-  const detected = document.querySelector("#detected");
-  const rom = document.querySelector("#rom");
-  const sav = document.querySelector("#sav");
+  const detected = q("#detected");
+  const rom = q("#rom");
+  const sav = q("#sav");
 
   if (!cart) {
     detected.replaceChildren(
@@ -56,17 +59,15 @@ const showInfo = (cart, dbEntry) => {
     );
   }
 
-  rom.replaceChildren(
-      h2("ROM Data"),
-      ul(li(`Size: ${cart.romSize}`),
-  );
+  const list = ul();
+  rom.replaceChildren(h2("ROM Data"), list);
   for (const [prop, name] of Object.entries(ROM_PROPS)) {
     if (typeof cart[prop] !== "undefined") {
-      rom.appendChild(li(`${name}: ${cart[prop]}`));
+      list.appendChild(li(`${name}: ${cart[prop]}`));
     }
   }
   if (typeof cart.logoImageUrl !== "undefined") {
-    rom.appendChild(li("Logo: ", makeElement("img", {src: cart.logoImageUrl()})));
+    list.appendChild(li("Logo: ", makeElement("img", {src: cart.logoImageUrl()})));
   }
 
   if (cart.savSize) {
@@ -83,7 +84,7 @@ const showInfo = (cart, dbEntry) => {
 };
 
 const showProgress = (curr, max) => {
-  const progress = document.querySelector("progress");
+  const progress = q("progress");
   const pct = Math.floor(1000 * curr / max) / 10;
   progress.value = pct;
   progress.innerText = `${pct}%`;
@@ -149,8 +150,6 @@ const run = async (client, platform, {signal}) => {
   showInfo(cart, dbEntry);
   signal.addEventListener("abort", () => showInfo(null));
 
-  const disconnect = document.querySelector("#disconnect");
-
   const backUpRom = makeElement("button", {
     children: [`Back up .${cart.extension}`],
     onclick: async () => {
@@ -161,7 +160,7 @@ const run = async (client, platform, {signal}) => {
       });
     },
   });
-  document.querySelector("#rom").append(backUpRom);
+  q("#rom").append(backUpRom);
   signal.addEventListener("abort", () => backUpRom.remove());
 
   if (cart.canBackUpSav) {
@@ -175,11 +174,12 @@ const run = async (client, platform, {signal}) => {
         });
       },
     });
-    document.querySelector("#sav").append(backUpSav);
+    q("#sav").append(backUpSav);
     signal.addEventListener("abort", () => backUpSav.remove());
   }
 
   const {promise, resolve} = Promise.withResolvers();
+  const disconnect = q("#disconnect");
   disconnect.disabled = false;
   disconnect.addEventListener("click", () => resolve(), {signal});
   signal.addEventListener("abort", () => disconnect.disabled = true);
@@ -214,9 +214,8 @@ const showErr = e => {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
-  const platform = document.querySelector("#platform");
-  const connect = document.querySelector("#connect");
-  showInfo(null);
+  const platform = q("#platform");
+  const connect = q("#connect");
 
   if (!navigator.serial) {
     platform.disabled = true;

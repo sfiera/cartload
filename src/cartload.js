@@ -17,6 +17,12 @@ const PLATFORMS = {
   lynx: LynxCart,
 };
 
+ROM_PROPS = {
+  title: "Title",
+  code: "Code",
+  mapperName: "Mapper",
+};
+
 const showInfo = (cart, dbEntry) => {
   const detected = document.querySelector("#detected");
   const rom = document.querySelector("#rom");
@@ -52,12 +58,16 @@ const showInfo = (cart, dbEntry) => {
 
   rom.replaceChildren(
       h2("ROM Data"),
-      ul(li(`Title: ${cart.title || "(none)"}`),
-         li(`Code: ${cart.code || "(none)"}`),
-         li(`Mapper: ${cart.mapperName}`),
-         li(`Size: ${cart.romSize}`),
-         li("Logo: ", makeElement("img", {src: cart.logoImageUrl()}))),
+      ul(li(`Size: ${cart.romSize}`),
   );
+  for (const [prop, name] of Object.entries(ROM_PROPS)) {
+    if (typeof cart[prop] !== "undefined") {
+      rom.appendChild(li(`${name}: ${cart[prop]}`));
+    }
+  }
+  if (typeof cart.logoImageUrl !== "undefined") {
+    rom.appendChild(li("Logo: ", makeElement("img", {src: cart.logoImageUrl()})));
+  }
 
   if (cart.savSize) {
     sav.replaceChildren(

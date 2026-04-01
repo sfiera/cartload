@@ -43,8 +43,6 @@ export default class AgbCart {
   async headerDigest() { return await window.crypto.subtle.digest("SHA-1", this.header); }
 
   get platform() { return "agb" }
-  get mapperName() { return "None" }
-
   get extension() { return "gba"; }
 
   // Translated from FlashGBX code originally by Winter1760
@@ -116,8 +114,6 @@ export default class AgbCart {
       }
     }
   }
-
-  logoImageUrl() { return makeImage(104, 16, (ctx) => this.drawImage(ctx)); }
 
   async backUpRom(client, callback) {
     return await client.lock(0, async client => {

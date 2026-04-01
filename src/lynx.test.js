@@ -14,8 +14,8 @@ test("128kib rom", async () => {
   const cart = await lynx.detect(client);
   expect(cart.header.length).toBe(0x400);
   expect(cart.header).toEqual(data.slice(0, 0x400));
-  expect(cart.title).toBeNull();
-  expect(cart.code).toBeNull();
+  expect(cart.title).toBeUndefined();
+  expect(cart.code).toBeUndefined();
   expect(cart.romSize).toBe(0x20000);
   expect(cart.valid.header).toBe(true);
 

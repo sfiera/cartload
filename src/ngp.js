@@ -35,23 +35,14 @@ export default class NeoGeoPocketCart {
   }
 
   get platform() { return "ngp" }
-  get mapperName() { return "None" }
+  get extension() { return "ngp"; }
 
   get romSegments() {
     return ints(this.romSize >> 16).map(i => new Segment(i * (1 << 16), (i + 1) * (1 << 16)));
   }
   get savSegments() { return []; }
 
-  get extension() { return "ngp"; }
-
   async headerDigest() { return await window.crypto.subtle.digest("SHA-1", this.header); }
-
-  logoImageUrl() {
-    return makeImage(64, 8, (ctx) => {
-      ctx.fillStyle = "black";
-      ctx.fillRect(0, 0, 64, 8);
-    });
-  }
 
   async backUpRom(client, callback) {
     return await client.lock(0, async client => {

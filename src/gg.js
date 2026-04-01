@@ -65,13 +65,6 @@ export default class GameGearCart {
 
   async headerDigest() { return await window.crypto.subtle.digest("SHA-1", this.header); }
 
-  logoImageUrl() {
-    return makeImage(64, 8, (ctx) => {
-      ctx.fillStyle = "black";
-      ctx.fillRect(0, 0, 64, 8);
-    });
-  }
-
   async backUpRom(client, callback) {
     return await client.lock(0, async client => {
       callback ||= () => {};

@@ -45,7 +45,7 @@ export default class DmgCart {
         /^(.*?)\u0000*(?:([ABHKV][A-Z2-9][A-Z2-9][ABDEFIJKPSUXY])?[\u0080-\uffff])?$/;
     const titleMatch = latin1.decode(data.slice(0x134, 0x144)).match(titleRegexp);
     this.title = titleMatch[1];
-    this.code = titleMatch[2] || "";
+    this.code = titleMatch[2] || undefined;
 
     const romSizeCode = data[0x148];
     this.romSize = 0x8000 << romSizeCode;

@@ -12,8 +12,6 @@ export default class LynxCart {
       throw new TypeError("data too short for header")
     }
     this.header = data.slice(0, 0x400);
-    this.title = null;
-    this.code = null;
     this.romSize = romSize;
 
     this.valid = {};
@@ -21,18 +19,9 @@ export default class LynxCart {
   }
 
   get platform() { return "lynx" }
-  get mapperName() { return "None" }
-
   get extension() { return "lyx"; }
 
   async headerDigest() { return await window.crypto.subtle.digest("SHA-1", this.header); }
-
-  logoImageUrl() {
-    return makeImage(64, 8, (ctx) => {
-      ctx.fillStyle = "black";
-      ctx.fillRect(0, 0, 64, 8);
-    });
-  }
 
   async backUpRom(client, callback) {
     return await client.lock(0, async client => {

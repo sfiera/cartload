@@ -147,7 +147,7 @@ test.each([
   {
     data: unhex("534841444f574741544520434c415380"),
     title: "SHADOWGATE CLAS",
-    code: "",  // C is not a valid cartridge type
+    code: undefined,  // C is not a valid cartridge type
     cgbFlag: 0x80,
   },
   {
@@ -180,7 +180,7 @@ test.each([
     code: "VPSE",
     cgbFlag: 0xc0,
   },
-])("title $title", async ({data, title, code = "", cgbFlag = 0}) => {
+])("title $title", async ({data, title, code, cgbFlag = 0}) => {
   const header = new Array(0x180);
   header.splice(0x134, data.length, ...data);
 

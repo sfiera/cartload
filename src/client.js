@@ -46,7 +46,7 @@ class LockedClient {
     if (mode !== "dmg") {
       throw new Error(`invalid transfer mode ${mode}`);
     }
-    return await this.command(cmds.DMG_CART_WRITE, variable.size, variable.id);
+    return await this.command(cmds.DMG_CART_WRITE, address, value);
   }
 
   async getVariable(variable) {

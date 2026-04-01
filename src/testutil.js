@@ -28,6 +28,7 @@ export class FakeClient {
         this.working = false;
       }
     }
+    this.setPower(false);
   }
 
   lock(priority, fn) {

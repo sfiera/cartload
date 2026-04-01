@@ -12,12 +12,14 @@ class LockedClient {
     this.port = port;
     this.reader = port.readable.getReader();
     this.writer = port.writable.getWriter();
+    this.open = true;
   }
 
   async close() {
     await this.reader.releaseLock();
     await this.writer.releaseLock();
     await this.port.close();
+    this.open = false;
   }
 
   async #command(cmd, ...args) {
@@ -206,6 +208,9 @@ export default class Client {
       } finally {
         this.working = false;
       }
+    }
+    if (this.locked.open) {
+      await this.locked.setPower(false);
     }
   }
 

@@ -120,17 +120,13 @@ export default class DmgCart {
     return await client.lock(0, async client => {
       callback ||= () => {};
       await client.setPower(true);
-      try {
-        let data = [];
-        const segs = this.romSegments;
-        for (const seg of segs) {
-          data.push(...await this.transferRomSegment(
-              client, seg, progress => callback(seg.begin + progress)));
-        }
-        return new Uint8Array(data);
-      } finally {
-        await client.setPower(false);
+      let data = [];
+      const segs = this.romSegments;
+      for (const seg of segs) {
+        data.push(...await this.transferRomSegment(
+            client, seg, progress => callback(seg.begin + progress)));
       }
+      return new Uint8Array(data);
     });
   }
 
@@ -140,17 +136,13 @@ export default class DmgCart {
     return await client.lock(0, async client => {
       callback ||= () => {};
       await client.setPower(true);
-      try {
-        let data = [];
-        const segs = this.savSegments;
-        for (const seg of segs) {
-          data.push(...await this.transferSavSegment(
-              client, seg, progress => callback(seg.begin + progress)));
-        }
-        return new Uint8Array(data);
-      } finally {
-        await client.setPower(false);
+      let data = [];
+      const segs = this.savSegments;
+      for (const seg of segs) {
+        data.push(...await this.transferSavSegment(
+            client, seg, progress => callback(seg.begin + progress)));
       }
+      return new Uint8Array(data);
     });
   }
 
@@ -183,24 +175,20 @@ export default class DmgCart {
 
   static async detect(client) {
     return await client.lock(0, async client => {
-      try {
-        await client.setMode("dmg", 5);
-        await client.setPower(true);
-        await client.dmgBoot();
-        await client.write("dmg", 0x0000, 0xFF);
+      await client.setMode("dmg", 5);
+      await client.setPower(true);
+      await client.dmgBoot();
+      await client.write("dmg", 0x0000, 0xFF);
 
-        const header = new Uint8Array(await client.transfer("dmg", 0, 0x180, {csPulse: true}));
-        if (header.every(x => x == 0)) {
-          throw new Error("No cartridge detected");
-        }
-        let cartType = dmgCarts[header[0x147]];
-        if (typeof cartType === "undefined") {
-          cartType = dmgCarts[0];
-        }
-        return cartType(header);
-      } finally {
-        await client.setPower(false);
+      const header = new Uint8Array(await client.transfer("dmg", 0, 0x180, {csPulse: true}));
+      if (header.every(x => x == 0)) {
+        throw new Error("No cartridge detected");
       }
+      let cartType = dmgCarts[header[0x147]];
+      if (typeof cartType === "undefined") {
+        cartType = dmgCarts[0];
+      }
+      return cartType(header);
     });
   }
 

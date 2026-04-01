@@ -48,20 +48,16 @@ export default class NeoGeoPocketCart {
     return await client.lock(0, async client => {
       callback ||= () => {};
       await client.setPower(true);
-      try {
-        let data = [];
-        const segs = this.romSegments;
-        for (const [i, seg] of segs.entries()) {
-          await this.selectRomSegment(client, seg);
-          data.push(...await client.transfer("dmg", 0, 0x10000, {
-            progress: n => callback(seg.begin + n),
-            csPulse: false,
-          }));
-        }
-        return new Uint8Array(data);
-      } finally {
-        await client.setPower(false);
+      let data = [];
+      const segs = this.romSegments;
+      for (const [i, seg] of segs.entries()) {
+        await this.selectRomSegment(client, seg);
+        data.push(...await client.transfer("dmg", 0, 0x10000, {
+          progress: n => callback(seg.begin + n),
+          csPulse: false,
+        }));
       }
+      return new Uint8Array(data);
     });
   }
 
@@ -72,36 +68,32 @@ export default class NeoGeoPocketCart {
 
   static async detect(client) {
     return await client.lock(0, async client => {
-      try {
-        await client.setMode("dmg", 3.3);
-        await client.setPower(true);
-        await latch(client, 0);
-        await cs(client, 0);
+      await client.setMode("dmg", 3.3);
+      await client.setPower(true);
+      await latch(client, 0);
+      await cs(client, 0);
 
-        const data = await client.transfer("dmg", 0, 0x40, {csPulse: false});
-        if (data.every(x => x == 0)) {
-          throw new Error("No cartridge detected");
-        }
-
-        for (let i = 1; i <= 0x10; i <<= 1) {
-          await latch(client, i);
-          const newData = await client.transfer("dmg", 0, 0x40, {csPulse: false});
-          if (arrayEq(newData, data)) {
-            return new NeoGeoPocketCart(new Uint8Array(data), i * 0x10000);
-          }
-        }
-
-        await latch(client, 0);
-        await cs(client, 1);
-        const newData = await client.transfer("dmg", 0, 0x40, {csPulse: false});
-        if (newData.every(x => x == 0)) {
-          return new NeoGeoPocketCart(new Uint8Array(data), 0x200000);
-        }
-
-        return new NeoGeoPocketCart(new Uint8Array(data), 0x400000);
-      } finally {
-        await client.setPower(false);
+      const data = await client.transfer("dmg", 0, 0x40, {csPulse: false});
+      if (data.every(x => x == 0)) {
+        throw new Error("No cartridge detected");
       }
+
+      for (let i = 1; i <= 0x10; i <<= 1) {
+        await latch(client, i);
+        const newData = await client.transfer("dmg", 0, 0x40, {csPulse: false});
+        if (arrayEq(newData, data)) {
+          return new NeoGeoPocketCart(new Uint8Array(data), i * 0x10000);
+        }
+      }
+
+      await latch(client, 0);
+      await cs(client, 1);
+      const newData = await client.transfer("dmg", 0, 0x40, {csPulse: false});
+      if (newData.every(x => x == 0)) {
+        return new NeoGeoPocketCart(new Uint8Array(data), 0x200000);
+      }
+
+      return new NeoGeoPocketCart(new Uint8Array(data), 0x400000);
     });
   }
 

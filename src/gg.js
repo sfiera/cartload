@@ -68,46 +68,38 @@ export default class GameGearCart {
     return await client.lock(0, async client => {
       callback ||= () => {};
       await client.setPower(true);
-      try {
-        let data = [];
-        const segs = this.romSegments;
-        for (const seg of segs) {
-          data.push(...await transferRomSegment(client, seg, n => callback(seg.begin + n)));
-        }
-        return new Uint8Array(data);
-      } finally {
-        await client.setPower(false);
+      let data = [];
+      const segs = this.romSegments;
+      for (const seg of segs) {
+        data.push(...await transferRomSegment(client, seg, n => callback(seg.begin + n)));
       }
+      return new Uint8Array(data);
     });
   }
 
   static async detect(client) {
     return await client.lock(0, async client => {
-      try {
-        await client.setMode("dmg", 5);
-        await client.setPower(true);
-        await client.write("dmg", BANKCTRL, 0);
-        await client.write("dmg", BANK0, 0);
-        await client.write("dmg", BANK1, 1);
-        await client.write("dmg", BANK2, 2);
+      await client.setMode("dmg", 5);
+      await client.setPower(true);
+      await client.write("dmg", BANKCTRL, 0);
+      await client.write("dmg", BANK0, 0);
+      await client.write("dmg", BANK1, 1);
+      await client.write("dmg", BANK2, 2);
 
-        const seg = new Segment(0x4000, 0x8000);
-        const data = await transferRomSegment(client, seg);
-        if (data.every(x => x == 0)) {
-          throw new Error("No cartridge detected");
-        }
-
-        for (let bankCount = 2; bankCount < 128; bankCount <<= 1) {
-          await client.write("dmg", BANK1, bankCount + 1);
-          const newData = await transferRomSegment(client, seg);
-          if (arrayEq(newData, data)) {
-            return new GameGearCart(data, bankCount * 0x4000);
-          }
-        }
-        throw new Error("failed to detect cartridge size");
-      } finally {
-        await client.setPower(false);
+      const seg = new Segment(0x4000, 0x8000);
+      const data = await transferRomSegment(client, seg);
+      if (data.every(x => x == 0)) {
+        throw new Error("No cartridge detected");
       }
+
+      for (let bankCount = 2; bankCount < 128; bankCount <<= 1) {
+        await client.write("dmg", BANK1, bankCount + 1);
+        const newData = await transferRomSegment(client, seg);
+        if (arrayEq(newData, data)) {
+          return new GameGearCart(data, bankCount * 0x4000);
+        }
+      }
+      throw new Error("failed to detect cartridge size");
     });
   }
 

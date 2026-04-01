@@ -85,4 +85,5 @@ progress {
   a:visited { color: #b7f; }
   a:active { color: #f77; }
   dialog::backdrop { background: rgba(0, 0, 0, 0.5); }
+  #rom img { filter: invert(1); }
 }

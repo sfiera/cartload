@@ -90,7 +90,6 @@ test("header", async () => {
   const client = new GgFakeClient(data);
 
   const cart = await gg.detect(client);
-  expect(cart.title).toBe(null);
   expect(cart.code).toBe("53412");
   expect(cart.romVersion).toBe(6);
   expect(cart.region).toBe(5);

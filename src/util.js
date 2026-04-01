@@ -25,18 +25,25 @@ export const hex = (array) => {
 
 export const latin1 = new TextDecoder("latin1");
 
+const KIB = 1024, MIB = 1024 * KIB, GIB = 1024 * MIB;
+
 export const unitBytes = (n) => {
+  let u;
   if (!n) {
     return "0";
-  } else if ((n % (1 << 30)) == 0) {
-    return (n >> 30) + " GiB";
-  } else if ((n % (1 << 20)) == 0) {
-    return (n >> 20) + " MiB";
-  } else if ((n % (1 << 10)) == 0) {
-    return (n >> 10) + " KiB";
+  } else if (n < KIB) {
+    u = "B";
+  } else if (n < MIB) {
+    u = "KiB";
+    n /= KIB;
+  } else if (n < GIB) {
+    u = "MiB";
+    n /= MIB;
   } else {
-    return n + " B";
+    u = "GiB";
+    n /= GIB;
   }
+  return `${n.toFixed(2).match(/^\d+(\.\d*[^0])?/)[0]} ${u}`
 };
 
 export const makeElement = (tagName, properties = {}) => {

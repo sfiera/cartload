@@ -20,7 +20,6 @@ const PLATFORMS = {
 };
 
 const ROM_PROPS = {
-  romSize: "Size",
   title: "Title",
   code: "Code",
   mapperName: "Mapper",
@@ -59,7 +58,7 @@ const showInfo = (cart, dbEntry) => {
     );
   }
 
-  const list = ul();
+  const list = ul(li(`Size: ${unitBytes(cart.romSize)}`));
   rom.replaceChildren(h2("ROM Data"), list);
   for (const [prop, name] of Object.entries(ROM_PROPS)) {
     if (typeof cart[prop] !== "undefined") {
@@ -73,7 +72,7 @@ const showInfo = (cart, dbEntry) => {
   if (cart.savSize) {
     sav.replaceChildren(
         h2("Save Data"),
-        ul(li(`Size: ${cart.romSize}`)),
+        ul(li(`Size: ${unitBytes(cart.savSize)}`)),
     );
   } else {
     sav.replaceChildren(

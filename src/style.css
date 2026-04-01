@@ -9,7 +9,7 @@ header, main, footer, dialog, h1 {
   margin: 10px;
 }
 
-header, main, footer, dialog {
+header, main, dialog {
   padding: 10px;
   background: white;
   border: 1px solid #999;
@@ -75,7 +75,7 @@ progress {
 
 @media (prefers-color-scheme: dark) {
   body { background: black; color: white; }
-  header, main, footer, dialog { background: #333; color: white; border: 1px solid #666; }
+  header, main, dialog { background: #333; color: white; border: 1px solid #666; }
   main > * { border: 1px solid #666; }
   a:link { color: #7bf; }
   a:visited { color: #b7f; }

@@ -7,7 +7,7 @@ import {pack} from "./struct.js";
 import {copy, FakeClient, rand, zero} from "./testutil.js";
 import {latin1, Segment, unhex} from "./util.js";
 
-test("no mapper", async () => {
+test("basic", async () => {
   const data = rand(0x10000);
   copy(data, 0, ...unhex("204c4943454e53454420425920534e4b20434f52504f524154494f4e"));
   copy(data, 0x1C, ...pack("<I", 0x200100));               // Startup address: 0x200100
@@ -26,6 +26,22 @@ test("no mapper", async () => {
   expect(cart.valid.trademark).toBe(true);
   expect(cart.compatibility.color).toBe(true);
 });
+
+test.each([
+  {size: 0x80000},
+  {size: 0x100000},
+  {size: 0x200000},
+  {size: 0x400000},
+])("size $size", async ({size}) => {
+  const data = rand(size);
+  copy(data, 0, ...unhex("204c4943454e53454420425920534e4b20434f52504f524154494f4e"));
+  const client = new NgpFakeClient(data);
+
+  const cart = await ngp.detect(client);
+  expect(cart.header.length).toBe(0x40);
+  expect(cart.romSize).toBe(size);
+  expect(cart.valid.trademark).toBe(true);
+})
 
 test.each([
   {
@@ -60,9 +76,18 @@ class NgpFakeClient extends FakeClient {
   }
 
   read(addr) {
+    const cs1 = !(this.hiPins & (1 << 4));
+    const cs2 = !(this.hiPins & (1 << 29));
+    expect(cs1).not.toBe(cs2);
+
+    const [data1, data2] = (this.rom.length === 0x400000) ?
+        [this.rom.slice(0, 0x200000), this.rom.slice(0x200000)] :
+        [this.rom, []];
+    const data = cs1 ? data1 : data2;
+
     addr |= this.latch << 16;
-    addr &= this.rom.length - 1;
-    return this.rom[addr];
+    addr &= data.length - 1;
+    return data[addr] || 0;
   }
 
   write(addr, value) {}
@@ -87,7 +112,6 @@ class NgpFakeClient extends FakeClient {
     expect(!!csPulse).toBe(false);
     expect(!!pullups).toBe(false);
     expect(this.hiPins & (0xFF << 5)).toBe(0);  // All address pins low
-    expect(this.hiPins & 0b10100).toBe(0);      // CS and RD low
 
     address &= 0xFFFF;
     const result = new Uint8Array(size);

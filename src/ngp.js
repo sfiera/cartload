@@ -65,7 +65,10 @@ export default class NeoGeoPocketCart {
     });
   }
 
-  async selectRomSegment(client, segment) { await latch(client, segment.begin >> 16); }
+  async selectRomSegment(client, segment) {
+    await latch(client, (segment.begin >>> 16) & 0x1F);
+    await cs(client, (segment.begin >>> 21) & 0x1);
+  }
 
   static async detect(client) {
     return await client.lock(0, async client => {
@@ -80,6 +83,7 @@ export default class NeoGeoPocketCart {
 
         await client.command(cmds.CART_PWR_ON);
         await latch(client, 0);
+        await cs(client, 0);
 
         const data = await client.transfer("dmg", 0, 0x40, {csPulse: false});
         if (data.every(x => x == 0)) {
@@ -93,7 +97,15 @@ export default class NeoGeoPocketCart {
             return new NeoGeoPocketCart(new Uint8Array(data), i * 0x10000);
           }
         }
-        return new NeoGeoPocketCart(new Uint8Array(data), 0x200000);
+
+        await latch(client, 0);
+        await cs(client, 1);
+        const newData = await client.transfer("dmg", 0, 0x40, {csPulse: false});
+        if (newData.every(x => x == 0)) {
+          return new NeoGeoPocketCart(new Uint8Array(data), 0x200000);
+        }
+
+        return new NeoGeoPocketCart(new Uint8Array(data), 0x400000);
       } finally {
         await client.command(cmds.CART_PWR_OFF);
       }
@@ -107,10 +119,15 @@ const latch = async (client, value) => {
   if (value != (value & 0b11111)) {
     throw `invalid latch value ${value}`;
   }
-  await client.setPin(0b00010, 1);                  // CLK
-  await client.setPin(value << 6, 1);               // A1:5
-  await client.setPin((value ^ 0b11111) << 6, 0);   // A1:5
-  await client.setPin(0b00010, 0);                  // CLK
-  await client.setPin(0b00010, 1);                  // CLK
-  await client.setPin(0b111111111111111110100, 0);  // A0:15
+  await client.setPin(0b00010, 1);                   // CLK
+  await client.setPin(value << 6, 1);                // A1:5
+  await client.setPin((value ^ 0b11111) << 6, 0);    // A1:5
+  await client.setPin(0b00010, 0);                   // CLK
+  await client.setPin(0b00010, 1);                   // CLK
+  await client.setPin(0b1111111111111111100000, 0);  // A0:15
+};
+
+const cs = async (client, index) => {
+  await client.setPin(1 << 4, index !== 0);   // /CS1, /WR
+  await client.setPin(1 << 29, index !== 1);  // /CS2, /WR
 };

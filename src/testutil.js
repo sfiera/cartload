@@ -1,6 +1,3 @@
-import cmds from "./gbxcart/cmds.js";
-import vars from "./gbxcart/vars.js";
-
 export class FakeClient {
   constructor(mode, voltage, rom) {
     this.address = 0;

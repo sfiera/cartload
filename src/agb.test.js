@@ -1,8 +1,6 @@
 // Cartload is (c) 2026 by sfiera. Licensed under GPLv3.
 
 import agb from "./agb.js";
-import cmds from "./gbxcart/cmds.js";
-import vars from "./gbxcart/vars.js";
 import {FakeClient, rand} from "./testutil.js";
 import {unhex} from "./util.js";
 

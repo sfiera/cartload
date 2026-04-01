@@ -3,7 +3,6 @@
 import AgbCart from "./agb.js";
 import Client from "./client.js";
 import DmgCart from "./dmg.js";
-import cmds from "./gbxcart/cmds.js";
 import GameGearCart from "./gg.js";
 import LynxCart from "./lynx.js";
 import NeoGeoPocketCart from "./ngp.js";

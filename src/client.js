@@ -52,11 +52,18 @@ class LockedClient {
     return await this.#command(cmds.SET_VARIABLE, variable.size, variable.id, value);
   }
 
-  async write(mode, address, value) {
-    if (mode !== "dmg") {
-      throw new Error(`invalid transfer mode ${mode}`);
-    }
+  async #writeDmg(address, value, {csPulse = true}) {
+    await this.#setVariable(vars.DMG_WRITE_CS_PULSE, csPulse ? 1 : 0);
     return await this.#command(cmds.DMG_CART_WRITE, address, value);
+  }
+
+  write(mode, address, value, options = {}) {
+    switch (mode) {
+      case "dmg":
+        return this.#writeDmg(address, value, options);
+      default:
+        throw new Error(`invalid write mode ${mode}`);
+    }
   }
 
   async setMode(mode, voltage) {

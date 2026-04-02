@@ -2,6 +2,16 @@
 
 import {arrayEq, ints, latin1, makeImage, Segment} from "./util.js";
 
+const MFR_IDS = {};
+MFR_IDS[0x98] = "Toshiba";
+MFR_IDS[0xb0] = "Sharp";
+MFR_IDS[0xec] = "Samsung";
+const SIZE_IDS = {};
+SIZE_IDS[0x00] = 0;
+SIZE_IDS[0xab] = 512 * 1024;
+SIZE_IDS[0x2c] = 1024 * 1024;
+SIZE_IDS[0x2f] = 2048 * 1024;
+
 export default class NeoGeoPocketCart {
   constructor(data, romSize) {
     if (!(data instanceof Uint8Array)) {
@@ -69,29 +79,34 @@ export default class NeoGeoPocketCart {
       await client.setMode("dmg", 3.3);
       await client.setPower(true);
       await latch(client, 0);
-      await cs(client, 0);
 
-      const data = await client.transfer("dmg", 0, 0x40, {csPulse: false});
-      if (data.every(x => x == 0)) {
+      const size = [0, 0];
+      for (const c of [0, 1]) {
+        await cs(client, c);
+        await client.write("dmg", 0x5555, 0xAA, {csPulse: false});
+        await client.write("dmg", 0x2AAA, 0x55, {csPulse: false});
+        await client.write("dmg", 0x5555, 0x90, {csPulse: false});
+        const [mfrId, sizeId] = await client.transfer("dmg", 0, 2, {csPulse: false});
+
+        if (typeof SIZE_IDS[sizeId] !== "number") {
+          throw new Error("Failed to detect cartridge size");
+        }
+        size[c] = SIZE_IDS[sizeId];
+      }
+      const romSize = size[0] + size[1];
+      if (romSize === 0) {
         throw new Error("No cartridge detected");
       }
 
-      for (let i = 1; i <= 0x10; i <<= 1) {
-        await latch(client, i);
-        const newData = await client.transfer("dmg", 0, 0x40, {csPulse: false});
-        if (arrayEq(newData, data)) {
-          return new NeoGeoPocketCart(new Uint8Array(data), i * 0x10000);
-        }
-      }
+      // There must be a better way to exit ID mode
+      await client.setPower(false);
+      await client.setPower(true);
 
       await latch(client, 0);
-      await cs(client, 1);
-      const newData = await client.transfer("dmg", 0, 0x40, {csPulse: false});
-      if (newData.every(x => x == 0)) {
-        return new NeoGeoPocketCart(new Uint8Array(data), 0x200000);
-      }
+      await cs(client, 0);
+      const data = await client.transfer("dmg", 0, 0x40, {csPulse: false});
 
-      return new NeoGeoPocketCart(new Uint8Array(data), 0x400000);
+      return new NeoGeoPocketCart(new Uint8Array(data), romSize);
     });
   }
 
@@ -102,15 +117,15 @@ const latch = async (client, value) => {
   if (value != (value & 0b11111)) {
     throw `invalid latch value ${value}`;
   }
-  await client.setPin(0b00010, 1);                   // CLK
-  await client.setPin(value << 6, 1);                // A1:5
-  await client.setPin((value ^ 0b11111) << 6, 0);    // A1:5
-  await client.setPin(0b00010, 0);                   // CLK
-  await client.setPin(0b00010, 1);                   // CLK
-  await client.setPin(0b1111111111111111100000, 0);  // A0:15
+  await client.setPin(0b00010, 1);                  // CLK
+  await client.setPin(value << 6, 1);               // A1:5
+  await client.setPin((value ^ 0b11111) << 6, 0);   // A1:5
+  await client.setPin(0b00010, 0);                  // CLK
+  await client.setPin(0b00010, 1);                  // CLK
+  await client.setPin(0b111111111111111100000, 0);  // A0:15
 };
 
 const cs = async (client, index) => {
-  await client.setPin(1 << 4, index !== 0);   // /CS1, /WR
-  await client.setPin(1 << 29, index !== 1);  // /CS2, /WR
+  await client.setPin(1 << 4, index !== 0);   // /CS1
+  await client.setPin(1 << 29, index !== 1);  // /CS2
 };

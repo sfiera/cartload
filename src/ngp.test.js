@@ -20,7 +20,7 @@ test("basic", async () => {
   expect(cart.header.length).toBe(0x40);
   expect(cart.title).toBe("HANABI 1.02");
   expect(cart.code).toBe("NEOP0052");
-  expect(cart.romSize).toBe(65536);
+  expect(cart.romSize).toBe(0x80000);
   expect(cart.valid.trademark).toBe(true);
   expect(cart.compatibility.color).toBe(true);
 });
@@ -71,12 +71,25 @@ class NgpFakeClient extends FakeClient {
     super("dmg", 3.3, rom);
     this.latch = 0;
     this.hiPins = 0;
+    this.command = [[], []];
   }
 
   read(addr) {
     const cs1 = !(this.hiPins & (1 << 4));
     const cs2 = !(this.hiPins & (1 << 29));
     expect(cs1).not.toBe(cs2);
+    const c = cs1 ? 0 : 1;
+
+    if (this.command[c].length) {
+      expect(this.command[c]).toStrictEqual([0x5555, 0xAA, 0x2AAA, 0x55, 0x5555, 0x90]);
+      if (cs2 && (this.rom.length !== 0x400000)) {
+        return 0;
+      }
+      const sizeId = (this.rom.length <= 0x80000) ? 0xab :
+          (this.rom.length <= 0x100000)           ? 0x2c :
+                                                    0x2f;
+      return [0x98, sizeId, 0x01, 0x81][addr & 0x3];
+    }
 
     const [data1, data2] = (this.rom.length === 0x400000) ?
         [this.rom.slice(0, 0x200000), this.rom.slice(0x200000)] :
@@ -88,7 +101,35 @@ class NgpFakeClient extends FakeClient {
     return data[addr] || 0;
   }
 
-  write(addr, value) {}
+  setPower(on) {
+    if (!on) {
+      this.command = [[], []];
+    }
+    super.setPower(on);
+  }
+
+  write(mode, addr, value) {
+    expect(mode).toBe("dmg");
+
+    const cs1 = !(this.hiPins & (1 << 4));
+    const cs2 = !(this.hiPins & (1 << 29));
+    expect(cs1).not.toBe(cs2);
+    const c = cs1 ? 0 : 1;
+
+    if (this.command[c].length === 0) {
+      expect(addr).toBe(0x5555);
+      expect(value).toBe(0xAA);
+    } else if (this.command[c].length === 2) {
+      expect(addr).toBe(0x2AAA);
+      expect(value).toBe(0x55);
+    } else if (this.command[c].length === 4) {
+      expect(addr).toBe(0x5555);
+      expect(value).toBe(0x90);
+    } else {
+      expect(this.command[c].length).toBe(0);
+    }
+    this.command[c].push(addr, value);
+  }
 
   setPin(mask, enabled) {
     if ((this.hiPins & 0b00010) && (mask & 0b00010) && !enabled) {

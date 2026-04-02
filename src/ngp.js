@@ -87,6 +87,7 @@ export default class NeoGeoPocketCart {
         await client.write("dmg", 0x2AAA, 0x55, {csPulse: false});
         await client.write("dmg", 0x5555, 0x90, {csPulse: false});
         const [mfrId, sizeId] = await client.transfer("dmg", 0, 2, {csPulse: false});
+        await client.write("dmg", 0, 0xF0, {csPulse: false});
 
         if (typeof SIZE_IDS[sizeId] !== "number") {
           throw new Error("Failed to detect cartridge size");
@@ -97,10 +98,6 @@ export default class NeoGeoPocketCart {
       if (romSize === 0) {
         throw new Error("No cartridge detected");
       }
-
-      // There must be a better way to exit ID mode
-      await client.setPower(false);
-      await client.setPower(true);
 
       await latch(client, 0);
       await cs(client, 0);

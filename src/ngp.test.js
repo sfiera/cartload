@@ -101,13 +101,6 @@ class NgpFakeClient extends FakeClient {
     return data[addr] || 0;
   }
 
-  setPower(on) {
-    if (!on) {
-      this.command = [[], []];
-    }
-    super.setPower(on);
-  }
-
   write(mode, addr, value) {
     expect(mode).toBe("dmg");
 
@@ -125,6 +118,11 @@ class NgpFakeClient extends FakeClient {
     } else if (this.command[c].length === 4) {
       expect(addr).toBe(0x5555);
       expect(value).toBe(0x90);
+    } else if (this.command[c].length === 6) {
+      expect(addr).toBe(0);
+      expect(value).toBe(0xF0);
+      this.command[c] = [];
+      return;
     } else {
       expect(this.command[c].length).toBe(0);
     }

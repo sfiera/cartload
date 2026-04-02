@@ -132,27 +132,33 @@ const run = async (client, platform, {signal}) => {
   showInfo(cart, dbEntry);
   signal.addEventListener("abort", () => showInfo(null));
 
-  const backUpRom = makeElement("button", {
+  const backUp = async () => {
+    const data = await cart.backUpRom(client, len => showProgress(len, cart.romSize));
+    console.log(hex(await window.crypto.subtle.digest("SHA-1", data)));
+    if (typeof dbEntry.rc !== "undefined") {
+      if (dbEntry.rc === crc32(data)) {
+        q("#db .crc32").classList.add("valid");
+        q("#db .crc32").classList.remove("invalid");
+      } else {
+        q("#db .crc32").classList.add("invalid");
+        q("#db .crc32").classList.remove("valid");
+      }
+    }
+    return data;
+  };
+
+  q("#rom > div").append(makeElement("button", {
     children: [`Back up .${cart.extension}`],
-    onclick: async () => {
-      await action(async () => {
-        const data = await cart.backUpRom(client, len => showProgress(len, cart.romSize));
-        console.log(hex(await window.crypto.subtle.digest("SHA-1", data)));
-        if (typeof dbEntry.rc !== "undefined") {
-          if (dbEntry.rc === crc32(data)) {
-            q("#db .crc32").classList.add("valid");
-            q("#db .crc32").classList.remove("invalid");
-          } else {
-            q("#db .crc32").classList.add("invalid");
-            q("#db .crc32").classList.remove("valid");
-          }
-        }
-        downloadUrl(`${title}.${cart.extension}`, await toDataUrl(data));
-      });
-    },
-  });
-  q("#rom").append(backUpRom);
-  signal.addEventListener("abort", () => backUpRom.remove());
+    onclick: async () =>
+        downloadUrl(`${title}.${cart.extension}`, await toDataUrl(await backUp())),
+  }));
+
+  if (typeof dbEntry.rc !== "undefined") {
+    q("#rom > div").append(makeElement("button", {
+      children: ["Validate"],
+      onclick: async () => await action(() => backUp()),
+    }));
+  }
 
   if (cart.canBackUpSav) {
     const backUpSav = makeElement("button", {
@@ -165,8 +171,7 @@ const run = async (client, platform, {signal}) => {
         });
       },
     });
-    q("#sav").append(backUpSav);
-    signal.addEventListener("abort", () => backUpSav.remove());
+    q("#sav > div").append(backUpSav);
   }
 
   const {promise, resolve} = Promise.withResolvers();

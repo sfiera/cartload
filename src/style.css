@@ -77,6 +77,13 @@ progress {
   margin: 0 auto;
 }
 
+form {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  grid-gap: 10px;
+}
+
 .valid::after {
   content: " ✅"
 }

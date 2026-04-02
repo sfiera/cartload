@@ -135,7 +135,7 @@ const run = async (client, platform, {signal}) => {
   const backUp = async () => {
     const data = await cart.backUpRom(client, len => showProgress(len, cart.romSize));
     console.log(hex(await window.crypto.subtle.digest("SHA-1", data)));
-    if (typeof dbEntry.rc !== "undefined") {
+    if (dbEntry && typeof dbEntry.rc !== "undefined") {
       if (dbEntry.rc === crc32(data)) {
         q("#db .crc32").classList.add("valid");
         q("#db .crc32").classList.remove("invalid");
@@ -147,21 +147,26 @@ const run = async (client, platform, {signal}) => {
     return data;
   };
 
-  q("#rom > div").append(makeElement("button", {
+  const romForm = makeElement("form");
+  q("#rom > div").appendChild(romForm);
+
+  romForm.append(makeElement("button", {
     children: [`Back up .${cart.extension}`],
     onclick: async () =>
         downloadUrl(`${title}.${cart.extension}`, await toDataUrl(await backUp())),
   }));
 
-  if (typeof dbEntry.rc !== "undefined") {
-    q("#rom > div").append(makeElement("button", {
+  if (dbEntry && typeof dbEntry.rc !== "undefined") {
+    romForm.append(makeElement("button", {
       children: ["Validate"],
       onclick: async () => await action(() => backUp()),
     }));
   }
 
   if (cart.canBackUpSav) {
-    const backUpSav = makeElement("button", {
+    const savForm = makeElement("form");
+    q("#sav > div").appendChild(savForm);
+    savForm.append(makeElement("button", {
       children: ["Back up .sav"],
       onclick: async () => {
         await action(async () => {
@@ -170,8 +175,7 @@ const run = async (client, platform, {signal}) => {
           downloadUrl(`${title}.sav`, await toDataUrl(data));
         });
       },
-    });
-    q("#sav > div").append(backUpSav);
+    }));
   }
 
   const {promise, resolve} = Promise.withResolvers();

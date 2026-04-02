@@ -22,6 +22,21 @@ export const hex = (array) => {
   return Array.prototype.map.call(array, (x) => x.toString(16).padStart(2, "0")).join("");
 };
 
+export const hex32 = n => n.toString(16).padStart(8, "0");
+
+const u8 = x => (x & 0xFF);
+const u32 = x => (x >>> 0);
+
+const crc32Table = new Array(0x100).fill(0).map((_, i) => {
+  let crc = i;
+  for (let j = 0; j < 8; ++j) {
+    crc = (crc >>> 1) ^ ((crc & 1) ? 0xEDB88320 : 0);
+  }
+  return u32(crc);
+});
+
+export const crc32 = (data, crc = 0) => u32(
+    ~Array.prototype.reduce.call(data, (crc, x) => crc32Table[u8(crc ^ x)] ^ (crc >>> 8), ~crc));
 
 export const latin1 = new TextDecoder("latin1");
 

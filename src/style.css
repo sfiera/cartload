@@ -35,7 +35,7 @@ main p {
   font-style: italic;
 }
 
-#detected, #progress {
+#db, #progress {
   grid-column: 1/-1;
 }
 
@@ -75,6 +75,14 @@ progress {
   max-width: 400px;
   display: block;
   margin: 0 auto;
+}
+
+.valid::after {
+  content: " ✅"
+}
+
+.invalid::after {
+  content: " ⛔️"
 }
 
 @media (prefers-color-scheme: dark) {

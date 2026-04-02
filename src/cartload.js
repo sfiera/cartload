@@ -6,7 +6,7 @@ import DmgCart from "./dmg.js";
 import GameGearCart from "./gg.js";
 import LynxCart from "./lynx.js";
 import NeoGeoPocketCart from "./ngp.js";
-import {downloadUrl, hex, makeElement, toDataUrl, unitBytes} from "./util.js";
+import {crc32, downloadUrl, hex, hex32, makeElement, toDataUrl, unitBytes} from "./util.js";
 
 const q = (...args) => document.querySelector(...args);
 
@@ -25,59 +25,43 @@ const ROM_PROPS = {
 };
 
 const showInfo = (cart, dbEntry) => {
-  const detected = q("#detected");
-  const rom = q("#rom");
-  const sav = q("#sav");
+  const db = q("#db > div");
+  const rom = q("#rom > div");
+  const sav = q("#sav > div");
 
   if (!cart) {
-    detected.replaceChildren(
-        h2("Database"),
-        p("Disconnected"),
-    );
-    rom.replaceChildren(
-        h2("ROM Data"),
-        p("Disconnected"),
-    );
-    sav.replaceChildren(
-        h2("Save Data"),
-        p("Disconnected"),
-    );
+    db.replaceChildren(p("Disconnected"));
+    rom.replaceChildren(p("Disconnected"));
+    sav.replaceChildren(p("Disconnected"));
     return;
   }
 
   if (dbEntry) {
-    detected.replaceChildren(
-        h2("Database"),
-        ul(li(`Title: ${dbEntry.gn} ${dbEntry.ne}`)),
-    );
+    const dbProps = ul(li(`Title: ${dbEntry.gn} ${dbEntry.ne}`));
+    db.replaceChildren(dbProps);
+    if (typeof dbEntry.rc !== "undefined") {
+      dbProps.appendChild(
+          li("Checksum: ", makeElement("tt", {className: "crc32", children: hex32(dbEntry.rc)})))
+    }
   } else {
-    detected.replaceChildren(
-        h2("Database"),
-        p("Not found"),
-    );
+    db.replaceChildren(p("Not found"));
   }
 
-  const list = ul(li(`Size: ${unitBytes(cart.romSize)}`));
-  rom.replaceChildren(h2("ROM Data"), list);
+  const romProps = ul(li(`Size: ${unitBytes(cart.romSize)}`));
+  rom.replaceChildren(romProps);
   for (const [prop, name] of Object.entries(ROM_PROPS)) {
     if (typeof cart[prop] !== "undefined") {
-      list.appendChild(li(`${name}: ${cart[prop]}`));
+      romProps.appendChild(li(`${name}: ${cart[prop]}`));
     }
   }
   if (typeof cart.logoImageUrl !== "undefined") {
-    list.appendChild(li("Logo: ", makeElement("img", {src: cart.logoImageUrl()})));
+    romProps.appendChild(li("Logo: ", makeElement("img", {src: cart.logoImageUrl()})));
   }
 
   if (cart.savSize) {
-    sav.replaceChildren(
-        h2("Save Data"),
-        ul(li(`Size: ${unitBytes(cart.savSize)}`)),
-    );
+    sav.replaceChildren(ul(li(`Size: ${unitBytes(cart.savSize)}`)));
   } else {
-    sav.replaceChildren(
-        h2("Save Data"),
-        p("None"),
-    );
+    sav.replaceChildren(p("None"));
   }
 };
 
@@ -154,6 +138,15 @@ const run = async (client, platform, {signal}) => {
       await action(async () => {
         const data = await cart.backUpRom(client, len => showProgress(len, cart.romSize));
         console.log(hex(await window.crypto.subtle.digest("SHA-1", data)));
+        if (typeof dbEntry.rc !== "undefined") {
+          if (dbEntry.rc === crc32(data)) {
+            q("#db .crc32").classList.add("valid");
+            q("#db .crc32").classList.remove("invalid");
+          } else {
+            q("#db .crc32").classList.add("invalid");
+            q("#db .crc32").classList.remove("valid");
+          }
+        }
         downloadUrl(`${title}.${cart.extension}`, await toDataUrl(data));
       });
     },

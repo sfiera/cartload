@@ -1,7 +1,10 @@
+
 {
  "bdd7bd4659364ed8b4bcd29ef2d7b487dd6b8e82": {
   "gn": "A.P.B. - All Points Bulletin",
   "ne": "(USA, Europe)",
+  "rc": 4143663355,
+  "rs": 262144,
   "mf": "Quicksilver Soft",
   "ro": 0,
   "ee": 0
@@ -9,6 +12,8 @@
  "03f87486fb9940332bab98bbcb4fcbc345f99383": {
   "gn": "Alien vs Predator",
   "ne": "(USA) (Proto)",
+  "rc": 1410243511,
+  "rs": 262144,
   "mf": "Images Software",
   "ro": 0,
   "ee": 0
@@ -16,6 +21,8 @@
  "fa6a02ea2bb2fc15e2a08a81a75c913a383bd8a2": {
   "gn": "Awesome Golf",
   "ne": "(USA, Europe)",
+  "rc": 75746602,
+  "rs": 262144,
   "mf": "Hand Made Soft",
   "ro": 0,
   "ee": 0
@@ -23,6 +30,8 @@
  "dec8246559420f43cfdba5348096ab1edcb163e9": {
   "gn": "Baseball Heroes",
   "ne": "(USA, Europe)",
+  "rc": 960741654,
+  "rs": 262144,
   "mf": "Atari Corp",
   "ro": 0,
   "ee": 0
@@ -30,6 +39,8 @@
  "47f6fef5b23b761f7039928ec64ebb2a0143137c": {
   "gn": "Basketbrawl",
   "ne": "(USA, Europe)",
+  "rc": 1096923978,
+  "rs": 131072,
   "mf": "Hamilton & Assoc",
   "ro": 0,
   "ee": 0
@@ -37,6 +48,8 @@
  "6ef8aca30fb3e5178a779a5af65b0a906a12db72": {
   "gn": "Batman Returns",
   "ne": "(USA, Europe)",
+  "rc": 662667970,
+  "rs": 262144,
   "mf": "Atari Corp",
   "ro": 0,
   "ee": 0
@@ -44,6 +57,8 @@
  "2316990f4d0c8823f363602761b2930bab66d634": {
   "gn": "Battle Wheels",
   "ne": "(USA, Europe)",
+  "rc": 2006953678,
+  "rs": 131072,
   "mf": "Beyond Games",
   "ro": 0,
   "ee": 0
@@ -51,6 +66,8 @@
  "a745a9d158dad60cfe959ae26d2de0423a7e5085": {
   "gn": "Battlezone 2000",
   "ne": "(USA, Europe)",
+  "rc": 822011686,
+  "rs": 262144,
   "mf": "Hand Made Soft",
   "ro": 0,
   "ee": 0
@@ -58,6 +75,8 @@
  "8ace53b7ec76ca759b5c55fe3c5b71dd82735cb3": {
   "gn": "Bill & Ted's Excellent Adventure",
   "ne": "(USA, Europe)",
+  "rc": 339358014,
+  "rs": 262144,
   "mf": "Al Baker & Assoc",
   "ro": 0,
   "ee": 0
@@ -65,6 +84,8 @@
  "bd39b17351d08b1a338a70fa7602daa9454f5951": {
   "gn": "Block Out",
   "ne": "(USA, Europe)",
+  "rc": 1020747251,
+  "rs": 131072,
   "mf": "P.Z.Karen Co Dev",
   "ro": 0,
   "ee": 0
@@ -72,6 +93,8 @@
  "389982dd1c237ecac34c5e4eb3eba35ec274e334": {
   "gn": "Blue Lightning",
   "ne": "(USA, Europe)",
+  "rc": 3219350821,
+  "rs": 131072,
   "mf": "Epyx",
   "ro": 0,
   "ee": 0
@@ -79,6 +102,8 @@
  "bb800ea64b054b507446e4511f2153bb7cb72011": {
   "gn": "Blue Lightning",
   "ne": "(USA) (Demo)",
+  "rc": 3673524145,
+  "rs": 131072,
   "mf": "Epyx",
   "ro": 0,
   "ee": 0
@@ -86,6 +111,8 @@
  "3ffd30a29ecdc4e8c846a17dc67a897d6f7b1328": {
   "gn": "Bubble Trouble",
   "ne": "(USA, Europe)",
+  "rc": 859680462,
+  "rs": 262144,
   "mf": "Lore Design Ltd",
   "ro": 0,
   "ee": 0
@@ -93,6 +120,8 @@
  "c56b5dc20b389569a81b863aa7b57acb68012f4c": {
   "gn": "California Games",
   "ne": "(USA, Europe)",
+  "rc": 2693729113,
+  "rs": 131072,
   "mf": "Epyx",
   "ro": 0,
   "ee": 0
@@ -100,6 +129,8 @@
  "121b6a2390eb6067f605c49e0ec84059060d89ad": {
   "gn": "Centipede",
   "ne": "(USA) (Proto)",
+  "rc": 2538608393,
+  "rs": 131072,
   "mf": "Shadowsoft",
   "ro": 2,
   "ee": 0
@@ -107,6 +138,8 @@
  "0e8d2dc3fcff606cb4ddbf61f4563498f0de8a7c": {
   "gn": "Checkered Flag",
   "ne": "(USA, Europe)",
+  "rc": 432383909,
+  "rs": 262144,
   "mf": "Atari Corp",
   "ro": 0,
   "ee": 0
@@ -114,6 +147,8 @@
  "2ffee1b2130f627ca8f1c814254988e32a01350c": {
   "gn": "Chip's Challenge",
   "ne": "(USA, Europe)",
+  "rc": 1784632301,
+  "rs": 131072,
   "mf": "Epyx",
   "ro": 0,
   "ee": 0
@@ -121,6 +156,8 @@
  "a4879bd7829574e9f0ecceac97a6d54d7da30f00": {
   "gn": "Crystal Mines II",
   "ne": "(USA, Europe)",
+  "rc": 2932110536,
+  "rs": 131072,
   "mf": "Color Dreams",
   "ro": 0,
   "ee": 0
@@ -128,6 +165,8 @@
  "20ec6436d876284b96d9f40575380bf2ea0df9bd": {
   "gn": "Daemonsgate",
   "ne": "(USA) (Proto)",
+  "rc": 2574422933,
+  "rs": 262144,
   "mf": "Imagitec Design",
   "ro": 0,
   "ee": 0
@@ -135,6 +174,8 @@
  "ef3888eecf1b843eda0a1a9a5f97c45ae59ac9d6": {
   "gn": "Desert Strike - Return to the Gulf",
   "ne": "(USA, Europe)",
+  "rc": 3115065317,
+  "rs": 262144,
   "mf": "Teque London",
   "ro": 0,
   "ee": 0
@@ -142,6 +183,8 @@
  "1993c9d4939aef4d59b811deefed5b63bc181114": {
   "gn": "Dinolympics",
   "ne": "(USA, Europe)",
+  "rc": 1345875194,
+  "rs": 262144,
   "mf": "Imagitec Design",
   "ro": 0,
   "ee": 0
@@ -149,6 +192,8 @@
  "ad9e90d2560a02f9af255fb65b5a9ee2f2a1531a": {
   "gn": "Dirty Larry - Renegade Cop",
   "ne": "(USA, Europe)",
+  "rc": 3580230583,
+  "rs": 262144,
   "mf": "Knight Tech",
   "ro": 0,
   "ee": 0
@@ -156,6 +201,8 @@
  "15452762d54bcd9c85c7f1d4262db8d658942c59": {
   "gn": "Double Dragon",
   "ne": "(USA, Europe)",
+  "rc": 4227600133,
+  "rs": 262144,
   "mf": "Knight Tech",
   "ro": 0,
   "ee": 0
@@ -163,6 +210,8 @@
  "489acda5dc44cbe72bc2a3b6a2609c5ff94e4048": {
   "gn": "Dracula the Undead",
   "ne": "(USA, Europe)",
+  "rc": 867923143,
+  "rs": 262144,
   "mf": "Hand Made Soft",
   "ro": 0,
   "ee": 0
@@ -170,6 +219,8 @@
  "7b48470322750df7ac7176c630e0c426cc1ea61a": {
   "gn": "Electrocop",
   "ne": "(USA, Europe)",
+  "rc": 3180794219,
+  "rs": 131072,
   "mf": "Epyx",
   "ro": 0,
   "ee": 0
@@ -177,6 +228,8 @@
  "776f89fcb0ee023695f8091e875ce10154d83184": {
   "gn": "European Soccer Challenge",
   "ne": "(USA, Europe)",
+  "rc": 4164130809,
+  "rs": 131072,
   "mf": "Krisalis Soft",
   "ro": 0,
   "ee": 0
@@ -184,6 +237,8 @@
  "f9caabd675c30532be05fb321ddaefd0f5c08362": {
   "gn": "Eye of the Beholder",
   "ne": "(USA) (Proto)",
+  "rc": 1808706204,
+  "rs": 131072,
   "mf": "NuFX",
   "ro": 0,
   "ee": 0
@@ -191,6 +246,8 @@
  "2699f82c103c6414965e1a5b6e0500be134d6d50": {
   "gn": "Fat Bobby",
   "ne": "(USA, Europe)",
+  "rc": 2419387943,
+  "rs": 262144,
   "mf": "Lore Design Ltd",
   "ro": 0,
   "ee": 0
@@ -198,6 +255,8 @@
  "b393f6fdbeddff527c5cd0cfe7f3791fe60a2957": {
   "gn": "Fidelity Ultimate Chess Challenge, The",
   "ne": "(USA, Europe)",
+  "rc": 2118867269,
+  "rs": 131072,
   "mf": "Telegames",
   "ro": 0,
   "ee": 0
@@ -205,6 +264,8 @@
  "cf9381c47f99a1943e81a49674ccad41f50abcff": {
   "gn": "Gates of Zendocon, The",
   "ne": "(USA, Europe)",
+  "rc": 1229768040,
+  "rs": 131072,
   "mf": "Epyx",
   "ro": 0,
   "ee": 0
@@ -212,6 +273,8 @@
  "361d4b92e6ac0e6c67246ed422c78dbbef1bb5df": {
   "gn": "Gauntlet - The Third Encounter",
   "ne": "(USA, Europe)",
+  "rc": 2131675053,
+  "rs": 131072,
   "mf": "Epyx",
   "ro": 1,
   "ee": 0
@@ -219,6 +282,8 @@
  "366123bdcf3939ca20c8c2dc6cd4b6a49dc0b918": {
   "gn": "Gordo 106 - The Mutated Lab Monkey",
   "ne": "(USA, Europe)",
+  "rc": 3523905020,
+  "rs": 262144,
   "mf": "Tenth Planet",
   "ro": 0,
   "ee": 0
@@ -226,6 +291,8 @@
  "e4018988a5bc6e598d9ef608ea028e87b2aec37a": {
   "gn": "Hard Drivin'",
   "ne": "(USA, Europe)",
+  "rc": 1844852788,
+  "rs": 131072,
   "mf": "NuFX",
   "ro": 0,
   "ee": 0
@@ -233,6 +300,8 @@
  "adc59a8740ea840e9e9d19154b962688c9c2889e": {
   "gn": "Hockey",
   "ne": "(USA, Europe)",
+  "rc": 3904132871,
+  "rs": 262144,
   "mf": "Alpine Software",
   "ro": 0,
   "ee": 0
@@ -240,6 +309,8 @@
  "49d85eaab651f4b684e20ee7251871e957c4d7d2": {
   "gn": "Hydra",
   "ne": "(USA, Europe)",
+  "rc": 3808697452,
+  "rs": 262144,
   "mf": "NuFX",
   "ro": 0,
   "ee": 0
@@ -247,6 +318,8 @@
  "003e5896555a5e2546f6241813644ff4d65c239b": {
   "gn": "Ishido - The Way of Stones",
   "ne": "(USA, Europe)",
+  "rc": 1559804912,
+  "rs": 131072,
   "mf": "Atari Corp",
   "ro": 0,
   "ee": 0
@@ -254,6 +327,8 @@
  "d65ed59d415463e8cd14dffce28a44be10e3872f": {
   "gn": "Jimmy Connors' Tennis",
   "ne": "(USA, Europe)",
+  "rc": 609597135,
+  "rs": 524288,
   "mf": "Hand Made Soft",
   "ro": 0,
   "ee": 0
@@ -261,6 +336,8 @@
  "a39dfb038b3541e487d1d062745e7d4be301c461": {
   "gn": "Joust",
   "ne": "(USA, Europe)",
+  "rc": 1572501802,
+  "rs": 131072,
   "mf": "Shadowsoft",
   "ro": 0,
   "ee": 0
@@ -268,6 +345,8 @@
  "c5dc6bfa09ef4233a4851d480a6a992cac5570e1": {
   "gn": "Klax",
   "ne": "(USA, Europe)",
+  "rc": 2771798513,
+  "rs": 262144,
   "mf": "Atari Corp",
   "ro": 1,
   "ee": 0
@@ -275,6 +354,8 @@
  "138c7a22ddb30b299ec033411b0ad7ca99ed47cb": {
   "gn": "Krazy Ace - Miniature Golf",
   "ne": "(USA, Europe)",
+  "rc": 3201677867,
+  "rs": 262144,
   "mf": "Telegames",
   "ro": 0,
   "ee": 0
@@ -282,6 +363,8 @@
  "4a62e5a764a89d70236edd6faccf64d8847978f4": {
   "gn": "Kung Food",
   "ne": "(USA, Europe)",
+  "rc": 3441153029,
+  "rs": 262144,
   "mf": "Lore Games",
   "ro": 0,
   "ee": 0
@@ -289,6 +372,8 @@
  "64c0b6dfd5d64db3d8f4be15a590602fb2afaf04": {
   "gn": "Lemmings",
   "ne": "(USA, Europe)",
+  "rc": 968472780,
+  "rs": 262144,
   "mf": "DMA Design",
   "ro": 0,
   "ee": 0
@@ -296,6 +381,8 @@
  "c474c731cf9a69ca7ccc1c0d9e5234b3ded2dee8": {
   "gn": "Lexis",
   "ne": "(USA, Europe)",
+  "rc": 41006825,
+  "rs": 262144,
   "mf": "Shadowsoft",
   "ro": 2,
   "ee": 0
@@ -303,6 +390,8 @@
  "78c84cdb4b04004626831c6d97f72426586ee299": {
   "gn": "Loopz",
   "ne": "(USA) (Proto)",
+  "rc": 2982305521,
+  "rs": 262144,
   "mf": "Hand Made Soft",
   "ro": 0,
   "ee": 0
@@ -310,6 +399,8 @@
  "281a9573e094c1a9728700d130bfa3b5c96bc08c": {
   "gn": "Lynx Casino",
   "ne": "(USA, Europe)",
+  "rc": 277979752,
+  "rs": 262144,
   "mf": "Brian A Rice Inc",
   "ro": 0,
   "ee": 0
@@ -317,6 +408,8 @@
  "c9bb432690f7060fbe8406812b804bdb7f6be45c": {
   "gn": "Lynx II Production Test Program V0.02",
   "ne": "(USA) (Proto)",
+  "rc": 682467353,
+  "rs": 262144,
   "mf": "Atari Corp",
   "ro": 0,
   "ee": 0
@@ -324,6 +417,8 @@
  "b07ab0f21b0554220e66537a44c7c90992eba2cb": {
   "gn": "Malibu Bikini Volleyball",
   "ne": "(USA, Europe)",
+  "rc": 2879838781,
+  "rs": 262144,
   "mf": "Hand Made Soft",
   "ro": 0,
   "ee": 0
@@ -331,6 +426,8 @@
  "71f1abec25c727f08452133aa11553a36e7e0b52": {
   "gn": "Marlboro Go!",
   "ne": "(Europe) (Proto)",
+  "rc": 3287944525,
+  "rs": 262144,
   "mf": "Digital Image",
   "ro": 0,
   "ee": 0
@@ -338,6 +435,8 @@
  "cb7afe55c0b37b0515b1b3c644ecbdb1ed09d00e": {
   "gn": "Ms. Pac-Man",
   "ne": "(USA, Europe)",
+  "rc": 2112059450,
+  "rs": 131072,
   "mf": "Atari Corp",
   "ro": 0,
   "ee": 0
@@ -345,6 +444,8 @@
  "8c3b5260d5ea8c8f45e67795427355e79f3cb6af": {
   "gn": "NFL Football",
   "ne": "(USA, Europe)",
+  "rc": 7328664,
+  "rs": 262144,
   "mf": "BlueSky Software",
   "ro": 2,
   "ee": 0
@@ -352,6 +453,8 @@
  "bc1c84f747d3552913a1f31c6f04e51c5746bd16": {
   "gn": "Ninja Gaiden",
   "ne": "(USA, Europe)",
+  "rc": 584351057,
+  "rs": 262144,
   "mf": "BlueSky Software",
   "ro": 0,
   "ee": 0
@@ -359,6 +462,8 @@
  "ebe361a7187e4d012a6db86c1202bc6b533eff99": {
   "gn": "Ninja Gaiden III - The Ancient Ship of Doom",
   "ne": "(USA, Europe)",
+  "rc": 4091803665,
+  "rs": 524288,
   "mf": "Atari Corp",
   "ro": 0,
   "ee": 0
@@ -366,6 +471,8 @@
  "e7f757d9717f7f77282f93839f73f65d5e8a4de4": {
   "gn": "Pac-Land",
   "ne": "(USA, Europe)",
+  "rc": 2857426210,
+  "rs": 131072,
   "mf": "Atari Corp",
   "ro": 0,
   "ee": 0
@@ -373,6 +480,8 @@
  "c41480546cdf86bd9303f4f575ac73eda58b272b": {
   "gn": "Paperboy",
   "ne": "(USA, Europe)",
+  "rc": 1289731415,
+  "rs": 131072,
   "mf": "Al Baker & Assoc",
   "ro": 0,
   "ee": 0
@@ -380,6 +489,8 @@
  "115380b778f9bed1a930fa3d7e4267bec79ca137": {
   "gn": "Pinball Jam",
   "ne": "(USA, Europe)",
+  "rc": 349408423,
+  "rs": 262144,
   "mf": "Atari Corp",
   "ro": 0,
   "ee": 0
@@ -387,6 +498,8 @@
  "a18df80795810768345b064d38a55e131da64893": {
   "gn": "Pit Fighter - The Ultimate Competition",
   "ne": "(USA, Europe)",
+  "rc": 596841311,
+  "rs": 524288,
   "mf": "Al Baker & Assoc",
   "ro": 0,
   "ee": 0
@@ -394,6 +507,8 @@
  "7f4c6b42a77cf56e4586a7cf75957bef32d1ed66": {
   "gn": "Power Factor",
   "ne": "(USA, Europe)",
+  "rc": 2579767348,
+  "rs": 262144,
   "mf": "Hand Made Soft",
   "ro": 0,
   "ee": 0
@@ -401,6 +516,8 @@
  "910c2813d6ef3f140714dbac163728dce2b35249": {
   "gn": "QIX",
   "ne": "(USA, Europe)",
+  "rc": 3112703011,
+  "rs": 131072,
   "mf": "Knight Tech",
   "ro": 0,
   "ee": 0
@@ -408,6 +525,8 @@
  "b0d2a32d1b25634469ce64dc66f2c8354d36d377": {
   "gn": "Raiden",
   "ne": "(USA) (v3.0)",
+  "rc": 3167816762,
+  "rs": 262144,
   "mf": "BlueSky Software",
   "ro": 2,
   "ee": 0
@@ -415,6 +534,8 @@
  "25051fcf8af158ac58806399d1d48ecfa1559669": {
   "gn": "Rampage",
   "ne": "(USA, Europe)",
+  "rc": 2970320014,
+  "rs": 262144,
   "mf": "Atari Corp",
   "ro": 0,
   "ee": 0
@@ -422,6 +543,8 @@
  "a19c0e4b7ae43eb3d92ff6b27e48939d1caf480b": {
   "gn": "Rampart",
   "ne": "(USA, Europe)",
+  "rc": 329199645,
+  "rs": 262144,
   "mf": "Atari Corp",
   "ro": 0,
   "ee": 0
@@ -429,6 +552,8 @@
  "e41e9c90bc2c0d802197407c091f2037667d970a": {
   "gn": "Road Riot 4WD",
   "ne": "(USA) (Proto)",
+  "rc": 1771412027,
+  "rs": 262144,
   "mf": "Images Software",
   "ro": 0,
   "ee": 0
@@ -436,6 +561,8 @@
  "fa83a28ccaa845268303413b4e291aa5e0164186": {
   "gn": "RoadBlasters",
   "ne": "(USA, Europe)",
+  "rc": 1751640076,
+  "rs": 262144,
   "mf": "Atari Corp",
   "ro": 0,
   "ee": 0
@@ -443,6 +570,8 @@
  "2293f6721df1be6b5720b98c850d003a47178c28": {
   "gn": "Robo-Squash",
   "ne": "(USA, Europe)",
+  "rc": 3521114802,
+  "rs": 131072,
   "mf": "NuFX",
   "ro": 0,
   "ee": 0
@@ -450,6 +579,8 @@
  "a19eb139bb97cf0aa22c2cd570bd8e288a804e85": {
   "gn": "Robotron 2084",
   "ne": "(USA, Europe)",
+  "rc": 2053130677,
+  "rs": 131072,
   "mf": "Shadowsoft",
   "ro": 0,
   "ee": 0
@@ -457,6 +588,8 @@
  "11ab25792cdf0662530c5622059e8735ff03a94c": {
   "gn": "Rygar - Legendary Warrior",
   "ne": "(USA, Europe)",
+  "rc": 1743109562,
+  "rs": 262144,
   "mf": "NuFX",
   "ro": 0,
   "ee": 0
@@ -464,6 +597,8 @@
  "7f9091010c3215cfead1a10f311864e1ab57927e": {
   "gn": "S.T.U.N. Runner",
   "ne": "(USA, Europe)",
+  "rc": 2241184779,
+  "rs": 262144,
   "mf": "Atari Corp",
   "ro": 0,
   "ee": 0
@@ -471,6 +606,8 @@
  "d1683a632d71319657f8334fe395c2650d92eed8": {
   "gn": "Scrapyard Dog",
   "ne": "(USA, Europe)",
+  "rc": 3189141307,
+  "rs": 262144,
   "mf": "Creative Soft",
   "ro": 0,
   "ee": 0
@@ -478,6 +615,8 @@
  "4d5aab444f991e51a200b7132050d894902ca7d8": {
   "gn": "Shadow of the Beast",
   "ne": "(USA, Europe)",
+  "rc": 3950557859,
+  "rs": 262144,
   "mf": "Digital Dvpments",
   "ro": 0,
   "ee": 0
@@ -485,6 +624,8 @@
  "7fc19584c7f15aebf26f05822abf8a95a19c7592": {
   "gn": "Shanghai",
   "ne": "(USA, Europe)",
+  "rc": 422300932,
+  "rs": 131072,
   "mf": "Atari Corp",
   "ro": 0,
   "ee": 0
@@ -492,6 +633,8 @@
  "322f255a84d9c9bdeccb034ff3d99a9d884b3840": {
   "gn": "Steel Talons",
   "ne": "(USA, Europe)",
+  "rc": 1529022701,
+  "rs": 262144,
   "mf": "NuFX",
   "ro": 0,
   "ee": 0
@@ -499,6 +642,8 @@
  "a02862201a5a765550b060642d4a4dcfca50ed0c": {
   "gn": "Super Asteroids, Missile Command",
   "ne": "(USA, Europe)",
+  "rc": 765977256,
+  "rs": 131072,
   "mf": "Atari Corp",
   "ro": 0,
   "ee": 0
@@ -506,6 +651,8 @@
  "d7a4f6ea29c24e65a90903c53d97f6548c3e79c7": {
   "gn": "Super Off-Road",
   "ne": "(USA, Europe)",
+  "rc": 1762438832,
+  "rs": 262144,
   "mf": "Leland Interactv",
   "ro": 0,
   "ee": 0
@@ -513,6 +660,8 @@
  "217293556d72cdebd3414acdf9781fb9445f7991": {
   "gn": "Super Skweek",
   "ne": "(USA, Europe)",
+  "rc": 3752203633,
+  "rs": 262144,
   "mf": "Loricel",
   "ro": 0,
   "ee": 0
@@ -520,6 +669,8 @@
  "62fe0d28ed1945724abb4e84f762b6b99e0cc256": {
   "gn": "Switchblade II",
   "ne": "(USA, Europe)",
+  "rc": 325416709,
+  "rs": 262144,
   "mf": "Optimus Software",
   "ro": 0,
   "ee": 0
@@ -527,6 +678,8 @@
  "ef32588a4c51b66f42ca0b91aabc88b4f13001d8": {
   "gn": "Todd's Adventures in Slime World",
   "ne": "(USA, Europe)",
+  "rc": 2921758249,
+  "rs": 131072,
   "mf": "Epyx",
   "ro": 0,
   "ee": 0
@@ -534,6 +687,8 @@
  "7628c52820b2ec51255741e69e3e835a05b2d347": {
   "gn": "Toki",
   "ne": "(USA, Europe)",
+  "rc": 359287372,
+  "rs": 262144,
   "mf": "Atari Corp",
   "ro": 0,
   "ee": 0
@@ -541,6 +696,8 @@
  "7899fcbd5ed4c67cf9df975ab857374898a9c56b": {
   "gn": "Tournament Cyberball",
   "ne": "(USA, Europe)",
+  "rc": 93366755,
+  "rs": 262144,
   "mf": "BlueSky Software",
   "ro": 0,
   "ee": 0
@@ -548,6 +705,8 @@
  "27b69464f3c4fb80f0a585f9754cff39af5a2ad3": {
   "gn": "Turbo Sub",
   "ne": "(USA, Europe)",
+  "rc": 2763597014,
+  "rs": 131072,
   "mf": "NuFX",
   "ro": 0,
   "ee": 0
@@ -555,6 +714,8 @@
  "8ad3b07a9930b321a40f16b343a5e875061d1a86": {
   "gn": "Viking Child",
   "ne": "(USA, Europe)",
+  "rc": 2371256971,
+  "rs": 262144,
   "mf": "Imagitec Design",
   "ro": 0,
   "ee": 0
@@ -562,6 +723,8 @@
  "6702870501828fd75db8369216e53c1a2e0135b9": {
   "gn": "Warbirds",
   "ne": "(USA, Europe)",
+  "rc": 3108420169,
+  "rs": 131072,
   "mf": "Atari Corp",
   "ro": 0,
   "ee": 0
@@ -569,6 +732,8 @@
  "fb5b244c110e0617b5dd37f2e7df2ec2d1e4e3b4": {
   "gn": "World Class Soccer",
   "ne": "(USA, Europe)",
+  "rc": 2435004308,
+  "rs": 262144,
   "mf": "Brian A Rice Inc",
   "ro": 0,
   "ee": 0
@@ -576,6 +741,8 @@
  "87d077b00940b878cfba67ad121c8525659a53c4": {
   "gn": "Xenophobe",
   "ne": "(USA, Europe)",
+  "rc": 2616030061,
+  "rs": 131072,
   "mf": "Epyx",
   "ro": 0,
   "ee": 0
@@ -583,6 +750,8 @@
  "c23550f8bbd0348134b92321fc02d93c52f48a51": {
   "gn": "Xybots",
   "ne": "(USA, Europe)",
+  "rc": 2313332117,
+  "rs": 262144,
   "mf": "NuFX",
   "ro": 0,
   "ee": 0
@@ -590,6 +759,8 @@
  "c832b32813b10b82bf7d92d83c4cbb9dc33aa58b": {
   "gn": "Zarlor Mercenary",
   "ne": "(USA, Europe)",
+  "rc": 3408337309,
+  "rs": 131072,
   "mf": "Epyx",
   "ro": 0,
   "ee": 0

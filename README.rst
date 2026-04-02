@@ -75,4 +75,8 @@ Q: How does Cartload compare to FlashGBX_?
   * supports Game Gear, Lynx, and Neo Geo Pocket through adapters
   * is a web app, but requires the use of specific browsers
 
+Q: Is there any further documentation of the Analogue Pocket adapters?
+  A: Yes, see `sfiera/pocket-adapters`_.
+
 .. _flashgbx: https://github.com/lesserkuma/FlashGBX
+.. _sfiera/pocket-adapters: https://github.com/sfiera/pocket-adapters

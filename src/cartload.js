@@ -133,18 +133,20 @@ const run = async (client, platform, {signal}) => {
   signal.addEventListener("abort", () => showInfo(null));
 
   const backUp = async () => {
-    const data = await cart.backUpRom(client, len => showProgress(len, cart.romSize));
-    console.log(hex(await window.crypto.subtle.digest("SHA-1", data)));
-    if (dbEntry && typeof dbEntry.rc !== "undefined") {
-      if (dbEntry.rc === crc32(data)) {
-        q("#db .crc32").classList.add("valid");
-        q("#db .crc32").classList.remove("invalid");
-      } else {
-        q("#db .crc32").classList.add("invalid");
-        q("#db .crc32").classList.remove("valid");
+    return await action(async () => {
+      const data = await cart.backUpRom(client, len => showProgress(len, cart.romSize));
+      console.log(hex(await window.crypto.subtle.digest("SHA-1", data)));
+      if (dbEntry && typeof dbEntry.rc !== "undefined") {
+        if (dbEntry.rc === crc32(data)) {
+          q("#db .crc32").classList.add("valid");
+          q("#db .crc32").classList.remove("invalid");
+        } else {
+          q("#db .crc32").classList.add("invalid");
+          q("#db .crc32").classList.remove("valid");
+        }
+        return data;
       }
-    }
-    return data;
+    });
   };
 
   const romForm = makeElement("form");
@@ -159,7 +161,7 @@ const run = async (client, platform, {signal}) => {
   if (dbEntry && typeof dbEntry.rc !== "undefined") {
     romForm.append(makeElement("button", {
       children: ["Validate"],
-      onclick: async () => await action(() => backUp()),
+      onclick: () => backUp(),
     }));
   }
 

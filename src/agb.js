@@ -116,7 +116,7 @@ export default class AgbCart {
   async backUpRom(client, callback) {
     return await client.lock(0, async client => {
       await client.setPower(true);
-      const data = await client.transfer("agb", 0, this.romSize, {progress: callback});
+      const data = await client.readRange("agb", 0, this.romSize, {progress: callback});
       return new Uint8Array(data);
     });
   }
@@ -127,14 +127,14 @@ export default class AgbCart {
       await client.setPower(true);
       await client.agbBoot();
 
-      const header = await client.transfer("agb", 0, 0x180);
+      const header = await client.readRange("agb", 0, 0x180);
       if (header.every(x => x == 0)) {
         throw new Error("No cartridge detected");
       }
 
       // Detect ROM size by scanning upwards for the header.
       for (let address = 0x8000; address <= 0x20000000; address <<= 1) {
-        const newHeader = await client.transfer("agb", address, 0x180);
+        const newHeader = await client.readRange("agb", address, 0x180);
         if (arrayEq(newHeader, header) || newHeader.every(x => x == 0)) {
           return new AgbCart(new Uint8Array(header), address);
         }

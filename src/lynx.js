@@ -35,7 +35,7 @@ export default class LynxCart {
           await shift(client, 1, b & 1);
           acc = (b & 1) | ((acc << 1) & 0xFF);
           b >>>= 1;
-          const chunk = await client.transfer("dmg", 0, this.romSize >>> 8, {
+          const chunk = await client.readRange("dmg", 0, this.romSize >>> 8, {
             progress: n => callback(total + n),
             csPulse: false,
           });
@@ -53,7 +53,7 @@ export default class LynxCart {
       await client.setPower(true);
       await shift(client, 8, 0);
 
-      const data = await client.transfer("dmg", 0, 0x800, {csPulse: false});
+      const data = await client.readRange("dmg", 0, 0x800, {csPulse: false});
       if (data.every(x => x == 0)) {
         throw new Error("No cartridge detected");
       } else if (!data.slice(0x400).every((x, i) => x === data[0x3FF] || x === data[i])) {
@@ -63,7 +63,7 @@ export default class LynxCart {
       } else {
         data.splice(0x200);
         await shift(client, 1, 1);
-        data.push(...await client.transfer("dmg", 0, 0x200, {csPulse: false}));
+        data.push(...await client.readRange("dmg", 0, 0x200, {csPulse: false}));
         return new LynxCart(new Uint8Array(data), 0x20000);
       }
     });

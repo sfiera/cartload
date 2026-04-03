@@ -62,7 +62,7 @@ export default class NeoGeoPocketCart {
       for (const [c, seg, ro] of this.segments) {
         await latch(client, seg.begin >>> 16);
         await cs(client, c);
-        data.push(...await client.transfer("dmg", 0, 0x10000, {
+        data.push(...await client.readRange("dmg", 0, 0x10000, {
           progress: n => callback(seg.begin + n),
           csPulse: false,
         }));
@@ -88,7 +88,7 @@ export default class NeoGeoPocketCart {
         for (const seg of segs) {
           await latch(client, seg.begin >>> 16);
           await cs(client, c);
-          const segData = await client.transfer("dmg", seg.begin & 0xFFFF, seg.size, {
+          const segData = await client.readRange("dmg", seg.begin & 0xFFFF, seg.size, {
             progress: n => callback(total + n),
             csPulse: false,
           });
@@ -119,7 +119,7 @@ export default class NeoGeoPocketCart {
         await client.write("dmg", 0x5555, 0xAA, {csPulse: false});
         await client.write("dmg", 0x2AAA, 0x55, {csPulse: false});
         await client.write("dmg", 0x5555, 0x90, {csPulse: false});
-        const [mfrId, sizeId] = await client.transfer("dmg", 0, 2, {csPulse: false});
+        const [mfrId, sizeId] = await client.readRange("dmg", 0, 2, {csPulse: false});
 
         const size = SIZE_IDS[sizeId];
         if (typeof size !== "number") {
@@ -148,7 +148,7 @@ export default class NeoGeoPocketCart {
             end = start + 0x10000;
             await latch(client, block);
           }
-          const [ro] = await client.transfer("dmg", 2, 1, {csPulse: false});
+          const [ro] = await client.readRange("dmg", 2, 1, {csPulse: false});
           if (!ro) {
             savSize += (end - start);
           }
@@ -163,7 +163,7 @@ export default class NeoGeoPocketCart {
 
       await latch(client, 0);
       await cs(client, 0);
-      const data = await client.transfer("dmg", 0, 0x40, {csPulse: false});
+      const data = await client.readRange("dmg", 0, 0x40, {csPulse: false});
 
       return new NeoGeoPocketCart(new Uint8Array(data), romSize, savSize, segments);
     });

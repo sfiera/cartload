@@ -129,7 +129,7 @@ const transferRomSegment = async (client, segment, progress) => {
   let total = 0;
   while (gearAddr < Math.min(segment.end, 0xC000)) {
     const boyAddr = addr.gearToBoy(gearAddr);
-    const chunk = await client.transfer("dmg", boyAddr, chunkSize, {
+    const chunk = await client.readRange("dmg", boyAddr, chunkSize, {
       progress: n => progress(n + total),
       csPulse: true,
     });

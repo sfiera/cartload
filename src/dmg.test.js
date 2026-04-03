@@ -215,7 +215,7 @@ class DmgFakeClient extends FakeClient {
 
   write(mode, addr, value) {}
 
-  async transfer(mode, address, size, options) {
+  async readRange(mode, address, size, options) {
     options ||= {};
     const {csPulse, pullups} = options;
 
@@ -313,10 +313,10 @@ class Mbc7FakeClient extends DmgFakeClient {
     }
   }
 
-  async transfer(mode, address, size, options) {
+  async readRange(mode, address, size, options) {
     options ||= {};
     if (mode === "dmg") {
-      return super.transfer(mode, address, size, options);
+      return super.readRange(mode, address, size, options);
     }
 
     const {pullups} = options;

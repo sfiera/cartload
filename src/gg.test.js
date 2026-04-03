@@ -47,7 +47,7 @@ class GgFakeClient extends FakeClient {
     }
   }
 
-  async transfer(mode, address, size, options) {
+  async readRange(mode, address, size, options) {
     options ||= {};
     const {csPulse, pullups} = options;
 

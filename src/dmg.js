@@ -148,10 +148,10 @@ export default class DmgCart {
 
   async transferRomSegment(client, segment, progress) {
     if (segment.begin == 0) {
-      return await client.transfer("dmg", 0, segment.size, {progress, csPulse: true});
+      return await client.readRange("dmg", 0, segment.size, {progress, csPulse: true});
     } else {
       await client.write("dmg", 0x2000, segment.begin >> 14);
-      return await client.transfer("dmg", 0x4000, segment.size, {progress, csPulse: true});
+      return await client.readRange("dmg", 0x4000, segment.size, {progress, csPulse: true});
     }
   }
 
@@ -163,7 +163,7 @@ export default class DmgCart {
     await client.write("dmg", 0x0000, 0x0A);
     try {
       await client.write("dmg", 0x4000, segment.begin >> 13);
-      return await client.transfer("dmg", 0xA000, segment.size, {progress, csPulse: true});
+      return await client.readRange("dmg", 0xA000, segment.size, {progress, csPulse: true});
     } finally {
       await client.write("dmg", 0x0000, 0x00);
     }
@@ -176,7 +176,7 @@ export default class DmgCart {
       await client.dmgBoot();
       await client.write("dmg", 0x0000, 0xFF);
 
-      const header = new Uint8Array(await client.transfer("dmg", 0, 0x180, {csPulse: true}));
+      const header = new Uint8Array(await client.readRange("dmg", 0, 0x180, {csPulse: true}));
       if (header.every(x => x == 0)) {
         throw new Error("No cartridge detected");
       }
@@ -246,7 +246,7 @@ class MBC7 extends DmgCart {
     await client.write("dmg", 0x0000, 0x0A);
     await client.write("dmg", 0x4000, 0x40);
     try {
-      return await client.transfer("eep", segment.begin, segment.size, {progress, csPulse: true});
+      return await client.readRange("eep", segment.begin, segment.size, {progress, csPulse: true});
     } finally {
       await client.write("dmg", 0x4000, 0x00);
       await client.write("dmg", 0x0000, 0x00);

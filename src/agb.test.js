@@ -80,7 +80,7 @@ class AgbFakeClient extends FakeClient {
 
   write(addr, value) {}
 
-  async transfer(mode, address, size, options) {
+  async readRange(mode, address, size, options) {
     const {pullups} = options || {};
 
     expect(mode).toBe("agb");

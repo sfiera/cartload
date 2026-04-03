@@ -147,7 +147,7 @@ class LockedClient {
     return await this.#transferAll(cmds.DMG_MBC7_READ_EEPROM, size, progress);
   }
 
-  async transfer(mode, address, size, options) {
+  async readRange(mode, address, size, options) {
     options ||= {};
     options.progress ||= () => {};
     const {pullups} = options;
@@ -166,7 +166,7 @@ class LockedClient {
       case "eep":
         return this.#transferEep(address, size, options);
       default:
-        throw new Error(`invalid transfer mode ${mode}`);
+        throw new Error(`invalid readRange mode ${mode}`);
     }
   }
 

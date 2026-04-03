@@ -29,13 +29,13 @@ export default class GameGearCart {
     } else if (data.length < 0x4000) {
       throw new TypeError("data too short for header")
     }
-    this.header = data.slice(0x3FF0, 0x4000);
-    this.trademark = latin1.decode(this.header.slice(0x00, 0x0A));
-    this.code = (this.header[0x0E] >> 4).toString(16) +
-        this.header[0x0D].toString(16).padStart(2, "0") +
-        this.header[0x0C].toString(16).padStart(2, "0");
-    this.romVersion = this.header[0x0E] & 0x0F;
-    this.region = this.header[0x0F] >> 4;
+    this.header = data.slice(0x3000, 0x4000);
+    this.trademark = latin1.decode(this.header.slice(0xFF0, 0xFFA));
+    this.code = (this.header[0xFFE] >> 4).toString(16) +
+        this.header[0xFFD].toString(16).padStart(2, "0") +
+        this.header[0xFFC].toString(16).padStart(2, "0");
+    this.romVersion = this.header[0xFFE] & 0x0F;
+    this.region = this.header[0xFFF] >> 4;
     this.romSize = romSize;
 
     this.compatibility = {
@@ -101,7 +101,7 @@ export default class GameGearCart {
     });
   }
 
-  static async db() { return {}; }
+  static async db() { return (await import("./db/gg.json", {with: {type: "json"}})).default; }
 }
 
 const nextBit = (val) => {

@@ -25,43 +25,46 @@ const ROM_PROPS = {
 };
 
 const showInfo = (cart, dbEntry) => {
-  const db = q("#db > div");
-  const rom = q("#rom > div");
-  const sav = q("#sav > div");
+  const db = q("#db");
+  const rom = q("#rom");
+  const sav = q("#sav");
+  for (const el of [db, rom, sav]) {
+    el.replaceChildren(el.children[0]);
+  }
 
   if (!cart) {
-    db.replaceChildren(p("Disconnected"));
-    rom.replaceChildren(p("Disconnected"));
-    sav.replaceChildren(p("Disconnected"));
+    db.append(p("Disconnected"));
+    rom.append(p("Disconnected"));
+    sav.append(p("Disconnected"));
     return;
   }
 
   if (dbEntry) {
     const dbProps = ul(li(`Title: ${dbEntry.gn} ${dbEntry.ne}`));
-    db.replaceChildren(dbProps);
+    db.append(dbProps);
     if (typeof dbEntry.rc !== "undefined") {
-      dbProps.appendChild(
+      dbProps.append(
           li("Checksum: ", makeElement("tt", {className: "crc32", children: hex32(dbEntry.rc)})))
     }
   } else {
-    db.replaceChildren(p("Not found"));
+    db.append(p("Not found"));
   }
 
   const romProps = ul(li(`Size: ${unitBytes(cart.romSize)}`));
-  rom.replaceChildren(romProps);
+  rom.append(romProps);
   for (const [prop, name] of Object.entries(ROM_PROPS)) {
     if (typeof cart[prop] !== "undefined") {
-      romProps.appendChild(li(`${name}: ${cart[prop]}`));
+      romProps.append(li(`${name}: ${cart[prop]}`));
     }
   }
   if (typeof cart.logoImageUrl !== "undefined") {
-    romProps.appendChild(li("Logo: ", makeElement("img", {src: cart.logoImageUrl()})));
+    romProps.append(li("Logo: ", makeElement("img", {src: cart.logoImageUrl()})));
   }
 
   if (cart.savSize) {
-    sav.replaceChildren(ul(li(`Size: ${unitBytes(cart.savSize)}`)));
+    sav.append(ul(li(`Size: ${unitBytes(cart.savSize)}`)));
   } else {
-    sav.replaceChildren(p("None"));
+    sav.append(p("None"));
   }
 };
 
@@ -150,7 +153,7 @@ const run = async (client, platform, {signal}) => {
   };
 
   const romForm = makeElement("form");
-  q("#rom > div").appendChild(romForm);
+  q("#rom").append(romForm);
 
   romForm.append(makeElement("button", {
     children: [`Back up .${cart.extension}`],
@@ -167,7 +170,7 @@ const run = async (client, platform, {signal}) => {
 
   if (typeof cart.backUpSav !== "undefined") {
     const savForm = makeElement("form");
-    q("#sav > div").appendChild(savForm);
+    q("#sav").append(savForm);
     savForm.append(makeElement("button", {
       children: ["Back up .sav"],
       onclick: async () => {
@@ -197,13 +200,13 @@ const runModal = (children, buttons) => new Promise(resolve => {
     children: buttons.map(b => makeElement("button", {innerText: b, value: b})),
   });
   form.firstChild.autofocus = true;
-  dlog.appendChild(form);
+  dlog.append(form);
 
   dlog.addEventListener("close", e => {
     document.body.removeChild(dlog);
     resolve(dlog.returnValue);
   });
-  document.body.appendChild(dlog);
+  document.body.append(dlog);
   dlog.showModal();
 });
 

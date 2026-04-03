@@ -25,12 +25,19 @@ main {
   grid-gap: 10px;
 }
 
-main > * {
+section {
   border: 1px solid #ccc;
-  padding: 10px;
 }
 
-main p {
+header, section {
+  padding: 0 10px;
+}
+
+header form, section > * {
+  margin: 10px 0;
+}
+
+section p {
   text-align: center;
   font-style: italic;
 }
@@ -50,7 +57,6 @@ h1, h2 {
 }
 
 h2 {
-  margin: 0 0 10px 0;
   font-size: 100%;
 }
 
@@ -60,9 +66,13 @@ footer {
 }
 
 ul {
-  margin: 0;
   padding: 0;
   list-style: none;
+}
+
+li {
+  text-indent: -20px;
+  margin-left: 20px;
 }
 
 img {
@@ -74,11 +84,10 @@ progress {
   width: 100%;
   max-width: 400px;
   display: block;
-  margin: 0 auto;
+  margin: 10px auto;
 }
 
 form {
-  margin: 0;
   display: flex;
   flex-wrap: wrap;
   grid-gap: 10px;
@@ -95,7 +104,7 @@ form {
 @media (prefers-color-scheme: dark) {
   body { background: black; color: white; }
   header, main, dialog { background: #333; color: white; border: 1px solid #666; }
-  main > * { border: 1px solid #666; }
+  section { border: 1px solid #666; }
   a:link { color: #7bf; }
   a:visited { color: #b7f; }
   a:active { color: #f77; }

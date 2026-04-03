@@ -7,6 +7,11 @@ export class Segment {
   }
 
   get size() { return this.end - this.begin; }
+
+  bisect() {
+    const half = this.begin + Math.floor(this.size / 2);
+    return [new Segment(this.begin, half), new Segment(half, this.end)];
+  }
 };
 
 export const arrayEq = (a, b) => (a.length == b.length) && a.every((x, i) => x == b[i]);

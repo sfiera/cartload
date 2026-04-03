@@ -128,8 +128,6 @@ export default class DmgCart {
     });
   }
 
-  get canBackUpSav() { return !!this.savSize; }
-
   async backUpSav(client, callback) {
     return await client.lock(0, async client => {
       callback ||= () => {};

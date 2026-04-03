@@ -163,7 +163,7 @@ const run = async (client, platform, {signal}) => {
     }));
   }
 
-  if (cart.canBackUpSav) {
+  if (typeof cart.backUpSav !== "undefined") {
     const savForm = makeElement("form");
     q("#sav > div").appendChild(savForm);
     savForm.append(makeElement("button", {

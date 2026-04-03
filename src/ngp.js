@@ -1,5 +1,6 @@
 // Cartload is (c) 2026 by sfiera. Licensed under GPLv3.
 
+import {pack} from "./struct.js";
 import {arrayEq, ints, latin1, makeImage, Segment} from "./util.js";
 
 const MFR_IDS = {};
@@ -13,7 +14,7 @@ SIZE_IDS[0x2c] = 1024 * 1024;
 SIZE_IDS[0x2f] = 2048 * 1024;
 
 export default class NeoGeoPocketCart {
-  constructor(data, romSize) {
+  constructor(data, romSize, savSize, segments) {
     if (!(data instanceof Uint8Array)) {
       throw new TypeError("data must be Uint8Array")
     } else if (data.length < 0x40) {
@@ -28,6 +29,8 @@ export default class NeoGeoPocketCart {
         ("NEOP" + this.header[0x21].toString(16).padStart(2, "0") +
          this.header[0x20].toString(16).padStart(2, "0"));
     this.romSize = romSize;
+    this.savSize = savSize;
+    this.segments = segments;
 
     this.compatibility = {
       color: !!(this.header[0x23] & 0x10),
@@ -48,7 +51,6 @@ export default class NeoGeoPocketCart {
   get romSegments() {
     return ints(this.romSize >> 16).map(i => new Segment(i * (1 << 16), (i + 1) * (1 << 16)));
   }
-  get savSegments() { return []; }
 
   async headerDigest() { return await window.crypto.subtle.digest("SHA-1", this.header); }
 
@@ -57,9 +59,9 @@ export default class NeoGeoPocketCart {
       callback ||= () => {};
       await client.setPower(true);
       let data = [];
-      const segs = this.romSegments;
-      for (const [i, seg] of segs.entries()) {
-        await this.selectRomSegment(client, seg);
+      for (const [c, seg, ro] of this.segments) {
+        await latch(client, seg.begin >>> 16);
+        await cs(client, c);
         data.push(...await client.transfer("dmg", 0, 0x10000, {
           progress: n => callback(seg.begin + n),
           csPulse: false,
@@ -69,9 +71,38 @@ export default class NeoGeoPocketCart {
     });
   }
 
-  async selectRomSegment(client, segment) {
-    await latch(client, (segment.begin >>> 16) & 0x1F);
-    await cs(client, (segment.begin >>> 21) & 0x1);
+  async backUpSav(client, callback) {
+    callback ||= () => {};
+    return await client.lock(0, async client => {
+      await client.setPower(true);
+      let data = [];
+      let count = 0;
+      let total = 0;
+
+      for (const [c, seg, ro] of this.segments) {
+        if (ro) {
+          continue;
+        }
+        const segs = (seg.size === 0x10000) ? seg.bisect() : [seg];
+
+        for (const seg of segs) {
+          await latch(client, seg.begin >>> 16);
+          await cs(client, c);
+          const segData = await client.transfer("dmg", seg.begin & 0xFFFF, seg.size, {
+            progress: n => callback(total + n),
+            csPulse: false,
+          });
+
+          const addr = (c ? 0x800000 : 0x200000) | seg.begin
+          data.push(...pack("<IH", addr, segData.length));
+          data.push(...segData);
+          total += segData.length;
+          count++;
+        }
+      }
+      data.splice(0, 0, ...pack("<HHI", 0x53, count, data.length + 8));
+      return new Uint8Array(data);
+    });
   }
 
   static async detect(client) {
@@ -80,21 +111,52 @@ export default class NeoGeoPocketCart {
       await client.setPower(true);
       await latch(client, 0);
 
-      const size = [0, 0];
+      let romSize = 0;
+      let savSize = 0;
+      const segments = [];
       for (const c of [0, 1]) {
         await cs(client, c);
         await client.write("dmg", 0x5555, 0xAA, {csPulse: false});
         await client.write("dmg", 0x2AAA, 0x55, {csPulse: false});
         await client.write("dmg", 0x5555, 0x90, {csPulse: false});
         const [mfrId, sizeId] = await client.transfer("dmg", 0, 2, {csPulse: false});
-        await client.write("dmg", 0, 0xF0, {csPulse: false});
 
-        if (typeof SIZE_IDS[sizeId] !== "number") {
+        const size = SIZE_IDS[sizeId];
+        if (typeof size !== "number") {
           throw new Error("Failed to detect cartridge size");
         }
-        size[c] = SIZE_IDS[sizeId];
+        romSize += size;
+
+        const blockCount = size ? (size >>> 16) + 3 : 0;
+        for (let block = 0; block < blockCount; ++block) {
+          let start, end;
+          if (block === blockCount - 1) {
+            start = (block << 16) - 0x30000 + 0xC000;
+            end = start + 0x4000;
+          } else if (block === blockCount - 2) {
+            start = (block << 16) - 0x20000 + 0xA000;
+            end = start + 0x2000;
+          } else if (block === blockCount - 3) {
+            start = (block << 16) - 0x10000 + 0x8000;
+            end = start + 0x2000;
+          } else if (block === blockCount - 4) {
+            start = (block << 16);
+            end = start + 0x8000;
+            await latch(client, block);
+          } else {
+            start = (block << 16);
+            end = start + 0x10000;
+            await latch(client, block);
+          }
+          const [ro] = await client.transfer("dmg", 2, 1, {csPulse: false});
+          if (!ro) {
+            savSize += (end - start);
+          }
+          segments.push([c, new Segment(start, end), ro]);
+        }
+
+        await client.write("dmg", 0, 0xF0, {csPulse: false});
       }
-      const romSize = size[0] + size[1];
       if (romSize === 0) {
         throw new Error("No cartridge detected");
       }
@@ -103,7 +165,7 @@ export default class NeoGeoPocketCart {
       await cs(client, 0);
       const data = await client.transfer("dmg", 0, 0x40, {csPulse: false});
 
-      return new NeoGeoPocketCart(new Uint8Array(data), romSize);
+      return new NeoGeoPocketCart(new Uint8Array(data), romSize, savSize, segments);
     });
   }
 

@@ -160,11 +160,11 @@ class LockedClient {
 
     switch (mode) {
       case "dmg":
-        return this.#transferDmg(address, size, options);
+        return await this.#transferDmg(address, size, options);
       case "agb":
-        return this.#transferAgb(address, size, options);
+        return await this.#transferAgb(address, size, options);
       case "eep":
-        return this.#transferEep(address, size, options);
+        return await this.#transferEep(address, size, options);
       default:
         throw new Error(`invalid readRange mode ${mode}`);
     }

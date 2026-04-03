@@ -42,7 +42,7 @@ section p {
   font-style: italic;
 }
 
-#db, #progress {
+#db, .progress {
   grid-column: 1/-1;
 }
 

@@ -10,7 +10,10 @@ export class FakeClient {
   }
 
   async #work() {
-    while (!this.working && this.queue.length) {
+    if (this.working) {
+      return;
+    }
+    while (this.queue.length) {
       const n = this.queue.slice(1).reduce(
           (i, _, j) => (this.queue[i].priority < this.queue[j].priority) ? i : j, 0);
       const {resolve, reject, fn} = this.queue[n];
@@ -21,11 +24,14 @@ export class FakeClient {
         resolve(result);
       } catch (e) {
         reject(e);
-      } finally {
-        this.working = false;
+      }
+
+      // Queue might become non-empty while running this command.
+      if (!this.queue.length) {
+        await this.setPower(false);
       }
     }
-    this.setPower(false);
+    this.working = false;
   }
 
   lock(priority, fn) {

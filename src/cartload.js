@@ -8,7 +8,7 @@ import LynxCart from "./lynx.js";
 import NeoGeoPocketCart from "./ngp.js";
 import {crc32, downloadUrl, hex, hex32, makeElement, toDataUrl, unitBytes} from "./util.js";
 
-const q = (...args) => document.querySelector(...args);
+const q = (s, el = document) => el.querySelector(s);
 
 const PLATFORMS = {
   dmg: DmgCart,
@@ -68,13 +68,6 @@ const showInfo = (cart, dbEntry) => {
   }
 };
 
-const showProgress = (curr, max) => {
-  const progress = q("progress");
-  const pct = Math.floor(1000 * curr / max) / 10;
-  progress.value = pct;
-  progress.innerText = `${pct}%`;
-};
-
 const handleConnect = async platform => {
   const ctrl = new AbortController();
   const signal = ctrl.signal;
@@ -106,21 +99,29 @@ const handleConnect = async platform => {
   };
 };
 
-const action = async (fn) => {
-  const elements = [];
-  [...document.getElementsByTagName("button")].forEach(e => {
-    elements.push([e, !!e.disabled]);
-    e.disabled = true;
+const action = async (title, fn) => {
+  q("#disconnect").disabled = true;
+  const section = makeElement("section", {
+    className: "progress",
+    children: [h2(title), makeElement("progress")],
   });
+  q("main").append(section);
   try {
-    return await fn();
+    return await fn((curr, max) => {
+      const pct = Math.floor(1000 * curr / max) / 10;
+      const progress = q("progress", section);
+      progress.value = curr;
+      progress.max = max;
+      progress.innerText = `${pct}%`;
+    });
   } finally {
-    elements.forEach(([e, dis]) => e.disabled = dis);
+    q("main").removeChild(section);
+    q("#disconnect").disabled = false;
   };
 };
 
 const run = async (client, platform, {signal}) => {
-  const cart = await platform.detect(client);
+  const cart = await action("Detect cartridge", () => platform.detect(client));
   console.log(cart);
   if (!cart) {
     return;
@@ -135,9 +136,9 @@ const run = async (client, platform, {signal}) => {
   showInfo(cart, dbEntry);
   signal.addEventListener("abort", () => showInfo(null));
 
-  const backUp = async () => {
-    return await action(async () => {
-      const data = await cart.backUpRom(client, len => showProgress(len, cart.romSize));
+  const backUp = async title => {
+    return await action(title, async progress => {
+      const data = await cart.backUpRom(client, len => progress(len, cart.romSize));
       console.log(hex(await window.crypto.subtle.digest("SHA-1", data)));
       if (dbEntry && typeof dbEntry.rc !== "undefined") {
         if (dbEntry.rc === crc32(data)) {
@@ -152,30 +153,30 @@ const run = async (client, platform, {signal}) => {
     });
   };
 
-  const romForm = makeElement("form");
+  const romForm = makeElement("form", {onsubmit: () => false});
   q("#rom").append(romForm);
 
   romForm.append(makeElement("button", {
     children: [`Back up .${cart.extension}`],
-    onclick: async () =>
-        downloadUrl(`${title}.${cart.extension}`, await toDataUrl(await backUp())),
+    onclick: async () => downloadUrl(
+        `${title}.${cart.extension}`, await toDataUrl(await backUp("Back up ROM Data"))),
   }));
 
   if (dbEntry && typeof dbEntry.rc !== "undefined") {
     romForm.append(makeElement("button", {
       children: ["Validate"],
-      onclick: () => backUp(),
+      onclick: () => backUp("Validate ROM Data"),
     }));
   }
 
   if (typeof cart.backUpSav !== "undefined") {
-    const savForm = makeElement("form");
+    const savForm = makeElement("form", {onsubmit: () => false});
     q("#sav").append(savForm);
     savForm.append(makeElement("button", {
       children: ["Back up .sav"],
       onclick: async () => {
-        await action(async () => {
-          const data = await cart.backUpSav(client, len => showProgress(len, cart.savSize));
+        await action("Back up Save Data", async progress => {
+          const data = await cart.backUpSav(client, len => progress(len, cart.savSize));
           console.log(hex(await window.crypto.subtle.digest("SHA-1", data)));
           downloadUrl(`${title}.sav`, await toDataUrl(data));
         });

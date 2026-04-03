@@ -101,21 +101,32 @@ const handleConnect = async platform => {
 
 const action = async (title, fn) => {
   q("#disconnect").disabled = true;
-  const section = makeElement("section", {
+  const sect = makeElement("section", {
     className: "progress",
     children: [h2(title), makeElement("progress")],
   });
-  q("main").append(section);
+  q("main").append(sect);
+  let update = true;
   try {
     return await fn((curr, max) => {
       const pct = Math.floor(1000 * curr / max) / 10;
-      const progress = q("progress", section);
+      const progress = q("progress", sect);
       progress.value = curr;
       progress.max = max;
       progress.innerText = `${pct}%`;
+      if (update) {
+        let text = q("p", sect);
+        if (!text) {
+          text = p();
+          sect.append(text);
+        }
+        text.innerText = `${unitBytes(curr)} of ${unitBytes(max)}`;
+        update = false;
+        setTimeout(() => update = true, 250);
+      }
     });
   } finally {
-    q("main").removeChild(section);
+    q("main").removeChild(sect);
     q("#disconnect").disabled = false;
   };
 };

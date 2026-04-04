@@ -144,6 +144,11 @@ const run = async (client, platform, {signal}) => {
   const title = dbEntry ? `${dbEntry.gn} ${dbEntry.ne}` : (cart.title || cart.code || "game");
   console.log(title, digest, dbEntry);
 
+  if (dbEntry?.st !== undefined) {
+    cart.savType = dbEntry.st;
+    cart.savSize = dbEntry.ss;
+  }
+
   showInfo(cart, dbEntry);
   signal.addEventListener("abort", () => showInfo(null));
 
@@ -151,7 +156,7 @@ const run = async (client, platform, {signal}) => {
     return await action(title, async progress => {
       const data = await cart.backUpRom(client, len => progress(len, cart.romSize));
       console.log(hex(await window.crypto.subtle.digest("SHA-1", data)));
-      if (dbEntry && typeof dbEntry.rc !== "undefined") {
+      if (dbEntry?.rc !== "undefined") {
         if (dbEntry.rc === crc32(data)) {
           q("#db .crc32").classList.add("valid");
           q("#db .crc32").classList.remove("invalid");

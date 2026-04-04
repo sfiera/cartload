@@ -42,7 +42,7 @@ const showInfo = (cart, dbEntry) => {
   if (dbEntry) {
     const dbProps = ul(li(`Title: ${dbEntry.gn} ${dbEntry.ne}`));
     db.append(dbProps);
-    if (typeof dbEntry.rc !== "undefined") {
+    if (dbEntry.rc !== undefined) {
       dbProps.append(
           li("Checksum: ", makeElement("tt", {className: "crc32", children: hex32(dbEntry.rc)})))
     }
@@ -53,11 +53,11 @@ const showInfo = (cart, dbEntry) => {
   const romProps = ul(li(`Size: ${unitBytes(cart.romSize)}`));
   rom.append(romProps);
   for (const [prop, name] of Object.entries(ROM_PROPS)) {
-    if (typeof cart[prop] !== "undefined") {
+    if (cart[prop] !== undefined) {
       romProps.append(li(`${name}: ${cart[prop]}`));
     }
   }
-  if (typeof cart.logoImageUrl !== "undefined") {
+  if (cart.logoImageUrl !== undefined) {
     romProps.append(li("Logo: ", makeElement("img", {src: cart.logoImageUrl()})));
   }
 
@@ -156,7 +156,7 @@ const run = async (client, platform, {signal}) => {
     return await action(title, async progress => {
       const data = await cart.backUpRom(client, len => progress(len, cart.romSize));
       console.log(hex(await window.crypto.subtle.digest("SHA-1", data)));
-      if (dbEntry?.rc !== "undefined") {
+      if (dbEntry?.rc !== undefined) {
         if (dbEntry.rc === crc32(data)) {
           q("#db .crc32").classList.add("valid");
           q("#db .crc32").classList.remove("invalid");
@@ -178,14 +178,14 @@ const run = async (client, platform, {signal}) => {
         `${title}.${cart.extension}`, await toDataUrl(await backUp("Back up ROM Data"))),
   }));
 
-  if (dbEntry && typeof dbEntry.rc !== "undefined") {
+  if (dbEntry?.rc !== undefined) {
     romForm.append(makeElement("button", {
       children: ["Validate"],
       onclick: () => backUp("Validate ROM Data"),
     }));
   }
 
-  if (typeof cart.backUpSav !== "undefined") {
+  if (cart.backUpSav !== undefined) {
     const savForm = makeElement("form", {onsubmit: () => false});
     q("#sav").append(savForm);
     savForm.append(makeElement("button", {

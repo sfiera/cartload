@@ -181,7 +181,7 @@ export default class DmgCart {
         throw new Error("No cartridge detected");
       }
       let cartType = dmgCarts[header[0x147]];
-      if (typeof cartType === "undefined") {
+      if (cartType === undefined) {
         cartType = dmgCarts[0];
       }
       return cartType(header);

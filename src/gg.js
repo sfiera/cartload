@@ -55,7 +55,13 @@ export default class GameGearCart {
     return ints(this.romSize >> 14).map((i) => new Segment(i * (1 << 14), (i + 1) * (1 << 14)));
   }
   get savSegments() {
-    return ints(this.savSize >> 13).map((i) => new Segment(i * (1 << 13), (i + 1) * (1 << 13)));
+    if (this.savSize === 0x8000) {
+      return [new Segment(0, 0x4000), new Segment(0x4000, 0x8000)];
+    } else if (this.savSize) {
+      return [new Segment(0, this.savSize)];
+    } else {
+      return [];
+    }
   }
 
   get extension() { return this.compatibility.sms ? "sms" : "gg"; }
@@ -67,9 +73,20 @@ export default class GameGearCart {
       callback ||= () => {};
       await client.setPower(true);
       let data = [];
-      const segs = this.romSegments;
-      for (const seg of segs) {
-        data.push(...await transferRomSegment(client, seg, n => callback(seg.begin + n)));
+      for (const seg of this.romSegments) {
+        data.push(...await readSeg(client, seg, n => callback(seg.begin + n)));
+      }
+      return new Uint8Array(data);
+    });
+  }
+
+  async backUpSav(client, callback) {
+    return await client.lock(0, async client => {
+      callback ||= () => {};
+      await client.setPower(true);
+      let data = [];
+      for (const seg of this.savSegments) {
+        data.push(...await readSeg(client, seg, n => callback(seg.begin + n), true));
       }
       return new Uint8Array(data);
     });
@@ -85,14 +102,14 @@ export default class GameGearCart {
       await client.write("dmg", BANK2, 2);
 
       const seg = new Segment(0x4000, 0x8000);
-      const data = await transferRomSegment(client, seg);
+      const data = await readSeg(client, seg);
       if (data.every(x => x == 0)) {
         throw new Error("No cartridge detected");
       }
 
       for (let bankCount = 2; bankCount < 128; bankCount <<= 1) {
         await client.write("dmg", BANK1, bankCount + 1);
-        const newData = await transferRomSegment(client, seg);
+        const newData = await readSeg(client, seg);
         if (arrayEq(newData, data)) {
           return new GameGearCart(data, bankCount * 0x4000);
         }
@@ -112,11 +129,17 @@ const nextBit = (val) => {
   return 1 << shift;
 };
 
-const transferRomSegment = async (client, segment, progress) => {
+const readSeg = async (client, segment, progress, sav = false) => {
   progress ||= () => {};
 
-  if (segment.begin >= 0x8000) {
-    await client.write("dmg", BANK2, segment.begin >> 14);
+  if (sav) {
+    await client.write("dmg", BANKCTRL, 0x08);
+    segment = new Segment(0x8000, 0x8000 + segment.size);
+  } else {
+    await client.write("dmg", BANKCTRL, 0);
+    if (segment.begin >= 0x8000) {
+      await client.write("dmg", BANK2, segment.begin >> 14);
+    }
   }
 
   const chunkSize = 0x200;

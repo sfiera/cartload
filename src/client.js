@@ -129,7 +129,7 @@ class LockedClient {
   async #transferDmg(address, size, {progress, csPulse}) {
     await this.#setVariable(vars.CART_MODE, 1);
     await this.#setVariable(vars.DMG_READ_METHOD, 1);
-    await this.#setVariable(vars.DMG_ACCESS_MODE, 1);
+    await this.#setVariable(vars.DMG_ACCESS_MODE, address >= 0xA000 ? 3 : 1);
     await this.#setVariable(vars.DMG_READ_CS_PULSE, csPulse ? 1 : 0);
     await this.#setVariable(vars.ADDRESS, address);
     return await this.#transferAll(cmds.DMG_CART_READ, size, progress);

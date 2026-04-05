@@ -135,7 +135,7 @@ class LockedClient {
     return await this.#transferAll(cmds.DMG_CART_READ, size, progress);
   }
 
-  async #transferEep(address, size, {progress}) {
+  async #transferDmgEep(address, size, {progress}) {
     await this.#setVariable(vars.ADDRESS, address);
     return await this.#transferAll(cmds.DMG_MBC7_READ_EEPROM, size, progress);
   }

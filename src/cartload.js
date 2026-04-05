@@ -23,6 +23,9 @@ const ROM_PROPS = {
   code: "Code",
   mapperName: "Mapper",
 };
+const SAV_PROPS = {
+  savTypeName: "Type",
+};
 
 const showInfo = (cart, dbEntry) => {
   const db = q("#db");
@@ -62,7 +65,13 @@ const showInfo = (cart, dbEntry) => {
   }
 
   if (cart.savSize) {
-    sav.append(ul(li(`Size: ${unitBytes(cart.savSize)}`)));
+    const savProps = ul(li(`Size: ${unitBytes(cart.savSize)}`));
+    sav.append(savProps);
+    for (const [prop, name] of Object.entries(SAV_PROPS)) {
+      if (cart[prop] !== undefined) {
+        savProps.append(li(`${name}: ${cart[prop]}`));
+      }
+    }
   } else {
     sav.append(p("None"));
   }
@@ -185,7 +194,7 @@ const run = async (client, platform, {signal}) => {
     }));
   }
 
-  if (cart.backUpSav !== undefined) {
+  if (cart.savSize && cart.backUpSav !== undefined) {
     const savForm = makeElement("form", {onsubmit: () => false});
     q("#sav").append(savForm);
     savForm.append(makeElement("button", {

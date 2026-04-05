@@ -121,6 +121,45 @@ export default class AgbCart {
     });
   }
 
+  async backUpSav(client, callback) {
+    return await client.lock(0, async client => {
+      callback ||= () => {};
+      await client.setPower(true);
+      let data = [];
+      switch (this.savType) {
+        case 1:
+        case 2:
+          data.push(...await client.readRange("agb-eep", 0, this.savSize, {progress: callback}));
+          break;
+        case 3:
+        case 4:
+        case 5:
+          data.push(...await client.readRange("agb-ram", 0, this.savSize, {progress: callback}));
+          break;
+        default:
+          throw new Error("Not implemented");
+      }
+      return new Uint8Array(data);
+    });
+  }
+
+  get savTypeName() {
+    switch (this.savType) {
+      case 1:
+      case 2:
+        return "EEPROM";
+      case 3:
+        return "SRAM";
+      case 4:
+      case 5:
+        return "Flash";
+      case 6:
+        return "DACS";
+      default:
+        return "None";
+    }
+  }
+
   static async detect(client) {
     return await client.lock(0, async client => {
       await client.setMode("agb", 3.3);

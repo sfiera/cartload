@@ -320,7 +320,7 @@ class Mbc7FakeClient extends DmgFakeClient {
     }
 
     const {pullups} = options;
-    expect(mode).toBe("eep");
+    expect(mode).toBe("dmg-eep");
     expect(!!pullups).toBe(false);
     expect(this.ramConf).toBe(0x0A);
     expect(this.eepConf).toBe(0x40);

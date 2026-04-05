@@ -20,7 +20,7 @@ export default {
   AGB_CART_WRITE: {id: 0xC2, reqFormat: "BIB", respFormat: "B"},
   AGB_CART_READ_SRAM: {id: 0xC3, reqFormat: "B", respFormat: ""},
   AGB_CART_WRITE_SRAM: {id: 0xC4, reqFormat: "BIB", respFormat: "B"},
-  AGB_CART_READ_EEPROM: {id: 0xC5, reqFormat: "B", respFormat: ""},
+  AGB_CART_READ_EEPROM: {id: 0xC5, reqFormat: "BB", respFormat: ""},
   AGB_CART_WRITE_EEPROM: {id: 0xC6, reqFormat: "BIB", respFormat: "B"},
   AGB_BOOTUP_SEQUENCE: {id: 0xC9, reqFormat: "B", respFormat: "B"},
   CART_PWR_ON: {id: 0xF2, reqFormat: "B", respFormat: "B"},

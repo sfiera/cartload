@@ -135,6 +135,11 @@ class LockedClient {
     return await this.#transferAll(cmds.DMG_CART_READ, size, progress);
   }
 
+  async #transferEep(address, size, {progress}) {
+    await this.#setVariable(vars.ADDRESS, address);
+    return await this.#transferAll(cmds.DMG_MBC7_READ_EEPROM, size, progress);
+  }
+
   async #transferAgb(address, size, {progress}) {
     await this.#setVariable(vars.CART_MODE, 2);
     await this.#setVariable(vars.AGB_READ_METHOD, 2);
@@ -142,9 +147,18 @@ class LockedClient {
     return await this.#transferAll(cmds.AGB_CART_READ, size, progress);
   }
 
-  async #transferEep(address, size, {progress}) {
+  async #transferAgbRam(address, size, {progress}) {
+    await this.#setVariable(vars.CART_MODE, 2);
+    await this.#setVariable(vars.AGB_READ_METHOD, 2);
     await this.#setVariable(vars.ADDRESS, address);
-    return await this.#transferAll(cmds.DMG_MBC7_READ_EEPROM, size, progress);
+    return await this.#transferAll(cmds.AGB_CART_READ_SRAM, size, progress);
+  }
+
+  async #transferAgbEep(address, size, {progress}) {
+    await this.#setVariable(vars.CART_MODE, 2);
+    await this.#setVariable(vars.AGB_READ_METHOD, 2);
+    await this.#setVariable(vars.ADDRESS, address >>> 3);
+    return await this.#transferAll(cmds.AGB_CART_READ_EEPROM, size, progress, 1);
   }
 
   async readRange(mode, address, size, options) {
@@ -161,10 +175,14 @@ class LockedClient {
     switch (mode) {
       case "dmg":
         return await this.#transferDmg(address, size, options);
+      case "dmg-eep":
+        return await this.#transferDmgEep(address, size, options);
       case "agb":
         return await this.#transferAgb(address, size, options);
-      case "eep":
-        return await this.#transferEep(address, size, options);
+      case "agb-ram":
+        return await this.#transferAgbRam(address, size, options);
+      case "agb-eep":
+        return await this.#transferAgbEep(address, size, options);
       default:
         throw new Error(`invalid readRange mode ${mode}`);
     }

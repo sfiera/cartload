@@ -246,7 +246,8 @@ class MBC7 extends DmgCart {
     await client.write("dmg", 0x0000, 0x0A);
     await client.write("dmg", 0x4000, 0x40);
     try {
-      return await client.readRange("eep", segment.begin, segment.size, {progress, csPulse: true});
+      return await client.readRange(
+          "dmg-eep", segment.begin, segment.size, {progress, csPulse: true});
     } finally {
       await client.write("dmg", 0x4000, 0x00);
       await client.write("dmg", 0x0000, 0x00);

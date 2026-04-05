@@ -129,7 +129,16 @@ class LockedClient {
   async #transferDmg(address, size, {progress, csPulse}) {
     await this.#setVariable(vars.CART_MODE, 1);
     await this.#setVariable(vars.DMG_READ_METHOD, 1);
-    await this.#setVariable(vars.DMG_ACCESS_MODE, address >= 0xA000 ? 3 : 1);
+    await this.#setVariable(vars.DMG_ACCESS_MODE, 1);
+    await this.#setVariable(vars.DMG_READ_CS_PULSE, csPulse ? 1 : 0);
+    await this.#setVariable(vars.ADDRESS, address);
+    return await this.#transferAll(cmds.DMG_CART_READ, size, progress);
+  }
+
+  async #transferDmgRam(address, size, {progress, csPulse}) {
+    await this.#setVariable(vars.CART_MODE, 1);
+    await this.#setVariable(vars.DMG_READ_METHOD, 1);
+    await this.#setVariable(vars.DMG_ACCESS_MODE, 3);
     await this.#setVariable(vars.DMG_READ_CS_PULSE, csPulse ? 1 : 0);
     await this.#setVariable(vars.ADDRESS, address);
     return await this.#transferAll(cmds.DMG_CART_READ, size, progress);
@@ -175,6 +184,8 @@ class LockedClient {
     switch (mode) {
       case "dmg":
         return await this.#transferDmg(address, size, options);
+      case "dmg-ram":
+        return await this.#transferDmgRam(address, size, options);
       case "dmg-eep":
         return await this.#transferDmgEep(address, size, options);
       case "agb":

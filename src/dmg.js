@@ -163,7 +163,7 @@ export default class DmgCart {
     await client.write("dmg", 0x0000, 0x0A);
     try {
       await client.write("dmg", 0x4000, segment.begin >> 13);
-      return await client.readRange("dmg", 0xA000, segment.size, {progress, csPulse: true});
+      return await client.readRange("dmg-ram", 0xA000, segment.size, {progress, csPulse: true});
     } finally {
       await client.write("dmg", 0x0000, 0x00);
     }

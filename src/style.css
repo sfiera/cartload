@@ -42,21 +42,29 @@ section p {
   font-style: italic;
 }
 
-#db, .progress {
-  grid-column: 1/-1;
+@media (min-width: 200px) {
+  main { grid-template-columns: repeat(2, 1fr); }
+  #db, .progress { grid-column: span 2; }
+  #rom, #sav { grid-column: span 2; }
 }
 
 @media (min-width: 400px) {
-  main {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  main { grid-template-columns: repeat(4, 1fr); }
+  #db, .progress { grid-column: span 4; }
+  #rom, #sav { grid-column: span 2; }
 }
 
-h1, h2 {
+@media (min-width: 600px) {
+  main { grid-template-columns: repeat(6, 1fr); }
+  #db, .progress { grid-column: span 6; }
+  #rom, #sav { grid-column: span 3; }
+}
+
+h1, h2, h3 {
   text-align: center;
 }
 
-h2 {
+h2, h3 {
   font-size: 100%;
 }
 
@@ -99,6 +107,16 @@ form {
 
 .invalid::after {
   content: " ⛔️"
+}
+
+.plug-item {
+    font-size: 90%;
+}
+
+.plug-item img {
+    display: block;
+    margin: 10px auto;
+    width: 64px;
 }
 
 @media (prefers-color-scheme: dark) {

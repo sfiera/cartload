@@ -6,6 +6,7 @@ import DmgCart from "./dmg.js";
 import GameGearCart from "./gg.js";
 import LynxCart from "./lynx.js";
 import NeoGeoPocketCart from "./ngp.js";
+import plugs from "./plug.js";
 import {crc32, downloadUrl, hex, hex32, makeElement, toDataUrl, unitBytes} from "./util.js";
 
 const q = (s, el = document) => el.querySelector(s);
@@ -140,12 +141,46 @@ const action = async (title, fn) => {
   };
 };
 
+const fillPlugItem = (item, sect, client) => {
+  if (item.iconUrl) {
+    sect.append(makeElement("img", {src: item.iconUrl}));
+  }
+  sect.append(
+      h3(item.title),
+      ul(li(`Size: ${unitBytes(item.size)}`)),
+      makeElement("form", {
+        onsubmit: () => false,
+        children: [makeElement("button", {
+          children: ["Back Up"],
+          onclick: async () => {
+            const data = await action(`Back up ${item.title}`, async progress => {
+              return await item.backUp(client, len => progress(len, item.size));
+            });
+            downloadUrl(`${item.title}.${item.extension}`, data);
+          },
+        })],
+      }),
+  );
+};
+
+const scanPlugs = async (client, cart, signal) => {
+  for (const plug of plugs) {
+    (await plug).scan(client, cart, async item => {
+      const sect = makeElement("section", {className: "plug-item"});
+      q("main").append(sect);
+      fillPlugItem(await item, sect, client);
+      signal.addEventListener("abort", () => q("main").removeChild(sect));
+    });
+  }
+};
+
 const run = async (client, platform, {signal}) => {
   const cart = await action("Detect cartridge", () => platform.detect(client));
   console.log(cart);
   if (!cart) {
     return;
   }
+  scanPlugs(client, cart, signal);
 
   const digest = hex(await cart.headerDigest());
   const db = await platform.db();
@@ -236,7 +271,7 @@ const runModal = (children, buttons) => new Promise(resolve => {
   dlog.showModal();
 });
 
-const [h2, p, ul, li, tt] = ["h2", "p", "ul", "li", "tt"].map(
+const [h2, h3, p, ul, li, tt] = ["h2", "h3", "p", "ul", "li", "tt"].map(
     tag => ((...children) => makeElement(tag, {children: children})));
 
 const showErr = e => {

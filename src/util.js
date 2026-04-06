@@ -88,6 +88,9 @@ export const makeElement = (tagName, properties = {}) => {
 };
 
 export const makeImage = (width, height, fn) => {
+  if (typeof document === "undefined") {
+    return null;
+  }
   const canvas = makeElement("canvas", {
     width: width,
     height: height,

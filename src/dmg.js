@@ -160,6 +160,7 @@ export default class DmgCart {
   }
 
   async transferSavSegment(client, segment, progress) {
+    console.log("sav", 0x0000, 0x0A, 0x4000, segment.begin >> 13);
     await client.write("dmg", 0x0000, 0x0A);
     try {
       await client.write("dmg", 0x4000, segment.begin >> 13);
@@ -258,6 +259,11 @@ class MBC7 extends DmgCart {
 class Camera extends DmgCart {
   constructor(header) { super(header, {ram, battery, camera}); }
   get mapperName() { return "MAC-GBD" }
+
+  async transferSavSegment(client, segment, progress) {
+    await client.write("dmg", 0x4000, segment.begin >> 13, {csPulse: false});
+    return await client.readRange("dmg-ram", 0xA000, segment.size, {progress, csPulse: true});
+  }
 };
 
 class HuC1 extends DmgCart {

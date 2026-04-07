@@ -1,0 +1,159 @@
+<html>
+  <head>
+    <title>Cartload: DB</title>
+    <script type="module">
+      import {hex32, unitBytes, makeElement} from "../util.js";
+
+      const q = (s, el = document) => el.querySelector(s);
+
+      const [tr, th, td, tt] = ["tr", "th", "td", "tt"].map(
+          tag => ((...children) => makeElement(tag, {children: children})));
+
+      const DBS = {
+        agb: (async () => (await import("./agb.json", {with: {type: "json"}})).default)(),
+        dmg: (async () => (await import("./dmg.json", {with: {type: "json"}})).default)(),
+        gg: (async () => (await import("./gg.json", {with: {type: "json"}})).default)(),
+        lynx: (async () => (await import("./lynx.json", {with: {type: "json"}})).default)(),
+        ngp: (async () => (await import("./ngp.json", {with: {type: "json"}})).default)(),
+      };
+
+      const COLS = {
+        gn: "Title",
+        mf: "Manufacturer",
+        gc: "Code",
+        lg: "Language",
+        rg: "Region",
+        rv: "Rev.",
+        ro: "Rot.",
+        rs: "Size",
+        rc: "Cksum",
+      };
+      const FILTERS = {
+        lg: x => [x.replaceAll(",", ", ")],
+        rs: x => [unitBytes(x)],
+        rc: x => [tt(hex32(x))],
+        ro: x => ["↑←→↓"[x]],
+      };
+
+      const show = async platform => {
+        q("thead tr").replaceChildren();
+
+        const db = [...Object.values(await DBS[platform])];
+        const cols = {};
+
+        let lastKey = "gn", asc = -1;
+        const show = sortKey => {
+          q(`thead .${lastKey}`).classList.remove("asc", "desc")
+          if (sortKey === lastKey) {
+            asc = -asc;
+            q(`thead .${lastKey}`).classList.add(asc > 0 ? "asc" : "desc")
+          } else {
+            asc = +1;
+            lastKey = sortKey;
+            q(`thead .${lastKey}`).classList.add("asc")
+          }
+          db.sort((a, b) => {
+            if (a[sortKey] === b[sortKey]) {
+              return 0;
+            } else if (a[sortKey] === undefined) {
+              return -asc;
+            } else if (b[sortKey] === undefined) {
+              return asc;
+            } else {
+              return a[sortKey] < b[sortKey] ? -asc : asc;
+            }
+          });
+          q("tbody").replaceChildren();
+          for (const item of db) {
+            const row = tr();
+            for (const id of Object.keys(cols)) {
+              if (item[id] === undefined) {
+                row.append(td());
+              } else if (FILTERS[id] === undefined) {
+                row.append(td(item[id]));
+              } else {
+                row.append(td(...FILTERS[id](item[id])));
+              }
+              row.lastChild.className = id;
+            }
+            q("tbody").append(row);
+          }
+        };
+
+        const row = q("thead tr");
+        for (const [id, name] of Object.entries(COLS)) {
+          for (const item of db) {
+            if (item[id] !== undefined) {
+              cols[id] = true;
+              const a = makeElement("a", {children: [name]});
+              a.addEventListener("click", e => {
+                e.preventDefault();
+                show(id);
+              });
+              row.append(th(a));
+              row.lastChild.className = id;
+              break;
+            }
+          }
+        }
+
+        show("gn");
+      };
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const platform = q("select");
+        show(platform.value);
+        platform.addEventListener("change", () => {
+          show(platform.value);
+        });
+      });
+    </script>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/style.css" type="text/css">
+    <style type="text/css">
+      body { max-width: fit-content; }
+      main { display: block; }
+      table { border-spacing: 5px 0; }
+      th { text-align: left; }
+      th a { cursor: pointer; }
+      td { vertical-align: top; }
+      .gc,.rs { white-space: nowrap; }
+      .asc::after { content: "↑"; }
+      .desc::after { content: "↓"; }
+    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+    </style>
+  </head>
+  <body>
+    <h1>Cartload: DB</h1>
+    <header>
+      <form>
+        <select id="platform">
+          <option value="dmg">Game Boy</option>
+          <option value="agb">Game Boy Advance</option>
+          <option value="gg">Game Gear</option>
+          <option value="ngp">Neo Geo Pocket</option>
+          <option value="lynx">Atari Lynx</option>
+          <!--
+          <option value="pce">PC-Engine/TG-16</option>
+          -->
+        </select>
+      <form>
+    </header>
+    <main>
+      <table>
+        <thead>
+          <tr>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+    </main>
+    <footer>
+      ©2026– cartload.org.
+      <a href="http://github.com/sfiera/cartload">Source</a> (<a href="https://github.com/sfiera/cartload/blob/main/LICENSE">GPLv3</a>).
+    </footer>
+  </body>
+</html>

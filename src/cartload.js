@@ -208,8 +208,8 @@ const run = async (client, platform, {signal}) => {
           q("#db .crc32").classList.add("invalid");
           q("#db .crc32").classList.remove("valid");
         }
-        return data;
       }
+      return data;
     });
   };
 

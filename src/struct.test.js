@@ -56,11 +56,16 @@ test("pstring", () => {
 });
 
 test("skip", () => {
-  expect(pack("Bxx", 1)).toStrictEqual(b(0x01, 0x00, 0x00));
+  expect(pack("B2x", 1)).toStrictEqual(b(0x01, 0x00, 0x00));
   expect(pack("xBx", 1)).toStrictEqual(b(0x00, 0x01, 0x00));
-  expect(pack("xxB", 1)).toStrictEqual(b(0x00, 0x00, 0x01));
-  expect(unpack("Bxx", b(0x01, 0x02, 0x03))).toStrictEqual([1]);
+  expect(pack("2xB", 1)).toStrictEqual(b(0x00, 0x00, 0x01));
+  expect(unpack("B2x", b(0x01, 0x02, 0x03))).toStrictEqual([1]);
   expect(unpack("xBx", b(0x01, 0x02, 0x03))).toStrictEqual([2]);
-  expect(unpack("xxB", b(0x01, 0x02, 0x03))).toStrictEqual([3]);
+  expect(unpack("2xB", b(0x01, 0x02, 0x03))).toStrictEqual([3]);
   expect(() => unpack("x", b())).toThrow(Error);
+})
+
+test("repeat", () => {
+  expect(pack("3B", 1, 2, 3)).toStrictEqual(b(0x01, 0x02, 0x03));
+  expect(pack("3?", true, false, true)).toStrictEqual(b(0x01, 0x00, 0x01));
 })

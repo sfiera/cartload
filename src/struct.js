@@ -1,7 +1,27 @@
 // Cartload is (c) 2026 by sfiera. Licensed under GPLv3.
 
+const repeat = single => ({
+  marshal: (count, args, result, options) => {
+    for (let i = 0; i < count; ++i) {
+      single.marshal(args, result, options);
+    }
+  },
+  unmarshal: (count, data, options) => {
+    const result = [];
+    let values;
+    for (let i = 0; i < count; ++i) {
+      [values, data] = single.unmarshal(data, options);
+      if (values === null) {
+        return [null, null];
+      }
+      result.push(...values);
+    }
+    return [result, data];
+  },
+});
+
 const fixedSize = function(size, getter, setter) {
-  return {
+  return repeat({
     marshal: (args, result, {littleEndian = false}) => {
       const data = new Uint8Array(size);
       const view = new DataView(data.buffer);
@@ -16,7 +36,7 @@ const fixedSize = function(size, getter, setter) {
       const value = view[getter](0, littleEndian);
       return [[value], data.slice(size)];
     },
-  };
+  });
 };
 
 const packFormats = {
@@ -26,9 +46,9 @@ const packFormats = {
   H: fixedSize(2, "getUint16", "setUint16"),
   i: fixedSize(4, "getInt32", "setInt32"),
   I: fixedSize(4, "getUint32", "setUint32"),
-  "?": {
+  "?": repeat({
     marshal: (args, result) => {result.push(args.shift() ? 1 : 0)},
-    unmarshal: (data) => {
+    unmarshal: data => {
       if (data.length < 1) {
         return [null, null];
       } else if (data[0] > 1) {
@@ -36,41 +56,39 @@ const packFormats = {
       }
       return [[data[0] == 1], data.slice(1)];
     },
-  },
-  p: {
-    unmarshal: (data) => {
-      let [length, remainder] = packFormats.B.unmarshal(data, {});
+  }),
+  p: repeat({
+    unmarshal: data => {
+      let [length, remainder] = packFormats.B.unmarshal(1, data, {});
       if ((length === null) || (remainder.length < length)) {
         return [null, null];
       }
       return [[new Uint8Array(remainder.slice(0, length))], remainder.slice(length)];
     },
-  },
+  }),
   x: {
-    marshal: (args, result) => result.push(0),
-    unmarshal: (data) => (data.length >= 1) ? [[], data.slice(1)] : [null, null],
+    marshal: (count, args, result) => result.push(...new Array(count).fill(0)),
+    unmarshal: (count, data) => (data.length >= count) ? [[], data.slice(count)] : [null, null],
   },
   "<": {
-    marshal: (args, result, options) => options.littleEndian = true,
-    unmarshal: (data, options) => {
-      options.littleEndian = true;
-      return [[], data];
-    },
+    marshal: (_, args, result, options) => options.littleEndian = true,
+    unmarshal: (_, data, options) => (options.littleEndian = true, [[], data]),
   },
   ">": {
-    marshal: (args, result, options) => options.littleEndian = false,
-    unmarshal: (data, options) => {
-      options.littleEndian = false;
-      return [[], data];
-    },
+    marshal: (_, args, result, options) => options.littleEndian = false,
+    unmarshal: (_, data, options) => (options.littleEndian = false, [[], data]),
   },
 };
 
 export function pack(format, ...args) {
   let result = [];
   let options = {littleEndian: false};
-  for (let i = 0; i < format.length; ++i) {
-    packFormats[format[i]].marshal(args, result, options);
+  for (const [_, n, ch] of format.matchAll(/([0-9]*)([^0-9])/g)) {
+    const count = n ? parseInt(n) : 1;
+    packFormats[ch].marshal(count, args, result, options);
+  }
+  if (args.length) {
+    throw new Error("excess args");
   }
   return new Uint8Array(result);
 };
@@ -82,8 +100,9 @@ export function unpack(format, data) {
   if (!(data instanceof Uint8Array)) {
     data = new Uint8Array(data);
   }
-  for (let i = 0; i < format.length; ++i) {
-    [values, data] = packFormats[format[i]].unmarshal(data, options);
+  for (const [_, n, ch] of format.matchAll(/([0-9]*)([^0-9])/g)) {
+    const count = n ? parseInt(n) : 1;
+    [values, data] = packFormats[ch].unmarshal(count, data, options);
     if (values === null) {
       throw new Error("data underflow");
     }

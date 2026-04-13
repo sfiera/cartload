@@ -54,3 +54,13 @@ test("pstring", () => {
   expect(unpack("pp", b(3, 1, 2, 3, 4, 5, 6, 7, 8)))
       .toStrictEqual([b(0x01, 0x02, 0x03), b(0x05, 0x06, 0x07, 0x08)]);
 });
+
+test("skip", () => {
+  expect(pack("Bxx", 1)).toStrictEqual(b(0x01, 0x00, 0x00));
+  expect(pack("xBx", 1)).toStrictEqual(b(0x00, 0x01, 0x00));
+  expect(pack("xxB", 1)).toStrictEqual(b(0x00, 0x00, 0x01));
+  expect(unpack("Bxx", b(0x01, 0x02, 0x03))).toStrictEqual([1]);
+  expect(unpack("xBx", b(0x01, 0x02, 0x03))).toStrictEqual([2]);
+  expect(unpack("xxB", b(0x01, 0x02, 0x03))).toStrictEqual([3]);
+  expect(() => unpack("x", b())).toThrow(Error);
+})

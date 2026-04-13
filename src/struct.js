@@ -46,6 +46,10 @@ const packFormats = {
       return [[new Uint8Array(remainder.slice(0, length))], remainder.slice(length)];
     },
   },
+  x: {
+    marshal: (args, result) => result.push(0),
+    unmarshal: (data) => (data.length >= 1) ? [[], data.slice(1)] : [null, null],
+  },
   "<": {
     marshal: (args, result, options) => options.littleEndian = true,
     unmarshal: (data, options) => {
@@ -78,7 +82,6 @@ export function unpack(format, data) {
   if (!(data instanceof Uint8Array)) {
     data = new Uint8Array(data);
   }
-  const littleEndian = (format[0] === "<");
   for (let i = 0; i < format.length; ++i) {
     [values, data] = packFormats[format[i]].unmarshal(data, options);
     if (values === null) {

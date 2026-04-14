@@ -2,6 +2,8 @@
 
 import {pack, unpack} from "./struct.js";
 
+const latin1 = new TextEncoder("latin1");
+
 const b = (...bytes) => new Uint8Array([...bytes]);
 
 test("ints and uints", () => {
@@ -54,6 +56,11 @@ test("pstring", () => {
   expect(unpack("pp", b(3, 1, 2, 3, 4, 5, 6, 7, 8)))
       .toStrictEqual([b(0x01, 0x02, 0x03), b(0x05, 0x06, 0x07, 0x08)]);
 });
+
+test("string", () => {
+  expect(pack("5s", latin1.encode("Hello"))).toStrictEqual(b(0x48, 0x65, 0x6c, 0x6c, 0x6f));
+  expect(unpack("5s", b(0x48, 0x65, 0x6c, 0x6c, 0x6f))).toStrictEqual([latin1.encode("Hello")]);
+})
 
 test("skip", () => {
   expect(pack("B2x", 1)).toStrictEqual(b(0x01, 0x00, 0x00));

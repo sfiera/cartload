@@ -66,6 +66,23 @@ const packFormats = {
       return [[new Uint8Array(remainder.slice(0, length))], remainder.slice(length)];
     },
   }),
+  s: {
+    marshal: (count, args, result) => {
+      const str = [...args.shift()];
+      if (str.length > count) {
+        throw new Error("string length " + str.length);
+      } else if (str.length < count) {
+        str.push(...new Array(count - str.length).fill(0));
+      }
+      result.push(...str);
+    },
+    unmarshal: (count, data) => {
+      if (data.length < count) {
+        return [null, null];
+      }
+      return [[new Uint8Array(data.slice(0, count))], data.slice(count)];
+    },
+  },
   x: {
     marshal: (count, args, result) => result.push(...new Array(count).fill(0)),
     unmarshal: (count, data) => (data.length >= count) ? [[], data.slice(count)] : [null, null],

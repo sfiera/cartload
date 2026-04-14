@@ -2,6 +2,9 @@
 
 import {arrayEq, ints, latin1, makeImage, Segment} from "./util.js";
 
+// LYNX pg0 pg1 ver cart mfr rot bank sav
+const lnx = "<4sHHH32s16sBBB3x";
+
 export default class LynxCart {
   constructor(data, romSize) {
     if (!(data instanceof Uint8Array)) {

@@ -160,7 +160,6 @@ export default class DmgCart {
   }
 
   async transferSavSegment(client, segment, progress) {
-    console.log("sav", 0x0000, 0x0A, 0x4000, segment.begin >> 13);
     await client.write("dmg", 0x0000, 0x0A);
     try {
       await client.write("dmg", 0x4000, segment.begin >> 13);

@@ -62,7 +62,7 @@ export default class NeoGeoPocketCart {
       for (const [c, seg, ro] of this.segments) {
         await latch(client, seg.begin >>> 16);
         await cs(client, c);
-        data.push(...await client.readRange("dmg", 0, 0x10000, {
+        data.push(...await client.readRange("dmg", 0, seg.size, {
           progress: n => callback(seg.begin + n),
           csPulse: false,
         }));

@@ -61,7 +61,7 @@ Q: What about PC-Engine/TurboGrafx-16 HuCards, with the AP\_A04?
   A: The AP_A04 adapter is considerably more complicated than the other 3 adapters. It hasn’t been reverse-engineered far enough to build on top of it.
 
 Q: Why don’t my Neo Geo Pocket backups match public digests?
-  A: NGP cartridges store game code and save data in a single flash chip, and backup utilities can’t distinguish one from the other. Unless the cartridge has never been used, any backup will likely contain save data that prevents it from matching.
+  A: NGP cartridges store game code and save data in a single flash chip, but public digests are for the original, unused state of cartridges. Unless a cartridge has never been used, any backup will likely contain save data that prevents it from matching.
 
 Q: How does Cartload compare to FlashGBX_?
   A: At present, FlashGBX:

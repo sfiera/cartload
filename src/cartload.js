@@ -7,7 +7,7 @@ import GameGearCart from "./gg.js";
 import LynxCart from "./lynx.js";
 import NeoGeoPocketCart from "./ngp.js";
 import plugs from "./plug.js";
-import {crc32, downloadUrl, hex, hex32, makeElement, toDataUrl, unitBytes} from "./util.js";
+import {crc32, downloadUrl, hex, hex32, makeElement, toDataUrl, unitBytes, v} from "./util.js";
 
 const q = (s, el = document) => el.querySelector(s);
 
@@ -93,7 +93,7 @@ const handleConnect = async platform => {
 
   const client = await Client.open(ports[0]);
   await client.lock(0, async client => {
-    console.log(await client.identify());
+    v(0).log(await client.identify());
   });
 
   try {
@@ -176,7 +176,7 @@ const scanPlugs = async (client, cart, signal) => {
 
 const run = async (client, platform, {signal}) => {
   const cart = await action("Detect cartridge", () => platform.detect(client));
-  console.log(cart);
+  v(0).log(cart);
   if (!cart) {
     return;
   }
@@ -186,7 +186,7 @@ const run = async (client, platform, {signal}) => {
   const db = await platform.db();
   const dbEntry = db[digest];
   const title = dbEntry ? `${dbEntry.gn} ${dbEntry.ne}` : (cart.title || cart.code || "game");
-  console.log(title, digest, dbEntry);
+  v(0).log(title, digest, dbEntry);
 
   if (dbEntry?.st !== undefined) {
     cart.savType = dbEntry.st;
@@ -199,7 +199,7 @@ const run = async (client, platform, {signal}) => {
   const backUp = async title => {
     return await action(title, async progress => {
       const data = await cart.backUpRom(client, len => progress(len, cart.romSize));
-      console.log(hex(await window.crypto.subtle.digest("SHA-1", data)));
+      v(0).log(hex(await window.crypto.subtle.digest("SHA-1", data)));
       if (dbEntry?.rc !== undefined) {
         if (dbEntry.rc === crc32(data)) {
           q("#db .crc32").classList.add("valid");
@@ -237,7 +237,7 @@ const run = async (client, platform, {signal}) => {
       onclick: async () => {
         await action("Back up Save Data", async progress => {
           const data = await cart.backUpSav(client, len => progress(len, cart.savSize));
-          console.log(hex(await window.crypto.subtle.digest("SHA-1", data)));
+          v(0).log(hex(await window.crypto.subtle.digest("SHA-1", data)));
           downloadUrl(`${title}.sav`, await toDataUrl(data));
         });
       },
@@ -275,7 +275,7 @@ const [h2, h3, p, ul, li, tt] = ["h2", "h3", "p", "ul", "li", "tt"].map(
     tag => ((...children) => makeElement(tag, {children: children})));
 
 const showErr = e => {
-  console.log(e);
+  v(0).log(e);
   runModal([h2(e.name), p(e.message)], ["OK"]);
 };
 

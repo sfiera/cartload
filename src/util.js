@@ -108,3 +108,14 @@ export const toDataUrl = buffer => new Promise(resolve => {
 export const downloadUrl = (filename, url) => {
   makeElement("a", {download: filename, href: url}).click();
 };
+
+const verbosity = typeof window === "undefined" ?
+    Infinity :
+    parseInt(new URLSearchParams(window.location.search).get("v")) || 0;
+export const v = (lvl) => {
+  if (verbosity >= lvl) {
+    return console;
+  } else {
+    return {log: () => {}};
+  }
+}

@@ -3,7 +3,7 @@
 import cmds from "./gbxcart/cmds.js";
 import vars from "./gbxcart/vars.js";
 import {pack, unpack} from "./struct.js";
-import {latin1} from "./util.js";
+import {latin1, v} from "./util.js";
 
 const MAX_TRANSFER_SIZE = 64;
 
@@ -23,6 +23,7 @@ class LockedClient {
   }
 
   async #command(cmd, ...args) {
+    v(3).log(cmd, ...args);
     await this.writer.write(pack(cmd.reqFormat, cmd.id, ...args));
     if (!cmd.respFormat.length) {
       return [];

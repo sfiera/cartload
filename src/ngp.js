@@ -123,7 +123,7 @@ export default class NeoGeoPocketCart {
 
         const size = SIZE_IDS[sizeId];
         if (typeof size !== "number") {
-          throw new Error("Failed to detect cartridge size");
+          throw new Error(`Failed to detect cartridge size: ${sizeId}`);
         }
         romSize += size;
 

@@ -293,7 +293,7 @@ document.addEventListener("DOMContentLoaded", () => {
               href: "https://caniuse.com/web-serial",
               children: "Web Serial-compatible browser",
             }),
-            ", such as the desktop versions of Chrome, Edge, or Opera."),
+            ", such as the desktop versions of Chrome, Firefox, Edge, or Opera."),
         ],
         ["OK"]);
     return;

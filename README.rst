@@ -31,11 +31,13 @@ Software
 Cartload uses the `Web Serial API`_, which is available in Blink-based browsers such as the desktop versions of:
 
 * Google Chrome_
+* Mozilla Firefox_
 * Microsoft Edge_
 * Opera_
 
 .. _web serial api: https://caniuse.com/web-serial
 .. _chrome: https://www.google.com/chrome/
+.. _firefox: https://www.firefox.com/
 .. _edge: https://www.microsoft.com/edge/
 .. _opera: https://www.opera.com/
 

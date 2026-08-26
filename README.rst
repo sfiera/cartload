@@ -28,10 +28,10 @@ Requirements
 Software
 ````````
 
-Cartload uses the `Web Serial API`_, which is available in Blink-based browsers such as the desktop versions of:
+Cartload uses the `Web Serial API`_, which is available in Gecko- and Blink-based browsers, such as the desktop versions of:
 
-* Google Chrome_
 * Mozilla Firefox_
+* Google Chrome_
 * Microsoft Edge_
 * Opera_
 
@@ -70,7 +70,7 @@ Q: How does Cartload compare to FlashGBX_?
 
   * has many more features for Game Boy and Game Boy Advance cartridges, such as write support
   * supports devices other than GBxCart RW, such as GBFlash and Joey Jr.
-  * is a Python app, so users of Firefox or Safari can use it
+  * is a Python app, so Safari users can run it
 
   Cartload:
 

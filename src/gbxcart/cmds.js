@@ -1,7 +1,7 @@
 export default {
   OFW_FW_VER: {id: 0x56, reqFormat: "B", respFormat: "B"},
   OFW_PCB_VER: {id: 0x68, reqFormat: "B", respFormat: "B"},
-  QUERY_FW_INFO: {id: 0xA1, reqFormat: "B", respFormat: "pp??"},
+  QUERY_FW_INFO: {id: 0xA1, reqFormat: "B", respFormat: "ppBB"},
   SET_MODE_AGB: {id: 0xA2, reqFormat: "B", respFormat: "B"},
   SET_MODE_DMG: {id: 0xA3, reqFormat: "B", respFormat: "B"},
   SET_VOLTAGE_3_3V: {id: 0xA4, reqFormat: "B", respFormat: "B"},

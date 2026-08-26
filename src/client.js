@@ -208,18 +208,23 @@ class LockedClient {
       throw new Error("unsupported ofw version", ofwPcbVer, ofwFwVer);
     }
 
-    const [info, nameEnc, cartPowerCtrl, bootloaderReset] =
+    const [info, nameEnc, cartFlags, bootloaderFlags] =
         await this.#command(cmds.QUERY_FW_INFO);
     const [cfwID, fwVer, pcbVer, fwTs] = unpack("BHBI", info);
     const fwDate = new Date(fwTs * 1000);
     const name = latin1.decode(nameEnc).replaceAll("\u0000", "");
+    const cartPowerCtrl = !!(cartFlags & 0x01);
+    const cartPresenceSwitch = !!(cartFlags & 0x02);
+    const cartModeSwitch = !!(cartFlags & 0x04);
+    const bootloaderReset = !!(bootloaderFlags & 0x01);
     if (fwVer < 12) {
       throw new Error("unsupported fw version", fwVer);
     } else if (!cartPowerCtrl) {
       throw new Error("cartridge reset not supported");
     }
 
-    return {cfwID, fwVer, pcbVer, fwDate, name, cartPowerCtrl, bootloaderReset};
+    const flags = {cartPowerCtrl, cartPresenceSwitch, cartModeSwitch, bootloaderReset};
+    return {cfwID, fwVer, pcbVer, fwDate, name, flags};
   }
 }
 

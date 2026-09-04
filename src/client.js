@@ -204,12 +204,11 @@ class LockedClient {
     const [ofwPcbVer] = await this.#command(cmds.OFW_PCB_VER);
     const [ofwFwVer] = await this.#command(cmds.OFW_FW_VER);
 
-    if ((ofwPcbVer < 5) || (ofwFwVer == 0)) {
+    if (ofwFwVer == 0) {
       throw new Error("unsupported ofw version", ofwPcbVer, ofwFwVer);
     }
 
-    const [info, nameEnc, cartFlags, bootloaderFlags] =
-        await this.#command(cmds.QUERY_FW_INFO);
+    const [info, nameEnc, cartFlags, bootloaderFlags] = await this.#command(cmds.QUERY_FW_INFO);
     const [cfwID, fwVer, pcbVer, fwTs] = unpack("BHBI", info);
     const fwDate = new Date(fwTs * 1000);
     const name = latin1.decode(nameEnc).replaceAll("\u0000", "");

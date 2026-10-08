@@ -1,9 +1,10 @@
 // Cartload is (c) 2026 by sfiera. Licensed under GPLv3.
 
-import cmds from "./gbxcart/cmds.js";
-import vars from "./gbxcart/vars.js";
-import {pack, unpack} from "./struct.js";
-import {latin1, v} from "./util.js";
+import {pack, unpack} from "../struct.js";
+import {latin1, v} from "../util.js";
+
+import cmds from "./cmds.js";
+import vars from "./vars.js";
 
 const MAX_TRANSFER_SIZE = 64;
 
@@ -227,7 +228,7 @@ class LockedClient {
   }
 }
 
-export default class Client {
+export default class GbxClient {
   constructor(port) {
     this.locked = new LockedClient(port);
     this.working = false;
@@ -270,6 +271,6 @@ export default class Client {
 
   static async open(port) {
     await port.open({baudRate: 1000000});
-    return new Client(port);
+    return new GbxClient(port);
   }
 }

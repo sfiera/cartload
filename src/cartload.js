@@ -1,8 +1,8 @@
 // Cartload is (c) 2026 by sfiera. Licensed under GPLv3.
 
 import AgbCart from "./agb.js";
-import Client from "./client.js";
 import DmgCart from "./dmg.js";
+import GbxClient from "./gbxcart/client.js";
 import GameGearCart from "./gg.js";
 import LynxCart from "./lynx.js";
 import NeoGeoPocketCart from "./ngp.js";
@@ -12,11 +12,11 @@ import {crc32, downloadUrl, hex, hex32, makeElement, toDataUrl, unitBytes, v} fr
 const q = (s, el = document) => el.querySelector(s);
 
 const PLATFORMS = {
-  dmg: DmgCart,
-  agb: AgbCart,
-  gg: GameGearCart,
-  ngp: NeoGeoPocketCart,
-  lynx: LynxCart,
+  dmg: () => connectGbx(DmgCart),
+  agb: () => connectGbx(AgbCart),
+  gg: () => connectGbx(GameGearCart),
+  ngp: () => connectGbx(NeoGeoPocketCart),
+  lynx: () => connectGbx(LynxCart),
 };
 
 const ROM_PROPS = {
@@ -78,7 +78,7 @@ const showInfo = (cart, dbEntry) => {
   }
 };
 
-const handleConnect = async platform => {
+const connectGbx = async platform => {
   const ctrl = new AbortController();
   const signal = ctrl.signal;
 
@@ -92,7 +92,7 @@ const handleConnect = async platform => {
     })];
   }
 
-  const client = await Client.open(ports[0]);
+  const client = await GbxClient.open(ports[0]);
   await client.lock(0, async client => {
     v(0).log(await client.identify());
   });
@@ -308,7 +308,7 @@ document.addEventListener("DOMContentLoaded", () => {
     connect.disabled = true;
     platform.disabled = true;
     try {
-      await handleConnect(PLATFORMS[platform.value]);
+      await PLATFORMS[platform.value]();
     } catch (e) {
       showErr(e);
     } finally {

@@ -29,6 +29,9 @@ const ROM_PROPS = {
 };
 const SAV_PROPS = {
   savTypeName: "Type",
+  fileCount: "File Count",
+  blocksUsed: "Blocks Used",
+  blocksFree: "Blocks Free",
 };
 
 const showInfo = (cart, dbEntry) => {

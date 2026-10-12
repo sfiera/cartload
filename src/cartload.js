@@ -7,16 +7,19 @@ import GameGearCart from "./gg.js";
 import LynxCart from "./lynx.js";
 import NeoGeoPocketCart from "./ngp.js";
 import plugs from "./plug.js";
+import PsMemClient from "./ps/client.js";
+import Ps1MemCard from "./ps1.js";
 import {crc32, downloadUrl, hex, hex32, makeElement, toDataUrl, unitBytes, v} from "./util.js";
 
 const q = (s, el = document) => el.querySelector(s);
 
 const PLATFORMS = {
-  dmg: () => connectGbx(DmgCart),
-  agb: () => connectGbx(AgbCart),
-  gg: () => connectGbx(GameGearCart),
-  ngp: () => connectGbx(NeoGeoPocketCart),
-  lynx: () => connectGbx(LynxCart),
+  dmg: () => connectSerial(GbxClient, DmgCart),
+  agb: () => connectSerial(GbxClient, AgbCart),
+  gg: () => connectSerial(GbxClient, GameGearCart),
+  ngp: () => connectSerial(GbxClient, NeoGeoPocketCart),
+  lynx: () => connectSerial(GbxClient, LynxCart),
+  ps1: () => connectBulk(PsMemClient, Ps1MemCard),
 };
 
 const ROM_PROPS = {
@@ -82,7 +85,7 @@ const showInfo = (cart, dbEntry) => {
   }
 };
 
-const connectGbx = async platform => {
+const connectSerial = async (clientType, platform) => {
   const ctrl = new AbortController();
   const signal = ctrl.signal;
 
@@ -96,7 +99,7 @@ const connectGbx = async platform => {
     })];
   }
 
-  const client = await GbxClient.open(ports[0]);
+  const client = await clientType.open(ports[0]);
   await client.lock(0, async client => {
     v(0).log(await client.identify());
   });
@@ -109,6 +112,31 @@ const connectGbx = async platform => {
     ctrl.abort();
     await client.lock(0, async client => {
       await client.setPower(false);
+      await client.close();
+    });
+  };
+};
+
+const connectBulk = async (clientType, platform) => {
+  const ctrl = new AbortController();
+  const signal = ctrl.signal;
+
+  const device = await navigator.usb.requestDevice({
+    filters: [{vendorId: 0x054c, productId: 0x2ea}],
+  });
+
+  const client = await clientType.open(device);
+  await client.lock(0, async client => {
+    v(0).log(await client.identify());
+  });
+
+  try {
+    await run(client, platform, {signal});
+  } catch (e) {
+    showErr(e);
+  } finally {
+    ctrl.abort();
+    await client.lock(0, async client => {
       await client.close();
     });
   };
@@ -304,6 +332,9 @@ document.addEventListener("DOMContentLoaded", () => {
         ],
         ["OK"]);
     return;
+  }
+  if (!navigator.usb) {
+    q("#ps1").disabled = true;
   }
 
   platform.addEventListener("change", () => {

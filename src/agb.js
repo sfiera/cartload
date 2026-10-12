@@ -41,7 +41,8 @@ export default class AgbCart {
   async headerDigest() { return await window.crypto.subtle.digest("SHA-1", this.header); }
 
   get platform() { return "agb" }
-  get extension() { return "gba"; }
+  get savExtension() { return "sav"; }
+  get romExtension() { return "gba"; }
 
   // Translated from FlashGBX code originally by Winter1760
   drawImage(ctx) {

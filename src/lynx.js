@@ -20,7 +20,7 @@ export default class LynxCart {
   }
 
   get platform() { return "lynx" }
-  get extension() { return "lyx"; }
+  get romExtension() { return "lyx"; }
 
   async headerDigest() { return await window.crypto.subtle.digest("SHA-1", this.header); }
 

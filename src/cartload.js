@@ -218,9 +218,9 @@ const run = async (client, platform, {signal}) => {
   q("#rom").append(romForm);
 
   romForm.append(makeElement("button", {
-    children: [`Back up .${cart.extension}`],
+    children: [`Back up .${cart.romExtension}`],
     onclick: async () => downloadUrl(
-        `${title}.${cart.extension}`, await toDataUrl(await backUp("Back up ROM Data"))),
+        `${title}.${cart.romExtension}`, await toDataUrl(await backUp("Back up ROM Data"))),
   }));
 
   if (dbEntry?.rc !== undefined) {
@@ -234,12 +234,12 @@ const run = async (client, platform, {signal}) => {
     const savForm = makeElement("form", {onsubmit: () => false});
     q("#sav").append(savForm);
     savForm.append(makeElement("button", {
-      children: ["Back up .sav"],
+      children: [`Back up .${cart.savExtension}`],
       onclick: async () => {
         await action("Back up Save Data", async progress => {
           const data = await cart.backUpSav(client, len => progress(len, cart.savSize));
           v(0).log(hex(await window.crypto.subtle.digest("SHA-1", data)));
-          downloadUrl(`${title}.sav`, await toDataUrl(data));
+          downloadUrl(`${title}.${cart.savExtension}`, await toDataUrl(data));
         });
       },
     }));

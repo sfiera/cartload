@@ -46,7 +46,8 @@ export default class NeoGeoPocketCart {
   }
 
   get platform() { return "ngp" }
-  get extension() { return "ngp"; }
+  get savExtension() { return "sav"; }
+  get romExtension() { return "ngp"; }
 
   get romSegments() {
     return ints(this.romSize >> 16).map(i => new Segment(i * (1 << 16), (i + 1) * (1 << 16)));

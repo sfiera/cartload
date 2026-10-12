@@ -84,7 +84,8 @@ export default class DmgCart {
 
   async headerDigest() { return await window.crypto.subtle.digest("SHA-1", this.header); }
 
-  get extension() {
+  get savExtension() { return "sav"; }
+  get romExtension() {
     return this.compatibility.cgb ? "gbc" : this.compatibility.sgb ? "sgb" : "gb";
   }
 

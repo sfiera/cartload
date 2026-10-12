@@ -64,7 +64,8 @@ export default class GameGearCart {
     }
   }
 
-  get extension() { return this.compatibility.sms ? "sms" : "gg"; }
+  get savExtension() { return "sav"; }
+  get romExtension() { return this.compatibility.sms ? "sms" : "gg"; }
 
   async headerDigest() { return await window.crypto.subtle.digest("SHA-1", this.header); }
 

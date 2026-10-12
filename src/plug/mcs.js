@@ -1,6 +1,6 @@
 // Cartload is (c) 2026 by sfiera. Licensed under GPLv3.
 
-import {latin1, makeImage, toDataUrl} from "../util.js";
+import {makeImage, shiftJis, toDataUrl} from "../util.js";
 
 export default {
   scan:
@@ -11,20 +11,26 @@ export default {
 
         for (const file of card.files) {
           if (file.state === 0x51) {
-            fn(ps1File(card, file.block));
+            fn(ps1File(client, card, file.block));
           }
         }
       },
 };
 
-const ps1File = async (card, block) => {
+const ps1File = async (client, card, block) => {
   const header = card.files[block - 1];
   const headerData = card.header.slice(block * 128, (block + 1) * 128);
   const totalSize = 128 + header.size;
-  const title = latin1.decode(new Uint8Array(headerData.slice(12, 16))) + "-" +
-      latin1.decode(new Uint8Array(headerData.slice(17, 22)));
+  const code = shiftJis.decode(new Uint8Array(headerData.slice(12, 16))) + "-" +
+      shiftJis.decode(new Uint8Array(headerData.slice(17, 22)));
+  const {title} = await client.lock(200, async client => {
+    const frame = await client.readFrame(block * 64);
+    const title = shiftJis.decode(new Uint8Array(frame.slice(0x04, 0x44))).replace(/\0.*/, "");
+    return {title};
+  });
   return {
     title: title,
+    code: code,
     size: totalSize,
     extension: "mcs",
     backUp: (client, progress) => client.lock(

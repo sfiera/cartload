@@ -44,6 +44,7 @@ export const crc32 = (data, crc = 0) => u32(
     ~Array.prototype.reduce.call(data, (crc, x) => crc32Table[u8(crc ^ x)] ^ (crc >>> 8), ~crc));
 
 export const latin1 = new TextDecoder("latin1");
+export const shiftJis = new TextDecoder("shift_jis");
 
 const KIB = 1024, MIB = 1024 * KIB, GIB = 1024 * MIB;
 

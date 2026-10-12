@@ -19,13 +19,13 @@ export default class Ps1MemCard {
     this.files = [];
     for (let block = 1; block < 16; ++block) {
       const start = block * FRAME_BYTES;
-      const [state, size, ptr, name] = unpack("<IIh20s", this.header.slice(start, start + 30));
+      const [state, size, next, name] = unpack("<IIh20s", this.header.slice(start, start + 30));
       switch (state) {
         case 0x51:
           ++this.fileCount;
         case 0x52:
         case 0x53:
-          this.files.push({block, state, size, ptr, name});
+          this.files.push({block, state, size, next, name});
           ++this.blocksUsed;
           break;
 

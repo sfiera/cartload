@@ -3,4 +3,5 @@
 export default [
   (async () => (await import("./plug/camera.js")).default)(),
   (async () => (await import("./plug/kiss.js")).default)(),
+  (async () => (await import("./plug/mcs.js")).default)(),
 ];

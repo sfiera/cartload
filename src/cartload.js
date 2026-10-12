@@ -54,15 +54,19 @@ const showInfo = (cart, dbEntry) => {
     db.append(p("Not found"));
   }
 
-  const romProps = ul(li(`Size: ${unitBytes(cart.romSize)}`));
-  rom.append(romProps);
-  for (const [prop, name] of Object.entries(ROM_PROPS)) {
-    if (cart[prop] !== undefined) {
-      romProps.append(li(`${name}: ${cart[prop]}`));
+  if (cart.romSize) {
+    const romProps = ul(li(`Size: ${unitBytes(cart.romSize)}`));
+    rom.append(romProps);
+    for (const [prop, name] of Object.entries(ROM_PROPS)) {
+      if (cart[prop] !== undefined) {
+        romProps.append(li(`${name}: ${cart[prop]}`));
+      }
     }
-  }
-  if (cart.logoImageUrl !== undefined) {
-    romProps.append(li("Logo: ", makeElement("img", {src: cart.logoImageUrl()})));
+    if (cart.logoImageUrl !== undefined) {
+      romProps.append(li("Logo: ", makeElement("img", {src: cart.logoImageUrl()})));
+    }
+  } else {
+    rom.append(p("None"));
   }
 
   if (cart.savSize) {
@@ -214,20 +218,22 @@ const run = async (client, platform, {signal}) => {
     });
   };
 
-  const romForm = makeElement("form", {onsubmit: () => false});
-  q("#rom").append(romForm);
+  if (cart.romSize && cart.backUpRom !== undefined) {
+    const romForm = makeElement("form", {onsubmit: () => false});
+    q("#rom").append(romForm);
 
-  romForm.append(makeElement("button", {
-    children: [`Back up .${cart.romExtension}`],
-    onclick: async () => downloadUrl(
-        `${title}.${cart.romExtension}`, await toDataUrl(await backUp("Back up ROM Data"))),
-  }));
-
-  if (dbEntry?.rc !== undefined) {
     romForm.append(makeElement("button", {
-      children: ["Validate"],
-      onclick: () => backUp("Validate ROM Data"),
+      children: [`Back up .${cart.romExtension}`],
+      onclick: async () => downloadUrl(
+          `${title}.${cart.romExtension}`, await toDataUrl(await backUp("Back up ROM Data"))),
     }));
+
+    if (dbEntry?.rc !== undefined) {
+      romForm.append(makeElement("button", {
+        children: ["Validate"],
+        onclick: () => backUp("Validate ROM Data"),
+      }));
+    }
   }
 
   if (cart.savSize && cart.backUpSav !== undefined) {

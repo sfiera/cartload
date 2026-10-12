@@ -25,8 +25,8 @@ class LockedClient {
     }
   }
 
-  async readFrame(f) {
-    await this.sendCommand(pack(">BB2xH134x", 0x81, 0x52, f));
+  async readFrame(f, brokenFrames = {}) {
+    await this.sendCommand(pack(">BB2xH134x", 0x81, 0x52, brokenFrames[f] || f));
     const resp = await this.device.transferIn(1, 64);
     const data =
         Array.from(new Uint8Array(resp.data.buffer, resp.data.byteOffset, resp.data.byteLength));

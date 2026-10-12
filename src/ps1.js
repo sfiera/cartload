@@ -33,6 +33,13 @@ export default class Ps1MemCard {
           ++this.blocksFree;
       }
     }
+    for (let frame = 16; frame < 36; ++frame) {
+      const start = frame * FRAME_BYTES;
+      const broken = unpack("<i", this.header.slice(start, start + 4));
+      if (broken >= BLOCK_FRAMES) {
+        this.brokenFrames[broken] = frame + 20;
+      }
+    }
   }
 
   get platform() { return "ps1" }
@@ -60,7 +67,7 @@ export default class Ps1MemCard {
         throw new Error("Memory card is not PS1");
       }
       let header = [];
-      for (let f = 0; f < CARD_BLOCKS; ++f) {
+      for (let f = 0; f < 36; ++f) {
         header.push(...await client.readFrame(f));
       }
       return new Ps1MemCard(header);

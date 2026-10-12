@@ -25,11 +25,11 @@ const ps1File = async (client, card, block) => {
   const code = shiftJis.decode(new Uint8Array(headerData.slice(12, 16))) + "-" +
       shiftJis.decode(new Uint8Array(headerData.slice(17, 22)));
   const {title, iconUrl} = await client.lock(200, async client => {
-    const frame = await client.readFrame(block * 64);
+    const frame = await client.readFrame(block * 64, card.brokenFrames);
     const title = shiftJis.decode(new Uint8Array(frame.slice(0x04, 0x44))).replace(/\0.*/, "");
     const palette = unpack("<16H", frame.slice(0x60, 0x80));
     const iconData = [];
-    for (const byte of await client.readFrame(header.block * 64 + 1)) {
+    for (const byte of await client.readFrame(header.block * 64 + 1, card.brokenFrames)) {
       iconData.push((byte & 0x0F), (byte & 0xF0) >> 4);
     }
     const iconUrl = makeImage(16, 16, ctx => {
@@ -64,7 +64,7 @@ const ps1File = async (client, card, block) => {
           progress(data.length);
           while (data.length < totalSize) {
             for (let f = 0; f < 64; ++f) {
-              data.push(...await client.readFrame(f + (file.block * 64)));
+              data.push(...await client.readFrame(f + (file.block * 64), card.brokenFrames));
               progress(data.length);
             }
             file = card.files[file.next];

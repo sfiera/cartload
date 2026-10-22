@@ -1,18 +1,19 @@
 // Cartload is (c) 2026 by sfiera. Licensed under GPLv3.
 
-import {arrayEq, ints, latin1, makeImage, Segment} from "./util.js";
+import {arrayEq, hex, ints, latin1, makeImage, Segment, sha1} from "./util.js";
 
 // LYNX pg0 pg1 ver cart mfr rot bank sav
 const lnx = "<4sHHH32s16sBBB3x";
 
 export default class LynxCart {
-  constructor(data, romSize) {
+  constructor(data, dbEntry, romSize) {
     if (!(data instanceof Uint8Array)) {
       throw new TypeError("data must be Uint8Array")
     } else if (data.length < 0x400) {
       throw new TypeError("data too short for header")
     }
     this.header = data.slice(0, 0x400);
+    this.dbEntry = dbEntry;
     this.romSize = romSize;
 
     this.valid = {};
@@ -21,8 +22,6 @@ export default class LynxCart {
 
   get platform() { return "lynx" }
   get romFormats() { return ["lyx"]; }
-
-  async headerDigest() { return await window.crypto.subtle.digest("SHA-1", this.header); }
 
   async backUpRom(client, format, callback) {
     return await client.lock(0, async client => {
@@ -56,19 +55,23 @@ export default class LynxCart {
       await client.setPower(true);
       await shift(client, 8, 0);
 
-      const data = await client.readRange("dmg", 0, 0x800, {csPulse: false});
+      let data = await client.readRange("dmg", 0, 0x800, {csPulse: false});
+      let size;
       if (data.every(x => x == 0)) {
         throw new Error("No cartridge detected");
       } else if (!data.slice(0x400).every((x, i) => x === data[0x3FF] || x === data[i])) {
-        return new LynxCart(new Uint8Array(data), 0x80000);
+        size = 0x80000;
       } else if (!data.slice(0x200, 0x400).every((x, i) => x === data[0x1FF] || x === data[i])) {
-        return new LynxCart(new Uint8Array(data), 0x40000);
+        size = 0x40000;
       } else {
         data.splice(0x200);
         await shift(client, 1, 1);
         data.push(...await client.readRange("dmg", 0, 0x200, {csPulse: false}));
-        return new LynxCart(new Uint8Array(data), 0x20000);
+        size = 0x20000;
       }
+      data = new Uint8Array(data);
+      const dbEntry = (await LynxCart.db())[hex(await sha1(data))];
+      return new LynxCart(new Uint8Array(data), dbEntry, size);
     });
   }
 

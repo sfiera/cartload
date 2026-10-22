@@ -43,6 +43,10 @@ const crc32Table = new Array(0x100).fill(0).map((_, i) => {
 export const crc32 = (data, crc = 0) => u32(
     ~Array.prototype.reduce.call(data, (crc, x) => crc32Table[u8(crc ^ x)] ^ (crc >>> 8), ~crc));
 
+export const sha1 = (typeof window !== "undefined") ?
+    (async data => await window.crypto.subtle.digest("SHA-1", data)) :
+    (async data => []);
+
 export const latin1 = new TextDecoder("latin1");
 export const shiftJis = new TextDecoder("shift_jis");
 

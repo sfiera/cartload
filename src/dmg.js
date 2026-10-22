@@ -1,7 +1,7 @@
 // Cartload is (c) 2026 by sfiera. Licensed under GPLv3.
 
 import {pack, unpack} from "./struct.js";
-import {arrayEq, ints, latin1, makeImage, Segment, unhex} from "./util.js";
+import {arrayEq, hex, ints, latin1, makeImage, Segment, sha1, unhex, v} from "./util.js";
 
 export const ram = true;
 export const battery = true;
@@ -18,7 +18,7 @@ const nintendoLogo = unhex(
     "dccc6ee6ddddd999bbbb67636e0eecccdddc999fbbb9333e");
 
 export default class DmgCart {
-  constructor(data, {
+  constructor(data, dbEntry, {
     ram = false,
     battery = false,
     timer = false,
@@ -35,6 +35,7 @@ export default class DmgCart {
       throw new TypeError("data too short for header")
     }
     this.header = data.slice(0, 0x180);
+    this.dbEntry = dbEntry;
     this.features = {ram, battery, timer, rumble, sensor, camera, infrared, speaker};
 
     this.logo = data.slice(0x104, 0x134);
@@ -81,8 +82,6 @@ export default class DmgCart {
   }
 
   get platform() { return "dmg" }
-
-  async headerDigest() { return await window.crypto.subtle.digest("SHA-1", this.header); }
 
   get romFormats() {
     return [this.compatibility.cgb ? "gbc" : this.compatibility.sgb ? "sgb" : "gb"];
@@ -185,7 +184,8 @@ export default class DmgCart {
       if (cartType === undefined) {
         cartType = dmgCarts[0];
       }
-      return cartType(header);
+      const dbEntry = (await DmgCart.db())[hex(await sha1(header))];
+      return cartType(header, dbEntry);
     });
   }
 
@@ -193,8 +193,8 @@ export default class DmgCart {
 };
 
 class NoMapper extends DmgCart {
-  constructor(header, opts = {}) {
-    super(header, opts);
+  constructor(header, dbEntry, opts = {}) {
+    super(header, dbEntry, opts);
     this.romSize = 32768;
     this.savSize = Math.min(0x2000, this.savSize);
   }
@@ -204,13 +204,13 @@ class NoMapper extends DmgCart {
 };
 
 class MBC1 extends DmgCart {
-  constructor(header, opts = {}) { super(header, opts); }
+  constructor(header, dbEntry, opts = {}) { super(header, dbEntry, opts); }
   get mapperName() { return "MBC1" }
 };
 
 class MBC2 extends DmgCart {
-  constructor(header, opts = {}) {
-    super(header, opts);
+  constructor(header, dbEntry, opts = {}) {
+    super(header, dbEntry, opts);
     if (this.features.battery) {
       this.savSize = 0x200;
     }
@@ -220,23 +220,23 @@ class MBC2 extends DmgCart {
 };
 
 class MBC3 extends DmgCart {
-  constructor(header, opts = {}) { super(header, opts); }
+  constructor(header, dbEntry, opts = {}) { super(header, dbEntry, opts); }
   get mapperName() { return "MBC3" }
 };
 
 class MBC5 extends DmgCart {
-  constructor(header, opts = {}) { super(header, opts); }
+  constructor(header, dbEntry, opts = {}) { super(header, dbEntry, opts); }
   get mapperName() { return "MBC5" }
 };
 
 class MBC6 extends DmgCart {
-  constructor(header, opts = {}) { super(header, opts); }
+  constructor(header, dbEntry, opts = {}) { super(header, dbEntry, opts); }
   get mapperName() { return "MBC6" }
 };
 
 class MBC7 extends DmgCart {
-  constructor(header, opts = {}) {
-    super(header, opts);
+  constructor(header, dbEntry, opts = {}) {
+    super(header, dbEntry, opts);
     this.savSize = 0x100;
   }
   get mapperName() { return "MBC7" }
@@ -257,7 +257,7 @@ class MBC7 extends DmgCart {
 };
 
 class Camera extends DmgCart {
-  constructor(header) { super(header, {ram, battery, camera}); }
+  constructor(header, dbEntry) { super(header, dbEntry, {ram, battery, camera}); }
   get mapperName() { return "MAC-GBD" }
 
   async transferSavSegment(client, segment, progress) {
@@ -267,46 +267,50 @@ class Camera extends DmgCart {
 };
 
 class HuC1 extends DmgCart {
-  constructor(header) { super(header, {ram, battery, infrared}); }
+  constructor(header, dbEntry) { super(header, dbEntry, {ram, battery, infrared}); }
   get mapperName() { return "HuC-1" }
 };
 
 class HuC3 extends DmgCart {
-  constructor(header) { super(header, {ram, battery, infrared, speaker, timer}); }
+  constructor(header, dbEntry) {
+    super(header, dbEntry, {ram, battery, infrared, speaker, timer});
+  }
   get mapperName() { return "HuC-3" }
 };
 
 class Tama5 extends DmgCart {
-  constructor(header) { super(header, {ram, battery, infrared, speaker, timer}); }
+  constructor(header, dbEntry) {
+    super(header, dbEntry, {ram, battery, infrared, speaker, timer});
+  }
   get mapperName() { return "Tama5" }
 };
 
 const dmgCarts = new Array(256)
-dmgCarts[0x00] = data => new NoMapper(data);
-dmgCarts[0x01] = data => new MBC1(data);
-dmgCarts[0x02] = data => new MBC1(data, {ram});
-dmgCarts[0x03] = data => new MBC1(data, {ram, battery});
-dmgCarts[0x05] = data => new MBC2(data);
-dmgCarts[0x06] = data => new MBC2(data, {battery});
-dmgCarts[0x08] = data => new NoMapper(data, {ram});
-dmgCarts[0x09] = data => new NoMapper(data, {ram, battery});
-dmgCarts[0x0b] = data => new MMM01(data);
-dmgCarts[0x0c] = data => new MMM01(data, {ram});
-dmgCarts[0x0d] = data => new MMM01(data, {ram, battery});
-dmgCarts[0x0f] = data => new MBC3(data, {timer, battery});
-dmgCarts[0x10] = data => new MBC3(data, {timer, ram, battery});
-dmgCarts[0x11] = data => new MBC3(data);
-dmgCarts[0x12] = data => new MBC3(data, {ram});
-dmgCarts[0x13] = data => new MBC3(data, {ram, battery});
-dmgCarts[0x19] = data => new MBC5(data);
-dmgCarts[0x1a] = data => new MBC5(data, {ram});
-dmgCarts[0x1b] = data => new MBC5(data, {ram, battery});
-dmgCarts[0x1c] = data => new MBC5(data, {rumble});
-dmgCarts[0x1d] = data => new MBC5(data, {rumble, ram});
-dmgCarts[0x1e] = data => new MBC5(data, {rumble, ram, battery});
-dmgCarts[0x20] = data => new MBC6(data);
-dmgCarts[0x22] = data => new MBC7(data, {sensor, rumble, ram, battery});
-dmgCarts[0xfc] = data => new Camera(data);
-dmgCarts[0xfd] = data => new Tama5(data);
-dmgCarts[0xfe] = data => new HuC3(data);
-dmgCarts[0xff] = data => new HuC1(data);
+dmgCarts[0x00] = (...args) => new NoMapper(...args);
+dmgCarts[0x01] = (...args) => new MBC1(...args);
+dmgCarts[0x02] = (...args) => new MBC1(...args, {ram});
+dmgCarts[0x03] = (...args) => new MBC1(...args, {ram, battery});
+dmgCarts[0x05] = (...args) => new MBC2(...args);
+dmgCarts[0x06] = (...args) => new MBC2(...args, {battery});
+dmgCarts[0x08] = (...args) => new NoMapper(...args, {ram});
+dmgCarts[0x09] = (...args) => new NoMapper(...args, {ram, battery});
+dmgCarts[0x0b] = (...args) => new MMM01(...args);
+dmgCarts[0x0c] = (...args) => new MMM01(...args, {ram});
+dmgCarts[0x0d] = (...args) => new MMM01(...args, {ram, battery});
+dmgCarts[0x0f] = (...args) => new MBC3(...args, {timer, battery});
+dmgCarts[0x10] = (...args) => new MBC3(...args, {timer, ram, battery});
+dmgCarts[0x11] = (...args) => new MBC3(...args);
+dmgCarts[0x12] = (...args) => new MBC3(...args, {ram});
+dmgCarts[0x13] = (...args) => new MBC3(...args, {ram, battery});
+dmgCarts[0x19] = (...args) => new MBC5(...args);
+dmgCarts[0x1a] = (...args) => new MBC5(...args, {ram});
+dmgCarts[0x1b] = (...args) => new MBC5(...args, {ram, battery});
+dmgCarts[0x1c] = (...args) => new MBC5(...args, {rumble});
+dmgCarts[0x1d] = (...args) => new MBC5(...args, {rumble, ram});
+dmgCarts[0x1e] = (...args) => new MBC5(...args, {rumble, ram, battery});
+dmgCarts[0x20] = (...args) => new MBC6(...args);
+dmgCarts[0x22] = (...args) => new MBC7(...args, {sensor, rumble, ram, battery});
+dmgCarts[0xfc] = (...args) => new Camera(...args);
+dmgCarts[0xfd] = (...args) => new Tama5(...args);
+dmgCarts[0xfe] = (...args) => new HuC3(...args);
+dmgCarts[0xff] = (...args) => new HuC1(...args);

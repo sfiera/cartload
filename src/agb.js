@@ -1,7 +1,7 @@
 // Cartload is (c) 2026 by sfiera. Licensed under GPLv3.
 
 import {pack, unpack} from "./struct.js";
-import {arrayEq, latin1, makeImage, unhex} from "./util.js";
+import {arrayEq, hex, latin1, makeImage, sha1, unhex} from "./util.js";
 
 const nintendoLogo = unhex(
     "24ffae51699aa2213d84820a84e409ad11248b98c0817f21a352" +
@@ -12,7 +12,7 @@ const nintendoLogo = unhex(
     "90cb88113a9465c07c6387f03cafd625e48b380aac7221d4f807")
 
 export default class AgbCart {
-  constructor(data, romSize) {
+  constructor(data, dbEntry, romSize) {
     if (!(data instanceof Uint8Array)) {
       throw new TypeError("data must be Uint8Array")
     }
@@ -25,6 +25,7 @@ export default class AgbCart {
     data = data.slice(0, headerSize);
 
     this.header = data;
+    this.dbEntry = dbEntry;
     this.logo = data.slice(0x004, 0x0A0);
     this.title = latin1.decode(data.slice(0x0A0, 0x0AC));
     this.romSize = romSize;
@@ -37,8 +38,6 @@ export default class AgbCart {
     };
     this.valid.header = this.valid.logo && this.valid.headerCksum;
   }
-
-  async headerDigest() { return await window.crypto.subtle.digest("SHA-1", this.header); }
 
   get platform() { return "agb" }
   get savFormats() { return ["sav"]; }
@@ -167,7 +166,7 @@ export default class AgbCart {
       await client.setPower(true);
       await client.agbBoot();
 
-      const header = await client.readRange("agb", 0, 0x180);
+      const header = new Uint8Array(await client.readRange("agb", 0, 0x180));
       if (header.every(x => x == 0)) {
         throw new Error("No cartridge detected");
       }
@@ -176,12 +175,14 @@ export default class AgbCart {
       for (let address = 0x8000; address <= 0x20000000; address <<= 1) {
         const newHeader = await client.readRange("agb", address, 0x180);
         if (arrayEq(newHeader, header) || newHeader.every(x => x == 0)) {
-          return new AgbCart(new Uint8Array(header), address);
+          const dbEntry = (await AgbCart.db())[hex(await sha1(header))];
+          return new AgbCart(header, dbEntry, address);
         }
       }
 
       // Failed to detect ROM size.
-      return new AgbCart(new Uint8Array(header), 0);
+      const dbEntry = (await AgbCart.db())[await sha1(header)];
+      return new AgbCart(header, dbEntry, 0);
     });
   }
 

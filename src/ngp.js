@@ -1,7 +1,7 @@
 // Cartload is (c) 2026 by sfiera. Licensed under GPLv3.
 
 import {pack} from "./struct.js";
-import {arrayEq, ints, latin1, makeImage, Segment} from "./util.js";
+import {arrayEq, hex, ints, latin1, makeImage, Segment, sha1} from "./util.js";
 
 const MFR_IDS = {};
 MFR_IDS[0x98] = "Toshiba";
@@ -14,13 +14,14 @@ SIZE_IDS[0x2c] = 1024 * 1024;
 SIZE_IDS[0x2f] = 2048 * 1024;
 
 export default class NeoGeoPocketCart {
-  constructor(data, romSize, savSize, segments) {
+  constructor(data, dbEntry, romSize, savSize, segments) {
     if (!(data instanceof Uint8Array)) {
       throw new TypeError("data must be Uint8Array")
     } else if (data.length < 0x40) {
       throw new TypeError("data too short for header")
     }
     this.header = data.slice(0, 0x40);
+    this.dbEntry = dbEntry;
     this.trademark = latin1.decode(this.header.slice(0x00, 0x1C));
     const titleRegexp = /^(.*?)[\u0000 ]*$/;
     const titleMatch = latin1.decode(this.header.slice(0x24, 0x30)).match(titleRegexp);
@@ -52,8 +53,6 @@ export default class NeoGeoPocketCart {
   get romSegments() {
     return ints(this.romSize >> 16).map(i => new Segment(i * (1 << 16), (i + 1) * (1 << 16)));
   }
-
-  async headerDigest() { return await window.crypto.subtle.digest("SHA-1", this.header); }
 
   async backUpRom(client, format, callback) {
     return await client.lock(0, async client => {
@@ -164,9 +163,9 @@ export default class NeoGeoPocketCart {
 
       await latch(client, 0);
       await cs(client, 0);
-      const data = await client.readRange("dmg", 0, 0x40, {csPulse: false});
-
-      return new NeoGeoPocketCart(new Uint8Array(data), romSize, savSize, segments);
+      const data = new Uint8Array(await client.readRange("dmg", 0, 0x40, {csPulse: false}));
+      const dbEntry = (await NeoGeoPocketCart.db())[hex(await sha1(data))];
+      return new NeoGeoPocketCart(data, dbEntry, romSize, savSize, segments);
     });
   }
 

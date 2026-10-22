@@ -1,7 +1,7 @@
 // Cartload is (c) 2026 by sfiera. Licensed under GPLv3.
 
 import {pack, unpack} from "./struct.js";
-import {arrayEq, ints, latin1, makeImage, Segment} from "./util.js";
+import {arrayEq, hex, ints, latin1, makeImage, Segment, sha1} from "./util.js";
 
 const GGBITS = [12, 7, 6, 5, 4, 3, 2, 1, 0, 10, 15, 11, 9, 8, 13, 14];
 export const addr = {
@@ -23,13 +23,14 @@ const BANK1 = addr.gearToBoy(0xFFFE);
 const BANK2 = addr.gearToBoy(0xFFFF);
 
 export default class GameGearCart {
-  constructor(data, romSize) {
+  constructor(data, dbEntry, romSize) {
     if (!(data instanceof Uint8Array)) {
       throw new TypeError("data must be Uint8Array")
     } else if (data.length < 0x4000) {
       throw new TypeError("data too short for header")
     }
     this.header = data.slice(0x3000, 0x4000);
+    this.dbEntry = dbEntry;
     this.trademark = latin1.decode(this.header.slice(0xFF0, 0xFFA));
     this.code = (this.header[0xFFE] >> 4).toString(16) +
         this.header[0xFFD].toString(16).padStart(2, "0") +
@@ -66,8 +67,6 @@ export default class GameGearCart {
 
   get romFormats() { return [this.compatibility.sms ? "sms" : "gg"]; }
   get savFormats() { return ["sav"]; }
-
-  async headerDigest() { return await window.crypto.subtle.digest("SHA-1", this.header); }
 
   async backUpRom(client, format, callback) {
     return await client.lock(0, async client => {
@@ -112,7 +111,8 @@ export default class GameGearCart {
         await client.write("dmg", BANK1, bankCount + 1);
         const newData = await readSeg(client, seg);
         if (arrayEq(newData, data)) {
-          return new GameGearCart(data, bankCount * 0x4000);
+          const dbEntry = (await GameGearCart.db())[hex(await sha1(data.slice(0x3000, 0x4000)))];
+          return new GameGearCart(data, dbEntry, bankCount * 0x4000);
         }
       }
       throw new Error("failed to detect cartridge size");

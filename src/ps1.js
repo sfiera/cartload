@@ -73,7 +73,4 @@ export default class Ps1MemCard {
       return new Ps1MemCard(header);
     });
   }
-
-  async headerDigest() { return []; }
-  static async db() { return {}; }
 }

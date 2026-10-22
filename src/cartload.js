@@ -34,7 +34,7 @@ const SAV_PROPS = {
   blocksFree: "Blocks Free",
 };
 
-const showInfo = (cart, dbEntry) => {
+const showInfo = cart => {
   const db = q("#db");
   const rom = q("#rom");
   const sav = q("#sav");
@@ -49,12 +49,12 @@ const showInfo = (cart, dbEntry) => {
     return;
   }
 
-  if (dbEntry) {
-    const dbProps = ul(li(`Title: ${dbEntry.gn} ${dbEntry.ne}`));
+  if (cart.dbEntry) {
+    const dbProps = ul(li(`Title: ${cart.dbEntry.gn} ${cart.dbEntry.ne}`));
     db.append(dbProps);
-    if (dbEntry.rc !== undefined) {
-      dbProps.append(
-          li("Checksum: ", makeElement("tt", {className: "crc32", children: hex32(dbEntry.rc)})))
+    if (cart.dbEntry.rc !== undefined) {
+      dbProps.append(li(
+          "Checksum: ", makeElement("tt", {className: "crc32", children: hex32(cart.dbEntry.rc)})))
     }
   } else {
     db.append(p("Not found"));
@@ -218,26 +218,24 @@ const run = async (client, platform, {signal}) => {
   }
   scanPlugs(client, cart, signal);
 
-  const digest = hex(await cart.headerDigest());
-  const db = await platform.db();
-  const dbEntry = db[digest];
-  const title = dbEntry ? `${dbEntry.gn} ${dbEntry.ne}` : (cart.title || cart.code || "game");
-  v(0).log(title, digest, dbEntry);
+  const title =
+      cart.dbEntry ? `${cart.dbEntry.gn} ${cart.dbEntry.ne}` : (cart.title || cart.code || "game");
+  v(0).log(title, cart.dbEntry);
 
-  if (dbEntry?.st !== undefined) {
-    cart.savType = dbEntry.st;
-    cart.savSize = dbEntry.ss;
+  if (cart.dbEntry?.st !== undefined) {
+    cart.savType = cart.dbEntry.st;
+    cart.savSize = cart.dbEntry.ss;
   }
 
-  showInfo(cart, dbEntry);
+  showInfo(cart);
   signal.addEventListener("abort", () => showInfo(null));
 
   const backUp = async (title, format) => {
     return await action(title, async progress => {
       const data = await cart.backUpRom(client, format, len => progress(len, cart.romSize));
       v(0).log(hex(await window.crypto.subtle.digest("SHA-1", data)));
-      if (dbEntry?.rc !== undefined) {
-        if (dbEntry.rc === crc32(data)) {
+      if (cart.dbEntry?.rc !== undefined) {
+        if (cart.dbEntry.rc === crc32(data)) {
           q("#db .crc32").classList.add("valid");
           q("#db .crc32").classList.remove("invalid");
         } else {
@@ -261,7 +259,7 @@ const run = async (client, platform, {signal}) => {
       }));
     }
 
-    if (dbEntry?.rc !== undefined) {
+    if (cart.dbEntry?.rc !== undefined) {
       romForm.append(makeElement("button", {
         children: ["Validate"],
         onclick: () => backUp("Validate ROM Data", cart.romFormats[0]),

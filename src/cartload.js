@@ -222,11 +222,6 @@ const run = async (client, platform, {signal}) => {
       cart.dbEntry ? `${cart.dbEntry.gn} ${cart.dbEntry.ne}` : (cart.title || cart.code || "game");
   v(0).log(title, cart.dbEntry);
 
-  if (cart.dbEntry?.st !== undefined) {
-    cart.savType = cart.dbEntry.st;
-    cart.savSize = cart.dbEntry.ss;
-  }
-
   showInfo(cart);
   signal.addEventListener("abort", () => showInfo(null));
 

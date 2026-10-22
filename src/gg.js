@@ -37,7 +37,9 @@ export default class GameGearCart {
         this.header[0xFFC].toString(16).padStart(2, "0");
     this.romVersion = this.header[0xFFE] & 0x0F;
     this.region = this.header[0xFFF] >> 4;
-    this.romSize = romSize;
+    this.romSize = dbEntry?.rs || romSize;
+    this.savType = dbEntry?.st;
+    this.savSize = dbEntry?.ss;
 
     this.compatibility = {
       sms: false,  // read and invert audio pin
@@ -106,12 +108,15 @@ export default class GameGearCart {
       if (data.every(x => x == 0)) {
         throw new Error("No cartridge detected");
       }
+      const dbEntry = (await GameGearCart.db())[hex(await sha1(data.slice(0x3000, 0x4000)))];
+      if (dbEntry) {
+        return new GameGearCart(data, dbEntry);
+      }
 
       for (let bankCount = 2; bankCount < 128; bankCount <<= 1) {
         await client.write("dmg", BANK1, bankCount + 1);
         const newData = await readSeg(client, seg);
         if (arrayEq(newData, data)) {
-          const dbEntry = (await GameGearCart.db())[hex(await sha1(data.slice(0x3000, 0x4000)))];
           return new GameGearCart(data, dbEntry, bankCount * 0x4000);
         }
       }

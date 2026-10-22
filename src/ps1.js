@@ -43,9 +43,9 @@ export default class Ps1MemCard {
   }
 
   get platform() { return "ps1" }
-  get savExtension() { return "mcr"; }
+  get savFormats() { return ["mcr"]; }
 
-  async backUpSav(client, callback) {
+  async backUpSav(client, format, callback) {
     return await client.lock(0, async client => {
       callback ||= () => {};
       let data = [];

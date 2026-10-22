@@ -20,11 +20,11 @@ export default class LynxCart {
   }
 
   get platform() { return "lynx" }
-  get romExtension() { return "lyx"; }
+  get romFormats() { return ["lyx"]; }
 
   async headerDigest() { return await window.crypto.subtle.digest("SHA-1", this.header); }
 
-  async backUpRom(client, callback) {
+  async backUpRom(client, format, callback) {
     return await client.lock(0, async client => {
       callback ||= () => {};
       const deBruijn = Uint8Array.fromBase64("AoOCQ0LDwiMyKjomNi4+KTk1LT2zsnPz8quurW/v/gE=");

@@ -84,10 +84,10 @@ export default class DmgCart {
 
   async headerDigest() { return await window.crypto.subtle.digest("SHA-1", this.header); }
 
-  get savExtension() { return "sav"; }
-  get romExtension() {
-    return this.compatibility.cgb ? "gbc" : this.compatibility.sgb ? "sgb" : "gb";
+  get romFormats() {
+    return [this.compatibility.cgb ? "gbc" : this.compatibility.sgb ? "sgb" : "gb"];
   }
+  get savFormats() { return ["sav"]; }
 
   drawImage(ctx) {
     ctx.fillStyle = "black";
@@ -115,7 +115,7 @@ export default class DmgCart {
 
   logoImageUrl() { return makeImage(48, 8, ctx => this.drawImage(ctx)); }
 
-  async backUpRom(client, callback) {
+  async backUpRom(client, format, callback) {
     return await client.lock(0, async client => {
       callback ||= () => {};
       await client.setPower(true);
@@ -129,7 +129,7 @@ export default class DmgCart {
     });
   }
 
-  async backUpSav(client, callback) {
+  async backUpSav(client, format, callback) {
     return await client.lock(0, async client => {
       callback ||= () => {};
       await client.setPower(true);

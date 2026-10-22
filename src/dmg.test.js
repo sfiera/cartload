@@ -53,7 +53,7 @@ test("no mapper", async () => {
   expect(cart.savSize).toBe(0);
   expect(cart.valid.header).toBe(true);
 
-  const backup = await cart.backUpRom(client, null);
+  const backup = await cart.backUpRom(client, "dmg");
   expect(backup).toEqual(data);
 });
 
@@ -194,7 +194,7 @@ test("mbc7", async () => {
   copy(rom, 0x147, 0x22);
   const client = new Mbc7FakeClient(rom, eep);
   const cart = await dmg.detect(client);
-  const backup = await cart.backUpSav(client, null);
+  const backup = await cart.backUpSav(client, "sav");
   expect(backup).toEqual(eep);
 });
 

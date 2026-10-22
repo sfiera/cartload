@@ -17,7 +17,7 @@ test("128kib rom", async () => {
   expect(cart.romSize).toBe(0x20000);
   expect(cart.valid.header).toBe(true);
 
-  const backup = await cart.backUpRom(client, null);
+  const backup = await cart.backUpRom(client, "lyx");
   expect(backup).toEqual(data);
 });
 

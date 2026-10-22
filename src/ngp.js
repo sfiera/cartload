@@ -46,8 +46,8 @@ export default class NeoGeoPocketCart {
   }
 
   get platform() { return "ngp" }
-  get savExtension() { return "sav"; }
-  get romExtension() { return "ngp"; }
+  get romFormats() { return ["ngp"]; }
+  get savFormats() { return ["sav"]; }
 
   get romSegments() {
     return ints(this.romSize >> 16).map(i => new Segment(i * (1 << 16), (i + 1) * (1 << 16)));
@@ -55,7 +55,7 @@ export default class NeoGeoPocketCart {
 
   async headerDigest() { return await window.crypto.subtle.digest("SHA-1", this.header); }
 
-  async backUpRom(client, callback) {
+  async backUpRom(client, format, callback) {
     return await client.lock(0, async client => {
       callback ||= () => {};
       await client.setPower(true);
@@ -72,7 +72,7 @@ export default class NeoGeoPocketCart {
     });
   }
 
-  async backUpSav(client, callback) {
+  async backUpSav(client, format, callback) {
     callback ||= () => {};
     return await client.lock(0, async client => {
       await client.setPower(true);

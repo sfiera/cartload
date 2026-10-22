@@ -41,8 +41,8 @@ export default class AgbCart {
   async headerDigest() { return await window.crypto.subtle.digest("SHA-1", this.header); }
 
   get platform() { return "agb" }
-  get savExtension() { return "sav"; }
-  get romExtension() { return "gba"; }
+  get savFormats() { return ["sav"]; }
+  get romFormats() { return ["gba"]; }
 
   // Translated from FlashGBX code originally by Winter1760
   drawImage(ctx) {
@@ -114,7 +114,7 @@ export default class AgbCart {
     }
   }
 
-  async backUpRom(client, callback) {
+  async backUpRom(client, format, callback) {
     return await client.lock(0, async client => {
       await client.setPower(true);
       const data = await client.readRange("agb", 0, this.romSize, {progress: callback});
@@ -122,7 +122,7 @@ export default class AgbCart {
     });
   }
 
-  async backUpSav(client, callback) {
+  async backUpSav(client, format, callback) {
     return await client.lock(0, async client => {
       callback ||= () => {};
       await client.setPower(true);

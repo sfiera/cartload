@@ -64,12 +64,12 @@ export default class GameGearCart {
     }
   }
 
-  get savExtension() { return "sav"; }
-  get romExtension() { return this.compatibility.sms ? "sms" : "gg"; }
+  get romFormats() { return [this.compatibility.sms ? "sms" : "gg"]; }
+  get savFormats() { return ["sav"]; }
 
   async headerDigest() { return await window.crypto.subtle.digest("SHA-1", this.header); }
 
-  async backUpRom(client, callback) {
+  async backUpRom(client, format, callback) {
     return await client.lock(0, async client => {
       callback ||= () => {};
       await client.setPower(true);
@@ -81,7 +81,7 @@ export default class GameGearCart {
     });
   }
 
-  async backUpSav(client, callback) {
+  async backUpSav(client, format, callback) {
     return await client.lock(0, async client => {
       callback ||= () => {};
       await client.setPower(true);

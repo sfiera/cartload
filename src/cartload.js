@@ -232,9 +232,9 @@ const run = async (client, platform, {signal}) => {
   showInfo(cart, dbEntry);
   signal.addEventListener("abort", () => showInfo(null));
 
-  const backUp = async title => {
+  const backUp = async (title, format) => {
     return await action(title, async progress => {
-      const data = await cart.backUpRom(client, len => progress(len, cart.romSize));
+      const data = await cart.backUpRom(client, format, len => progress(len, cart.romSize));
       v(0).log(hex(await window.crypto.subtle.digest("SHA-1", data)));
       if (dbEntry?.rc !== undefined) {
         if (dbEntry.rc === crc32(data)) {
@@ -253,16 +253,18 @@ const run = async (client, platform, {signal}) => {
     const romForm = makeElement("form", {onsubmit: () => false});
     q("#rom").append(romForm);
 
-    romForm.append(makeElement("button", {
-      children: [`Back up .${cart.romExtension}`],
-      onclick: async () => downloadUrl(
-          `${title}.${cart.romExtension}`, await toDataUrl(await backUp("Back up ROM Data"))),
-    }));
+    for (const format of cart.romFormats) {
+      romForm.append(makeElement("button", {
+        children: [`Back up .${format}`],
+        onclick: async () => downloadUrl(
+            `${title}.${format}`, await toDataUrl(await backUp("Back up ROM Data", format))),
+      }));
+    }
 
     if (dbEntry?.rc !== undefined) {
       romForm.append(makeElement("button", {
         children: ["Validate"],
-        onclick: () => backUp("Validate ROM Data"),
+        onclick: () => backUp("Validate ROM Data", cart.romFormats[0]),
       }));
     }
   }
@@ -270,16 +272,18 @@ const run = async (client, platform, {signal}) => {
   if (cart.savSize && cart.backUpSav !== undefined) {
     const savForm = makeElement("form", {onsubmit: () => false});
     q("#sav").append(savForm);
-    savForm.append(makeElement("button", {
-      children: [`Back up .${cart.savExtension}`],
-      onclick: async () => {
-        await action("Back up Save Data", async progress => {
-          const data = await cart.backUpSav(client, len => progress(len, cart.savSize));
-          v(0).log(hex(await window.crypto.subtle.digest("SHA-1", data)));
-          downloadUrl(`${title}.${cart.savExtension}`, await toDataUrl(data));
-        });
-      },
-    }));
+    for (const format of cart.savFormats) {
+      savForm.append(makeElement("button", {
+        children: [`Back up .${format}`],
+        onclick: async () => {
+          await action("Back up Save Data", async progress => {
+            const data = await cart.backUpSav(client, format, len => progress(len, cart.savSize));
+            v(0).log(hex(await window.crypto.subtle.digest("SHA-1", data)));
+            downloadUrl(`${title}.${format}`, await toDataUrl(data));
+          });
+        },
+      }));
+    }
   }
 
   const {promise, resolve} = Promise.withResolvers();

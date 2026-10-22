@@ -94,7 +94,7 @@ test("header", async () => {
   expect(cart.romSize).toBe(32768);
   expect(cart.valid.trademark).toBe(true);
 
-  const backup = await cart.backUpRom(client);
+  const backup = await cart.backUpRom(client, "gg");
   expect(backup.slice(1024)).toEqual(data.slice(1024));
 });
 
@@ -110,6 +110,6 @@ test.each([
   const cart = await gg.detect(client);
   expect(cart.romSize).toBe(size);
 
-  const backup = await cart.backUpRom(client);
+  const backup = await cart.backUpRom(client, "gg");
   expect(backup).toEqual(data);
 });

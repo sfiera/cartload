@@ -29,10 +29,10 @@
         rc: "Cksum",
       };
       const FILTERS = {
-        lg: x => [x.replaceAll(",", ", ")],
-        rs: x => [unitBytes(x)],
-        rc: x => [tt(hex32(x))],
-        ro: x => ["↑←→↓"[x]],
+        lg: x => x.replaceAll(",", ", "),
+        rs: x => unitBytes(x),
+        rc: x => tt(hex32(x)),
+        ro: x => "↑←→↓"[x],
       };
 
       const show = async platform => {
@@ -67,14 +67,13 @@
           for (const item of db) {
             const row = tr();
             for (const id of Object.keys(cols)) {
+              row.append(makeElement("td", {className: id}));
               if (item[id] === undefined) {
-                row.append(td());
-              } else if (FILTERS[id] === undefined) {
-                row.append(td(item[id]));
-              } else {
-                row.append(td(...FILTERS[id](item[id])));
+                continue;
               }
-              row.lastChild.className = id;
+              const content = (FILTERS[id] === undefined) ? item[id] : FILTERS[id](item[id]);
+              row.lastChild.append(content);
+              row.lastChild.title = content;
             }
             q("tbody").append(row);
           }
@@ -116,7 +115,13 @@
       table { border-spacing: 5px 0; }
       th { text-align: left; }
       th a { cursor: pointer; }
-      td { vertical-align: top; }
+      td {
+        vertical-align: top;
+        max-width: 20em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
       .gc,.rs { white-space: nowrap; }
       .asc::after { content: "↑"; }
       .desc::after { content: "↓"; }

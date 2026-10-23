@@ -229,7 +229,7 @@ const run = async (client, platform, {signal}) => {
     return await action(title, async progress => {
       const data = await cart.backUpRom(client, format, len => progress(len, cart.romSize));
       v(0).log(hex(await window.crypto.subtle.digest("SHA-1", data)));
-      if (cart.dbEntry?.rc !== undefined) {
+      if ((format === cart.romFormats[0]) && (cart.dbEntry?.rc !== undefined)) {
         if (cart.dbEntry.rc === crc32(data)) {
           q("#db .crc32").classList.add("valid");
           q("#db .crc32").classList.remove("invalid");

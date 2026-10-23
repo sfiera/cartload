@@ -1,9 +1,7 @@
 // Cartload is (c) 2026 by sfiera. Licensed under GPLv3.
 
-import {arrayEq, hex, ints, latin1, makeImage, Segment, sha1} from "./util.js";
-
-// LYNX pg0 pg1 ver cart mfr rot bank sav
-const lnx = "<4sHHH32s16sBBB3x";
+import {pack} from "./struct.js";
+import {arrayEq, hex, ints, makeImage, Segment, sha1} from "./util.js";
 
 export default class LynxCart {
   constructor(data, dbEntry, romSize) {
@@ -21,17 +19,35 @@ export default class LynxCart {
   }
 
   get platform() { return "lynx" }
-  get romFormats() { return ["lyx"]; }
+  get romFormats() { return (this.dbEntry ? ["lyx", "lnx"] : ["lyx"]); }
 
   async backUpRom(client, format, callback) {
     return await client.lock(0, async client => {
       callback ||= () => {};
-      const deBruijn = Uint8Array.fromBase64("AoOCQ0LDwiMyKjomNi4+KTk1LT2zsnPz8quurW/v/gE=");
       await client.setPower(true);
       await shift(client, 7, 0);
       let acc = 0;
       let total = 0;
-      const data = new Uint8Array(this.romSize);
+      const headerSize = (format == "lnx") ? 64 : 0;
+      const data = new Uint8Array(headerSize + this.romSize);
+
+      if (format === "lnx") {
+        const utf8 = new TextEncoder();
+        const header = pack(
+            "<4sHHH32s16sBBB3x",
+            utf8.encode("LYNX"),
+            this.romSize >>> 8,  // page 0 size
+            0,                   // page 1 size
+            1,                   // header version
+            utf8.encode(this.dbEntry.gn),
+            utf8.encode(this.dbEntry.mf),
+            this.dbEntry.ro,
+            0,  // banking
+            this.dbEntry.st);
+        data.set(header, 0);
+      }
+
+      const deBruijn = Uint8Array.fromBase64("AoOCQ0LDwiMyKjomNi4+KTk1LT2zsnPz8quurW/v/gE=");
       for (let b of deBruijn) {
         for (const _ of ints(8)) {
           await shift(client, 1, b & 1);
@@ -41,7 +57,7 @@ export default class LynxCart {
             progress: n => callback(total + n),
             csPulse: false,
           });
-          chunk.forEach((b, i) => data[(acc * (this.romSize >>> 8)) | i] = b);
+          chunk.forEach((b, i) => data[((acc * (this.romSize >>> 8)) | i) + headerSize] = b);
           total += this.romSize >>> 8;
         }
       };

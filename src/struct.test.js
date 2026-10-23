@@ -1,5 +1,7 @@
 // Cartload is (c) 2026 by sfiera. Licensed under GPLv3.
 
+import {expect, test} from "vitest"
+
 import {pack, unpack} from "./struct.js";
 
 const latin1 = new TextEncoder("latin1");
@@ -59,7 +61,8 @@ test("pstring", () => {
 
 test("string", () => {
   expect(pack("5s", latin1.encode("Hello"))).toStrictEqual(b(0x48, 0x65, 0x6c, 0x6c, 0x6f));
-  expect(unpack("5s", b(0x48, 0x65, 0x6c, 0x6c, 0x6f))).toStrictEqual([latin1.encode("Hello")]);
+  expect(unpack("5s", b(0x48, 0x65, 0x6c, 0x6c, 0x6f))).toStrictEqual([b(
+      0x48, 0x65, 0x6c, 0x6c, 0x6f)]);
 })
 
 test("skip", () => {

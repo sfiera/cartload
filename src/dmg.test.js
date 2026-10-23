@@ -1,5 +1,7 @@
 // Cartload is (c) 2026 by sfiera. Licensed under GPLv3.
 
+import {expect, test} from "vitest"
+
 import dmg from "./dmg.js";
 import {copy, FakeClient, rand, zero} from "./testutil.js";
 import {latin1, Segment, unhex} from "./util.js";

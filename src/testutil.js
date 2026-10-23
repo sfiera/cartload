@@ -1,3 +1,5 @@
+import {expect} from "vitest"
+
 export class FakeClient {
   constructor(mode, voltage, rom) {
     this.address = 0;

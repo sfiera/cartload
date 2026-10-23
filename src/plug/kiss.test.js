@@ -2,6 +2,7 @@
 
 import fs from "fs/promises";
 import path from "path";
+import {expect, test} from "vitest"
 
 import DmgCart from "../dmg.js";
 import {copy, FakeClient, rand} from "../testutil.js";

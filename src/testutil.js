@@ -57,10 +57,10 @@ export class FakeClient {
 export function rand(n, seed) {
   seed = seed || 1;
   const data = new Uint8Array(n);
-  data.forEach((_, i) => {
+  for (let i = 0; i < n; ++i) {
     seed = (48271 * seed) % 2147483647;
     data[i] = seed;
-  });
+  }
   return data;
 }
 
